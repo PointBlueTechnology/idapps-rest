@@ -1103,7 +1103,7 @@ Password synchronisation status of the signed-in user, per driver.
 
 Password synchronisation status of a given user, per driver.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1115,11 +1115,11 @@ Password synchronisation status of a given user, per driver.
 }
 ```
 
-**Answer:** {messages:[{message, driverName, driverImage, status}]} or 204
+**Answer:** 204 with no body when the user has no password sync messages
 
-**Example:** POST …/access/info/user/passwordsyncstatus {dn:'cn=uaadmin,ou=sa,o=data'} -> 204
+**Example:** POST …/access/info/user/passwordsyncstatus {dn:<user DN>}
 
-**Notes:** Read-only POST. No messages and an invalid DN both answer 204. An empty body gives 489 'Internal Error'. The lab user root ou=users,o=data is empty, so there was no other user to try.
+**Notes:** A real user without a password (and no driver password sync) also gives 204; messages would need a password change going through drivers, which the test did not do. Read-only POST. An invalid DN also answers 204. An empty body gives 489 'Internal Error'.
 
 <a id="get-idmprov-rest-access-info-user-rights"></a>
 ### GET `/IDMProv/rest/access/info/user/rights`

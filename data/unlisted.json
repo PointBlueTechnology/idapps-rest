@@ -69,7 +69,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/groups/groupmembers",
-  "status": "not-working",
+  "status": "validated",
   "purpose": "List a group's members.",
   "params": [
    {
@@ -114,10 +114,10 @@
     }
    ]
   },
-  "answer": "list of members",
-  "example": "",
-  "notes": "A DN that is not a group answers 489 'Invalid Group Detected'. Not run with a real group: the lab's search root has none.",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[{name, dn, allUsers, includeManager, readOnly}]}], arraySize, nextIndex, \u2026}",
+  "example": "POST \u2026/access/groups/groupmembers?q=&nextIndex=1&size=5 {dn:<group DN>}",
+  "notes": "Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
  {
@@ -328,7 +328,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/teams/recipients/users",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Users a team manager may act for (the team's recipients).",
   "params": [
    {
@@ -368,16 +368,16 @@
    }
   ],
   "body": null,
-  "answer": "{arraySize,nextIndex,\u2026}",
-  "example": "",
-  "notes": "",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[\u2026]}], arraySize, nextIndex}",
+  "example": "GET \u2026/access/teams/recipients/users?q=Alice&nextIndex=1&size=10&client=1",
+  "notes": "Lists the people the caller may act for as a team manager (for a domain administrator: everyone in the user root), each with the teams that reach them. q matches the name.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/teams/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Search teams.",
   "params": [
    {
@@ -431,10 +431,10 @@
    }
   ],
   "body": null,
-  "answer": "{arraySize,totalCount,nextIndex,\u2026}",
-  "example": "",
-  "notes": "The lab has no teams.",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{teams:[{name, dn, description, recipients:[{name, dn, type, isGroupAssignment}], requestors:[\u2026], allUsers, includeManager, localizedNames, localizedDescriptions, readOnly, domainTypes}], \u2026}",
+  "example": "GET \u2026/access/teams/list?q=dctest&nextIndex=1&size=10",
+  "notes": "Shows the team at once (no forceRefresh needed); q matched the team name; sortBy=name with sortOrder=desc and forceRefresh=true also worked. Each team comes with its full recipients and requestors (team managers).",
+  "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
  {
@@ -586,7 +586,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/users",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Search users (older form of /users/list).",
   "params": [
    {
@@ -621,14 +621,14 @@
     "name": "sortBy",
     "in": "query",
     "required": false,
-    "values": "an attribute key (default FirstName)",
-    "kind": "per-installation"
+    "values": "only FirstName (the default); others refused",
+    "kind": "fixed"
    },
    {
     "name": "sortOrder",
     "in": "query",
     "required": false,
-    "values": "asc|desc (default asc)",
+    "values": "asc or desc (checked) but did not change the order on the lab",
     "kind": "fixed"
    },
    {
@@ -654,10 +654,10 @@
    }
   ],
   "body": null,
-  "answer": "{nextIndex,arraySize,\u2026}",
-  "example": "",
-  "notes": "Limited to the user search root, which is empty on the lab.",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{members:[{dn, firstName, lastName}], nextIndex (0 = no more, else the next start), arraySize, token}",
+  "example": "GET \u2026/access/users?q=Alice&nextIndex=1&size=10",
+  "notes": "q matches first and last name (contains), not cn or title: 'Alice' and 'Dctest' found people, 'dctest-a' and 'Test Analyst' found nothing; an empty q lists everyone in the user search root. sortBy accepts only FirstName (anything else: 489 'Invalid sort-by column: LastName'); sortOrder asc/desc is checked, but the order did not follow it: Bob, Alice, then Dctest Manager came back in that order for both asc and desc. Paging: size=2 gave nextIndex 3, the next page nextIndex 0. limit=2 did not cut the list of 3. The token names a server-side cache of the result; forceRefresh=true with the token drops it.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
  {
@@ -679,10 +679,10 @@
     }
    ]
   },
-  "answer": "{user, roleAssignments:[names]}",
-  "example": "POST \u2026/access/users/role/assignments {dn}",
-  "notes": "These are the applications' administrator assignments (Role Administrator, Provisioning Manager\u2026), not IDM roles.",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{user, roleAssignments:[role name]}",
+  "example": "POST \u2026/access/users/role/assignments {dn:<user DN>}",
+  "notes": "With a role assigned: the role's display name (names only, no DNs). Correction: the earlier write-up said these were only the applications' administrator assignments; with data, an ordinary IDM role assigned to the user is listed too.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
  {
@@ -725,7 +725,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/catalog/groups",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Search groups.",
   "params": [
    {
@@ -793,10 +793,10 @@
    }
   ],
   "body": null,
-  "answer": "{arraySize,nextIndex,\u2026}",
-  "example": "",
-  "notes": "Limited to the search root; none on the lab.",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{groups:[{id, name, description}], arraySize, nextIndex (0 = no more), token}",
+  "example": "GET \u2026/catalog/groups?q=one&nextIndex=1&size=10&sortBy=Description&sortOrder=desc",
+  "notes": "q matches the description (contains); 'dctest-group2' (the cn) found nothing. sortBy=Description with desc reversed the order. Paging: size=1 gave nextIndex 2, then 0. The id field is the DN (here it is called id, in /access/groups dn).",
+  "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
  {
@@ -945,10 +945,10 @@
     }
    ]
   },
-  "answer": "{nextIndex,arraySize,total,hasmore,\u2026}",
-  "example": "",
-  "notes": "The role goes in dn (with id it answers 489 'Invalid input DN'). Like v1, limited to the user search root.",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{assignmentStatusList:[{dn, recipientType:'USER', recipientTypeSubContainer, recipientDn, recipientFullName, statusCode:'50', statusDisplay:'Completed', effectiveDate (epoch ms as string), expiryDate, description, grant}], nextIndex, arraySize, total, hasmore}",
+  "example": "POST \u2026/catalog/roles/role/assignments/v2?nextIndex=1&size=20 {dn:<role DN>}",
+  "notes": "The body field is dn here, not id as in v1: {id: \u2026} gives 489 'Invalid input DN: '. statusCode 50 = Completed; description is the assign-time reason; grant true for an assignment. Limited to the user search root, like v1.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
  {

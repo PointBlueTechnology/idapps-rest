@@ -8,10 +8,10 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 14 |
-| did not work on the lab | 11 |
-| answered on the lab, which had no data to show | 6 |
+| validated on the lab | 19 |
+| did not work on the lab | 10 |
 | not run: worked out from the server's and the dashboard's code | 4 |
+| answered on the lab, which had no data to show | 2 |
 
 ## Contents
 
@@ -105,7 +105,7 @@ Turn DNs of any entity type into display names, with each one's entity type.
 
 List a group's members.
 
-**Status:** did not work on the lab. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -124,9 +124,11 @@ List a group's members.
 }
 ```
 
-**Answer:** list of members
+**Answer:** {recipients:[{name, dn, isGroupAssignment, targetSetList:[{name, dn, allUsers, includeManager, readOnly}]}], arraySize, nextIndex, …}
 
-**Notes:** A DN that is not a group answers 489 'Invalid Group Detected'. Not run with a real group: the lab's search root has none.
+**Example:** POST …/access/groups/groupmembers?q=&nextIndex=1&size=5 {dn:<group DN>}
+
+**Notes:** Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'.
 
 <a id="get-idmprov-rest-access-orgchart-position"></a>
 ### GET `/IDMProv/rest/access/orgChart/position`
@@ -237,7 +239,7 @@ The signed-in person's tasks, simple form.
 
 Search teams.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -249,16 +251,18 @@ Search teams.
 | `sortOrder` | query | no | asc\|desc (default asc) | fixed |
 | `forceRefresh` | query | no | true\|false (default false) | fixed |
 
-**Answer:** {arraySize,totalCount,nextIndex,…}
+**Answer:** {teams:[{name, dn, description, recipients:[{name, dn, type, isGroupAssignment}], requestors:[…], allUsers, includeManager, localizedNames, localizedDescriptions, readOnly, domainTypes}], …}
 
-**Notes:** The lab has no teams.
+**Example:** GET …/access/teams/list?q=dctest&nextIndex=1&size=10
+
+**Notes:** Shows the team at once (no forceRefresh needed); q matched the team name; sortBy=name with sortOrder=desc and forceRefresh=true also worked. Each team comes with its full recipients and requestors (team managers).
 
 <a id="get-idmprov-rest-access-teams-recipients-users"></a>
 ### GET `/IDMProv/rest/access/teams/recipients/users`
 
 Users a team manager may act for (the team's recipients).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -268,7 +272,11 @@ Users a team manager may act for (the team's recipients).
 | `client` | query | no | config client id (default 1) | per installation |
 | `proxyUser` | query | no | DN to act as a proxy for |  |
 
-**Answer:** {arraySize,nextIndex,…}
+**Answer:** {recipients:[{name, dn, isGroupAssignment, targetSetList:[…]}], arraySize, nextIndex}
+
+**Example:** GET …/access/teams/recipients/users?q=Alice&nextIndex=1&size=10&client=1
+
+**Notes:** Lists the people the caller may act for as a team manager (for a domain administrator: everyone in the user root), each with the teams that reach them. q matches the name.
 
 <a id="get-idmprov-rest-access-ulp-items"></a>
 ### GET `/IDMProv/rest/access/ulp/items`
@@ -336,7 +344,7 @@ Images for a given set of landing-page items.
 
 Search users (older form of /users/list).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -344,15 +352,17 @@ Search users (older form of /users/list).
 | `nextIndex` | query | no |  (default 1) |  |
 | `size` | query | no |  (default 10) |  |
 | `limit` | query | no |  (default -1) |  |
-| `sortBy` | query | no | an attribute key (default FirstName) | per installation |
-| `sortOrder` | query | no | asc\|desc (default asc) | fixed |
+| `sortBy` | query | no | only FirstName (the default); others refused | fixed |
+| `sortOrder` | query | no | asc or desc (checked) but did not change the order on the lab | fixed |
 | `forceRefresh` | query | no |  (default false) |  |
 | `noCache` | query | no |  (default false) |  |
 | `token` | query | no |  |  |
 
-**Answer:** {nextIndex,arraySize,…}
+**Answer:** {members:[{dn, firstName, lastName}], nextIndex (0 = no more, else the next start), arraySize, token}
 
-**Notes:** Limited to the user search root, which is empty on the lab.
+**Example:** GET …/access/users?q=Alice&nextIndex=1&size=10
+
+**Notes:** q matches first and last name (contains), not cn or title: 'Alice' and 'Dctest' found people, 'dctest-a' and 'Test Analyst' found nothing; an empty q lists everyone in the user search root. sortBy accepts only FirstName (anything else: 489 'Invalid sort-by column: LastName'); sortOrder asc/desc is checked, but the order did not follow it: Bob, Alice, then Dctest Manager came back in that order for both asc and desc. Paging: size=2 gave nextIndex 3, the next page nextIndex 0. limit=2 did not cut the list of 3. The token names a server-side cache of the result; forceRefresh=true with the token drops it.
 
 <a id="get-idmprov-rest-access-users-fullname"></a>
 ### GET `/IDMProv/rest/access/users/fullName`
@@ -462,7 +472,7 @@ Quick information on several users.
 
 The administrator roles (security domains) a user holds, by name.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -474,11 +484,11 @@ The administrator roles (security domains) a user holds, by name.
 }
 ```
 
-**Answer:** {user, roleAssignments:[names]}
+**Answer:** {user, roleAssignments:[role name]}
 
-**Example:** POST …/access/users/role/assignments {dn}
+**Example:** POST …/access/users/role/assignments {dn:<user DN>}
 
-**Notes:** These are the applications' administrator assignments (Role Administrator, Provisioning Manager…), not IDM roles.
+**Notes:** With a role assigned: the role's display name (names only, no DNs). Correction: the earlier write-up said these were only the applications' administrator assignments; with data, an ordinary IDM role assigned to the user is listed too.
 
 <a id="post-idmprov-rest-catalog-containers-container"></a>
 ### POST `/IDMProv/rest/catalog/containers/container`
@@ -508,7 +518,7 @@ List the subcontainers of a container, of a role level's container, or of the re
 
 Search groups.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -522,9 +532,11 @@ Search groups.
 | `noCache` | query | no |  (default false) |  |
 | `token` | query | no |  |  |
 
-**Answer:** {arraySize,nextIndex,…}
+**Answer:** {groups:[{id, name, description}], arraySize, nextIndex (0 = no more), token}
 
-**Notes:** Limited to the search root; none on the lab.
+**Example:** GET …/catalog/groups?q=one&nextIndex=1&size=10&sortBy=Description&sortOrder=desc
+
+**Notes:** q matches the description (contains); 'dctest-group2' (the cn) found nothing. sortBy=Description with desc reversed the order. Paging: size=1 gave nextIndex 2, then 0. The id field is the DN (here it is called id, in /access/groups dn).
 
 <a id="get-idmprov-rest-catalog-info-version"></a>
 ### GET `/IDMProv/rest/catalog/info/version`
@@ -563,7 +575,7 @@ Create a role category.
 
 A role's assignments, with paging, sorting and a filter by source.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -584,9 +596,11 @@ A role's assignments, with paging, sorting and a filter by source.
 }
 ```
 
-**Answer:** {nextIndex,arraySize,total,hasmore,…}
+**Answer:** {assignmentStatusList:[{dn, recipientType:'USER', recipientTypeSubContainer, recipientDn, recipientFullName, statusCode:'50', statusDisplay:'Completed', effectiveDate (epoch ms as string), expiryDate, description, grant}], nextIndex, arraySize, total, hasmore}
 
-**Notes:** The role goes in dn (with id it answers 489 'Invalid input DN'). Like v1, limited to the user search root.
+**Example:** POST …/catalog/roles/role/assignments/v2?nextIndex=1&size=20 {dn:<role DN>}
+
+**Notes:** The body field is dn here, not id as in v1: {id: …} gives 489 'Invalid input DN: '. statusCode 50 = Completed; description is the assign-time reason; grant true for an assignment. Limited to the user search root, like v1.
 
 <a id="post-idmprov-rest-catalog-sods-list"></a>
 ### POST `/IDMProv/rest/catalog/sods/list`

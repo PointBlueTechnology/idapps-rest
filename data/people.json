@@ -580,7 +580,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/entities/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Searches objects of one DAL entity, paged, or reads one object by DN.",
   "params": [
    {
@@ -683,10 +683,10 @@
    }
   ],
   "body": null,
-  "answer": "{entityList?:[{dn, attributes:[\u2026]}], nextIndex:int, totalCount:int, hasMore:bool}",
-  "example": "GET \u2026/entities/list?entityKey=user&q=*&searchKeys=FirstName  or  \u2026&entityDN=cn=uaadmin,ou=sa,o=data&filterAttr=FirstName,LastName",
-  "notes": "With no per-client entity configuration (dashboard Configuration > Entities) and no searchKeys or isDynamic, the server answers 489 'Entity configuration is missing' \u2014 the lab has none, so every plain call failed that way. sortBy outside the display attributes: 'Sort column is not specified as entity display attribute'. Searches for user, group and container returned 0 (lab search roots empty); the entityDN form returned uaadmin. sys-nrf-role with searchKeys=cn gave 'Internal Error'.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{entityList:[{dn, attributes:[{key, displayLabel, attributeValues:[\u2026], dataType, \u2026}]}], nextIndex (-1 = no more), totalCount, hasMore}; with entityDN+filterAttr: {entityList:[{dn, attributes:[{key, attributeValues:[{@type:'entityInfoNode', dn, name, type}]}]}]}",
+  "example": "GET \u2026/access/entities/list?entityKey=user&q=*&searchKeys=FirstName&nextIndex=1&size=2",
+  "notes": "With searchKeys the rows carry only those attributes; with isDynamic=true all the entity's display attributes (Department, Email, FirstName, \u2026). Paging: size=2 gave nextIndex 3, totalCount 3. entityDN + filterAttr reads DN-valued attributes of one object, resolved to names: filterAttr=directReports on the manager listed both reports; filterAttr=manager,group on Alice gave her manager and her group (comma-separated keys work). entityKey=group with searchKeys=Description listed both groups; searchKeys=cn for groups gave 489 'Internal Error' (use an attribute the definition has; cn is not one for group). sortBy FirstName or LastName: 489 'Sort column is not specified as entity display attribute' (no per-client entity configuration on the lab, so no display attributes to sort by). With no per-client entity configuration (dashboard Configuration > Entities) and neither searchKeys nor isDynamic, the server answers 489 'Entity configuration is missing'. sys-nrf-role with searchKeys=cn also gave 'Internal Error'.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -896,7 +896,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/groups",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Searches groups (by description) or counts them.",
   "params": [
    {
@@ -936,10 +936,10 @@
    }
   ],
   "body": null,
-  "answer": "{groups?:[\u2026], arraySize:int, nextIndex:int, totalCount?:int}",
-  "example": "GET \u2026/groups?q=*&nextIndex=1&size=5&sortOrder=ASC",
-  "notes": "Lab returns arraySize 0 (no groups in the search root). The dashboard also appends sortColumn and filter key/value pairs, which this method does not declare.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{groups:[{dn, name, description}], arraySize, nextIndex (-1 = no more)}; searchCount=true gives {arraySize:0, nextIndex:-1, totalCount}",
+  "example": "GET \u2026/access/groups?q=two&nextIndex=1&size=10&sortOrder=ASC",
+  "notes": "Groups in ou=groups,o=data are found at once. q matches the description only, as a contains match ('two' and 'group one' found groups; 'group2', part of the cn, found nothing); q empty or * lists all. Paging: size=1 gave nextIndex 2, then -1. sortOrder ASC/DESC checked ('up': 489 'Invalid sort order: up'). searchCount=true returns the count (totalCount 2) and no list. Sorted by cn. The dashboard also appends sortColumn and filter key/value pairs, which this method does not declare.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
@@ -1035,7 +1035,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/groups/members",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists a group's members, filtered by full name and paged (a read despite POST).",
   "params": [
    {
@@ -1080,15 +1080,15 @@
     }
    ]
   },
-  "answer": "{recipients:[{dn, name}], arraySize, total, nextIndex, startIndex, endIndex}",
-  "example": "POST \u2026/groups/members?q=*&nextIndex=1&size=5 {dn:<group DN>}",
-  "notes": "The lab has no groups, so no member list could be shown. A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name in memory.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{recipients:[{name, dn, isGroupAssignment}], arraySize, nextIndex (0 = no more), currentIndex, endIndex, total}",
+  "example": "POST \u2026/access/groups/members?q=*&nextIndex=1&size=5 {dn:<group DN>}",
+  "notes": "Lists the group's members with full names. size=1 gave nextIndex 2 with total 2; sortOrder=desc reversed the order (by name); q=Bob filtered to Bob (q matches the name). A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name, in memory.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/groups/membershipInfo",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the groups a user belongs to.",
   "params": [
    {
@@ -1100,10 +1100,10 @@
    }
   ],
   "body": null,
-  "answer": "{dn:str, groups?:[\u2026]}",
-  "example": "GET \u2026/groups/membershipInfo?userDn=cn=uaadmin,ou=sa,o=data",
-  "notes": "Missing userDn: 'Invalid input DN: null'. uaadmin is in no groups, so only dn came back. The dashboard puts userDn both in the URL and in params.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{dn, groupMemberof:[group DN]}",
+  "example": "GET \u2026/access/groups/membershipInfo?userDn=<user DN>",
+  "notes": "With a member: groupMemberof lists the user's groups (one each here). Missing userDn: 'Invalid input DN: null'. A user in no groups gets only dn back. The dashboard puts userDn both in the URL and in params.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -1148,9 +1148,9 @@
   ],
   "body": null,
   "answer": "{users?:[str]}",
-  "example": "GET \u2026/helpdesk/category?userDn=cn=uaadmin,ou=sa,o=data&resDn=<helpdesk resource DN>",
-  "notes": "Both parameters are required ('Value for userDn/resDn is missing in payload'). Lab answered {} (no addressees). Note userDn here vs userDN on /helpdesk.",
-  "evidence": "server code + live 2026-10-30"
+  "example": "GET \u2026/access/helpdesk/category?userDn=<user DN>&resDn=<helpdesk resource DN>",
+  "notes": "Still {} with a real user: the addressees come from the per-client helpdesk configuration, which the lab does not have (GET /access/config/helpdesk is not-working there), not from users. GET /access/helpdesk?userDN=<user DN> for the same user listed the helpdesk resources with empty users lists. Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
@@ -1186,15 +1186,15 @@
    }
   ],
   "body": null,
-  "answer": "{userQuickInfo:{dn, fullName, primaryAttributes, secondaryAttributes, totalNumberOfReportees}, totalNumberOfReportees:int}",
-  "example": "GET \u2026/orgChart?dn=cn=uaadmin,ou=sa,o=data&clientId=1",
-  "notes": "Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN \u2026'. The current dashboard uses /orgChart/v2 instead.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{userQuickInfo:{dn, fullName, primaryAttributes:[{key, displayLabel, value, dataType}], secondaryAttributes, totalNumberOfReportees}, reportees:[{dn, fullName, \u2026}], totalNumberOfReportees}",
+  "example": "GET \u2026/access/orgChart?dn=<manager DN>&clientId=1",
+  "notes": "With reports set: the manager's totalNumberOfReportees 2 and a reportees list with each report's quick info (only appears when the user has directReports). Here attributes carry a single value field, unlike the attributeValues lists of /users/list. Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN \u2026'. The current dashboard uses /orgChart/v2 instead.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/orgChart/managers",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Returns a user's manager chain (hierarchy upward).",
   "params": [
    {
@@ -1213,15 +1213,15 @@
    }
   ],
   "body": null,
-  "answer": "{managers?:[\u2026], totalNumberOfReportees:int}",
-  "example": "GET \u2026/orgChart/managers?dn=cn=uaadmin,ou=sa,o=data&clientId=1",
-  "notes": "uaadmin has no manager, so only totalNumberOfReportees 0 came back. Without dn: 'Internal Error'. The dashboard defines it (task approval pages).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{totalNumberOfReportees:int, managers?:[{dn, directReportee, fullName, totalNumberOfReportees}]} \u2014 the chain upward, nearest manager first",
+  "example": "GET \u2026/access/orgChart/managers?dn=<user DN>&clientId=1",
+  "notes": "Reads the user's manager attribute (the DAL key manager) and walks up while each manager has one; each step names the person below it in directReportee and gives the manager's directReports count. For Alice: one manager with totalNumberOfReportees 2. For the manager himself (no manager): only totalNumberOfReportees 0 (the top-level count is not the user's own reports). The org chart uses two separate attributes: manager on each report, directReports on the manager; the server does not keep them in step, so set both. Without dn: 'Internal Error'. The dashboard defines it (task approval pages).",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/orgChart/target/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the targets of one relationship from an entity (the org chart 'level up' options), paged.",
   "params": [
    {
@@ -1261,10 +1261,10 @@
    }
   ],
   "body": null,
-  "answer": "{targets?:[\u2026], totalCount:int, nextIndex:int, hasMore:bool}",
-  "example": "GET \u2026/orgChart/target/list?dn=cn=uaadmin,ou=sa,o=data&relationshipkey=user2users&clientId=1",
-  "notes": "Both dn and relationshipkey are required ('Value for \u2026 is missing in payload'). uaadmin has no targets.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{totalCount, nextIndex, hasMore, entityList?:[{dn, fullName, primaryAttributes, secondaryAttributes, relationshipKey, relationshipDisplayName}]}",
+  "example": "GET \u2026/access/orgChart/target/list?dn=<user DN>&relationshipkey=user2users&clientId=1",
+  "notes": "For user2users (source attribute @key, target attribute manager) it returns the values of the SOURCE's manager attribute: Alice gave her manager, the manager gave nothing. So this is the 'go up a level' list, not the reports. group2users from a group gave nothing (the group has no 'group' attribute). Only relationships whose source and target entity are the same are used; others are skipped silently. Paging with size=1 still gave nextIndex 0 for one result. Both dn and relationshipkey are required ('Value for \u2026 is missing in payload').",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -1316,10 +1316,10 @@
    }
   ],
   "body": null,
-  "answer": "{fullName, entityKey(dn), primaryAttributes, secondaryAttributes, photoAttribute, emailAttributes, entityDefinitionKey, isHidden, isLoginDisabled, targets:[{relationshipKey, relationshipDisplayName, isRecursiveRelationship, orgChartEntityNodes?, nextIndex, total, hasMore}]}",
-  "example": "GET \u2026/orgChart/v2?entityDN=cn=uaadmin,ou=sa,o=data&entityDefKey=user&relationshipKeys=user2users&clientId=1",
-  "notes": "Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object, and the call fails with 'Invalid entity relationship key : {\"key\":\"user2users\",\u2026}'. So always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{fullName, entityKey, primaryAttributes, secondaryAttributes, photoAttribute, emailAttributes, entityDefinitionKey, isHidden, isLoginDisabled, targets:[{relationshipKey, relationshipDisplayName, isRecursiveRelationship, orgChartEntityNodes:[{fullName, entityKey, primaryAttributes, \u2026}], nextIndex, total, hasMore}]}",
+  "example": "GET \u2026/access/orgChart/v2?entityDN=<manager DN>&entityDefKey=user&relationshipKeys=user2users&clientId=1",
+  "notes": "With data: for user2users the targets are the users whose manager is the entity (query on the target attribute), so the manager showed both reports; for entityDefKey=group with group2users the group showed its members. STALE CACHE: right after the fixture was made every v2 call (even the one that worked earlier for uaadmin) answered 489 'Internal Error'; after DELETE /admin/cache/holder/items {cacheHolderItems:[{cacheHolderID:'All Cache'}]} (204) all worked. For user2users total is the directReports count. Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object and the call fails with 'Invalid entity relationship key : {\"key\":\"user2users\",\u2026}' (seen again with data), so always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
@@ -1820,7 +1820,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/users/usersForHistory",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Searches users whose request history the caller may view (helpdesk).",
   "params": [
    {
@@ -1909,9 +1909,99 @@
    }
   ],
   "body": null,
-  "answer": "{users?:[\u2026], nextIndex:int, totalCount?:int}",
-  "example": "GET \u2026/users/usersForHistory?q=*&clientId=1&nextIndex=1&size=5&isHistory=true",
-  "notes": "Lab user root is empty, so nextIndex -1 and totalCount 0. Callers who are neither domain administrators nor helpdesk users for a client get an unauthorized error. Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{usersList:[same rows as /users/list], nextIndex (-1 = no more)}; with searchCount=true {nextIndex, totalCount}",
+  "example": "GET \u2026/access/users/usersForHistory?q=*&clientId=1&nextIndex=1&size=2&sortBy=LastName&sortOrder=desc",
+  "notes": "Same rows as GET /access/users/list, but the answer has no totalSize. isHistory true or false made no difference here. Paging size=2 gave nextIndex 3. sortBy LastName/FirstName with desc sorted correctly. q=Alice found Alice. Callers who are neither domain administrators nor helpdesk users for a client get an unauthorized error. Not used by the dashboard.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/users/list",
+  "status": "validated",
+  "purpose": "Searches people in the user search root with the dashboard's display columns.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "text matched against names; * or empty for all",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start, default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size, default 20",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "a directory attribute key of the user entity, e.g. LastName, FirstName, Title",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "config client id, default 1",
+    "kind": "per-installation"
+   },
+   {
+    "name": "searchAttr",
+    "in": "query",
+    "required": false,
+    "values": "attribute key to search instead of names, e.g. Title",
+    "kind": "per-installation"
+   },
+   {
+    "name": "searchCount",
+    "in": "query",
+    "required": false,
+    "values": "true returns only the count",
+    "kind": "free"
+   },
+   {
+    "name": "columnCustomization",
+    "in": "query",
+    "required": false,
+    "values": "true leaves the attribute columns out",
+    "kind": "free"
+   },
+   {
+    "name": "advSearch",
+    "in": "query",
+    "required": false,
+    "values": "advanced search expression (not tried)",
+    "kind": "free"
+   },
+   {
+    "name": "filter",
+    "in": "query",
+    "required": false,
+    "values": "column filter (not tried)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{usersList:[{dn, fullName, canHide, imageAttr, primaryAttributes:[{key, displayLabel, attributeValues:[{@type, $}], \u2026}], secondaryAttributes, disabledLogin, disabledLoginSupported, isHelpdeskUser, teamManger, hideProfilePhoto}], nextIndex (-1 = no more), totalSize}; with searchCount=true only {nextIndex, totalCount, totalSize}",
+  "example": "GET \u2026/access/users/list?q=*&clientId=1&nextIndex=1&size=10&sortBy=LastName&sortOrder=desc",
+  "notes": "With users present: primaryAttributes carried Department and Title and secondaryAttributes Email and TelephoneNumber (the client's quick-info columns; per installation), with values only where the user has them. q matches names (Manager found the manager; dctest-a found nothing); searchAttr=Title with q='Test Analyst' found the one user with that title. sortBy works on directory attributes (LastName desc, FirstName asc, Title all sorted correctly); an unknown attribute gives 489 'Sort on Bogus does not work. Please check your Directory Abstraction Layer configuration'. Paging: size=2 gave nextIndex 3; totalSize is the whole count. searchCount=true returns the count alone (totalCount 3) and no list. columnCustomization=true dropped primaryAttributes and secondaryAttributes from each row.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  }
 ]

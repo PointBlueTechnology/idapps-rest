@@ -950,7 +950,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/admin/permission/assignment",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the granular permissions a delegated administrator holds in one domain.",
   "params": [
    {
@@ -1011,10 +1011,10 @@
    }
   ],
   "body": null,
-  "answer": "{authObjects:[\u2026], nextIndex, totalSize, total}",
-  "example": "GET \u2026/admin/permission/assignment?assigneeDn=cn=uaadmin,ou=sa,o=data&domain=ROLES&q=*&nextIndex=1&size=5",
-  "notes": "Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; PRD refused as above. Lab uaadmin has no granular permissions, so nextIndex -1, total 0.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{authObjectPermissions:[{objectType, objectClass, authObjectDn, resolvedNameAuthObject, permissionKey, permissionLabel}], nextIndex, totalSize, total}",
+  "example": "GET \u2026/admin/permission/assignment?assigneeDn=<team DN>&domain=ROLES&q=*&nextIndex=1&size=5",
+  "notes": "assigneeDn can be a team DN: it then lists the team's granted permissions (Assign Role To User, Revoke Role From User on the role). A team manager's own DN showed nothing: team grants are held by the team, not by its managers. Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; domain PRD refused.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -2870,5 +2870,148 @@
   "example": "GET \u2026/catalog/statistics/workflowthreadinfo",
   "notes": "",
   "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/assignments/identities",
+  "status": "validated",
+  "purpose": "Lists who holds a role or a resource.",
+  "params": [
+   {
+    "name": "permissionId",
+    "in": "query",
+    "required": true,
+    "values": "role or resource DN",
+    "kind": "per-installation"
+   },
+   {
+    "name": "permissionType",
+    "in": "query",
+    "required": true,
+    "values": "role or resource",
+    "kind": "fixed"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 20",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default FirstName",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{assignmentToList:[{subtype:'USER', assignedToDn, assigneeFullName}], nextIndex (-1 = no more), totalCount}",
+  "example": "GET \u2026/access/assignments/identities?permissionId=<role DN>&permissionType=role&nextIndex=1&size=20",
+  "notes": "With a holder in the user search root the role's holder appears (before, holders outside the root were never shown). sortBy=LastName with sortOrder=desc and q=Alice were accepted (one holder, so the sort could not be seen). Without permissionType: HTML 500.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/role/assignments",
+  "status": "validated",
+  "purpose": "Lists a role's assignments (who has it and how).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default identityDisplayName",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "onlyDirectAssignments",
+    "in": "query",
+    "required": false,
+    "values": "default true",
+    "kind": "free"
+   },
+   {
+    "name": "assignType",
+    "in": "query",
+    "required": false,
+    "values": "filter by assignment type (not tried)",
+    "kind": "free"
+   },
+   {
+    "name": "column",
+    "in": "query",
+    "required": false,
+    "values": "columns (not tried)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "<role DN>"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "role DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{dn, arraySize, nextIndex, roleAssignments:[{identity, identityDisplayName, assignmentType, assignmentStatus, statusDetails, effectiveDate, reason}]}",
+  "example": "POST \u2026/catalog/roles/role/assignments?nextIndex=1&size=20 {id:<role DN>}",
+  "notes": "With a direct assignment: assignmentType 'User Assigned to Role', assignmentStatus and statusDetails 'Completed', reason = the text given at assign time, effectiveDate as a formatted date ('Oct 31, 2026', server time zone, not epoch). onlyDirectAssignments=false with q=Alice gave the same row.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  }
 ]

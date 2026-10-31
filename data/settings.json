@@ -2024,10 +2024,10 @@
     }
    ]
   },
-  "answer": "{messages:[{message, driverName, driverImage, status}]} or 204",
-  "example": "POST \u2026/access/info/user/passwordsyncstatus {dn:'cn=uaadmin,ou=sa,o=data'} -> 204",
-  "notes": "Read-only POST. No messages and an invalid DN both answer 204. An empty body gives 489 'Internal Error'. The lab user root ou=users,o=data is empty, so there was no other user to try.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "204 with no body when the user has no password sync messages",
+  "example": "POST \u2026/access/info/user/passwordsyncstatus {dn:<user DN>}",
+  "notes": "A real user without a password (and no driver password sync) also gives 204; messages would need a password change going through drivers, which the test did not do. Read-only POST. An invalid DN also answers 204. An empty body gives 489 'Internal Error'.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",

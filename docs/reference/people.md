@@ -8,9 +8,9 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 31 |
-| answered on the lab, which had no data to show | 11 |
+| validated on the lab | 39 |
 | not run: worked out from the server's and the dashboard's code | 7 |
+| answered on the lab, which had no data to show | 4 |
 | not known yet | 1 |
 
 ## Contents
@@ -60,6 +60,7 @@ signing in and errors.
 - [GET `/IDMProv/rest/access/user/admin`](#get-idmprov-rest-access-user-admin)
 - [POST `/IDMProv/rest/access/user/dn`](#post-idmprov-rest-access-user-dn)
 - [GET `/IDMProv/rest/access/users/clearEntitlementResult`](#get-idmprov-rest-access-users-clearentitlementresult)
+- [GET `/IDMProv/rest/access/users/list`](#get-idmprov-rest-access-users-list)
 - [GET `/IDMProv/rest/access/users/userDefaults`](#get-idmprov-rest-access-users-userdefaults)
 - [GET `/IDMProv/rest/access/users/usersForHistory`](#get-idmprov-rest-access-users-usersforhistory)
 - [POST `/IDMProv/rest/catalog/codemaprefresh/driver`](#post-idmprov-rest-catalog-codemaprefresh-driver)
@@ -405,7 +406,7 @@ Change attributes of an existing directory object through its entity definition.
 
 Searches objects of one DAL entity, paged, or reads one object by DN.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -424,11 +425,11 @@ Searches objects of one DAL entity, paged, or reads one object by DN.
 | `size` | query | no | page size, default 20 |  |
 | `clientId` | query | no | dashboard client configuration id; defaults to 1 (lab: 1) | per installation |
 
-**Answer:** {entityList?:[{dn, attributes:[…]}], nextIndex:int, totalCount:int, hasMore:bool}
+**Answer:** {entityList:[{dn, attributes:[{key, displayLabel, attributeValues:[…], dataType, …}]}], nextIndex (-1 = no more), totalCount, hasMore}; with entityDN+filterAttr: {entityList:[{dn, attributes:[{key, attributeValues:[{@type:'entityInfoNode', dn, name, type}]}]}]}
 
-**Example:** GET …/entities/list?entityKey=user&q=*&searchKeys=FirstName  or  …&entityDN=cn=uaadmin,ou=sa,o=data&filterAttr=FirstName,LastName
+**Example:** GET …/access/entities/list?entityKey=user&q=*&searchKeys=FirstName&nextIndex=1&size=2
 
-**Notes:** With no per-client entity configuration (dashboard Configuration > Entities) and no searchKeys or isDynamic, the server answers 489 'Entity configuration is missing' — the lab has none, so every plain call failed that way. sortBy outside the display attributes: 'Sort column is not specified as entity display attribute'. Searches for user, group and container returned 0 (lab search roots empty); the entityDN form returned uaadmin. sys-nrf-role with searchKeys=cn gave 'Internal Error'.
+**Notes:** With searchKeys the rows carry only those attributes; with isDynamic=true all the entity's display attributes (Department, Email, FirstName, …). Paging: size=2 gave nextIndex 3, totalCount 3. entityDN + filterAttr reads DN-valued attributes of one object, resolved to names: filterAttr=directReports on the manager listed both reports; filterAttr=manager,group on Alice gave her manager and her group (comma-separated keys work). entityKey=group with searchKeys=Description listed both groups; searchKeys=cn for groups gave 489 'Internal Error' (use an attribute the definition has; cn is not one for group). sortBy FirstName or LastName: 489 'Sort column is not specified as entity display attribute' (no per-client entity configuration on the lab, so no display attributes to sort by). With no per-client entity configuration (dashboard Configuration > Entities) and neither searchKeys nor isDynamic, the server answers 489 'Entity configuration is missing'. sys-nrf-role with searchKeys=cn also gave 'Internal Error'.
 
 <a id="get-idmprov-rest-access-entities-quickinfo"></a>
 ### GET `/IDMProv/rest/access/entities/quickInfo`
@@ -560,7 +561,7 @@ Delete one group.
 
 Searches groups (by description) or counts them.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -570,11 +571,11 @@ Searches groups (by description) or counts them.
 | `sortOrder` | query | no | ASC (default) or DESC; other values are rejected | fixed |
 | `searchCount` | query | no | 'true' adds totalCount | fixed |
 
-**Answer:** {groups?:[…], arraySize:int, nextIndex:int, totalCount?:int}
+**Answer:** {groups:[{dn, name, description}], arraySize, nextIndex (-1 = no more)}; searchCount=true gives {arraySize:0, nextIndex:-1, totalCount}
 
-**Example:** GET …/groups?q=*&nextIndex=1&size=5&sortOrder=ASC
+**Example:** GET …/access/groups?q=two&nextIndex=1&size=10&sortOrder=ASC
 
-**Notes:** Lab returns arraySize 0 (no groups in the search root). The dashboard also appends sortColumn and filter key/value pairs, which this method does not declare.
+**Notes:** Groups in ou=groups,o=data are found at once. q matches the description only, as a contains match ('two' and 'group one' found groups; 'group2', part of the cn, found nothing); q empty or * lists all. Paging: size=1 gave nextIndex 2, then -1. sortOrder ASC/DESC checked ('up': 489 'Invalid sort order: up'). searchCount=true returns the count (totalCount 2) and no list. Sorted by cn. The dashboard also appends sortColumn and filter key/value pairs, which this method does not declare.
 
 <a id="post-idmprov-rest-access-groups"></a>
 ### POST `/IDMProv/rest/access/groups`
@@ -640,7 +641,7 @@ Change a group's description and add or remove members.
 
 Lists a group's members, filtered by full name and paged (a read despite POST).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -659,28 +660,28 @@ Lists a group's members, filtered by full name and paged (a read despite POST).
 }
 ```
 
-**Answer:** {recipients:[{dn, name}], arraySize, total, nextIndex, startIndex, endIndex}
+**Answer:** {recipients:[{name, dn, isGroupAssignment}], arraySize, nextIndex (0 = no more), currentIndex, endIndex, total}
 
-**Example:** POST …/groups/members?q=*&nextIndex=1&size=5 {dn:<group DN>}
+**Example:** POST …/access/groups/members?q=*&nextIndex=1&size=5 {dn:<group DN>}
 
-**Notes:** The lab has no groups, so no member list could be shown. A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name in memory.
+**Notes:** Lists the group's members with full names. size=1 gave nextIndex 2 with total 2; sortOrder=desc reversed the order (by name); q=Bob filtered to Bob (q matches the name). A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name, in memory.
 
 <a id="get-idmprov-rest-access-groups-membershipinfo"></a>
 ### GET `/IDMProv/rest/access/groups/membershipInfo`
 
 Lists the groups a user belongs to.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `userDn` | query | yes | user DN |  |
 
-**Answer:** {dn:str, groups?:[…]}
+**Answer:** {dn, groupMemberof:[group DN]}
 
-**Example:** GET …/groups/membershipInfo?userDn=cn=uaadmin,ou=sa,o=data
+**Example:** GET …/access/groups/membershipInfo?userDn=<user DN>
 
-**Notes:** Missing userDn: 'Invalid input DN: null'. uaadmin is in no groups, so only dn came back. The dashboard puts userDn both in the URL and in params.
+**Notes:** With a member: groupMemberof lists the user's groups (one each here). Missing userDn: 'Invalid input DN: null'. A user in no groups gets only dn back. The dashboard puts userDn both in the URL and in params.
 
 <a id="get-idmprov-rest-access-helpdesk"></a>
 ### GET `/IDMProv/rest/access/helpdesk`
@@ -704,7 +705,7 @@ Lists, per helpdesk access resource, the helpdesk users for a user.
 
 Lists the helpdesk addressees for a user and one helpdesk resource.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -713,9 +714,9 @@ Lists the helpdesk addressees for a user and one helpdesk resource.
 
 **Answer:** {users?:[str]}
 
-**Example:** GET …/helpdesk/category?userDn=cn=uaadmin,ou=sa,o=data&resDn=<helpdesk resource DN>
+**Example:** GET …/access/helpdesk/category?userDn=<user DN>&resDn=<helpdesk resource DN>
 
-**Notes:** Both parameters are required ('Value for userDn/resDn is missing in payload'). Lab answered {} (no addressees). Note userDn here vs userDN on /helpdesk.
+**Notes:** Still {} with a real user: the addressees come from the per-client helpdesk configuration, which the lab does not have (GET /access/config/helpdesk is not-working there), not from users. GET /access/helpdesk?userDN=<user DN> for the same user listed the helpdesk resources with empty users lists. Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.
 
 <a id="post-idmprov-rest-access-helpdesk-ticket"></a>
 ### POST `/IDMProv/rest/access/helpdesk/ticket`
@@ -733,43 +734,43 @@ Allocates a new helpdesk ticket number.
 
 Returns a user's quick info and number of direct reports for the classic org chart.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `dn` | query | yes | user DN |  |
 | `clientId` | query | no | dashboard client configuration id; defaults to 1 (lab: 1) | per installation |
 
-**Answer:** {userQuickInfo:{dn, fullName, primaryAttributes, secondaryAttributes, totalNumberOfReportees}, totalNumberOfReportees:int}
+**Answer:** {userQuickInfo:{dn, fullName, primaryAttributes:[{key, displayLabel, value, dataType}], secondaryAttributes, totalNumberOfReportees}, reportees:[{dn, fullName, …}], totalNumberOfReportees}
 
-**Example:** GET …/orgChart?dn=cn=uaadmin,ou=sa,o=data&clientId=1
+**Example:** GET …/access/orgChart?dn=<manager DN>&clientId=1
 
-**Notes:** Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN …'. The current dashboard uses /orgChart/v2 instead.
+**Notes:** With reports set: the manager's totalNumberOfReportees 2 and a reportees list with each report's quick info (only appears when the user has directReports). Here attributes carry a single value field, unlike the attributeValues lists of /users/list. Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN …'. The current dashboard uses /orgChart/v2 instead.
 
 <a id="get-idmprov-rest-access-orgchart-managers"></a>
 ### GET `/IDMProv/rest/access/orgChart/managers`
 
 Returns a user's manager chain (hierarchy upward).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `dn` | query | yes | user DN |  |
 | `clientId` | query | no | dashboard client configuration id; defaults to 1 (lab: 1) | per installation |
 
-**Answer:** {managers?:[…], totalNumberOfReportees:int}
+**Answer:** {totalNumberOfReportees:int, managers?:[{dn, directReportee, fullName, totalNumberOfReportees}]} — the chain upward, nearest manager first
 
-**Example:** GET …/orgChart/managers?dn=cn=uaadmin,ou=sa,o=data&clientId=1
+**Example:** GET …/access/orgChart/managers?dn=<user DN>&clientId=1
 
-**Notes:** uaadmin has no manager, so only totalNumberOfReportees 0 came back. Without dn: 'Internal Error'. The dashboard defines it (task approval pages).
+**Notes:** Reads the user's manager attribute (the DAL key manager) and walks up while each manager has one; each step names the person below it in directReportee and gives the manager's directReports count. For Alice: one manager with totalNumberOfReportees 2. For the manager himself (no manager): only totalNumberOfReportees 0 (the top-level count is not the user's own reports). The org chart uses two separate attributes: manager on each report, directReports on the manager; the server does not keep them in step, so set both. Without dn: 'Internal Error'. The dashboard defines it (task approval pages).
 
 <a id="get-idmprov-rest-access-orgchart-target-list"></a>
 ### GET `/IDMProv/rest/access/orgChart/target/list`
 
 Lists the targets of one relationship from an entity (the org chart 'level up' options), paged.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -779,18 +780,18 @@ Lists the targets of one relationship from an entity (the org chart 'level up' o
 | `size` | query | no | page size |  |
 | `clientId` | query | no | dashboard client configuration id; defaults to 1 (lab: 1) | per installation |
 
-**Answer:** {targets?:[…], totalCount:int, nextIndex:int, hasMore:bool}
+**Answer:** {totalCount, nextIndex, hasMore, entityList?:[{dn, fullName, primaryAttributes, secondaryAttributes, relationshipKey, relationshipDisplayName}]}
 
-**Example:** GET …/orgChart/target/list?dn=cn=uaadmin,ou=sa,o=data&relationshipkey=user2users&clientId=1
+**Example:** GET …/access/orgChart/target/list?dn=<user DN>&relationshipkey=user2users&clientId=1
 
-**Notes:** Both dn and relationshipkey are required ('Value for … is missing in payload'). uaadmin has no targets.
+**Notes:** For user2users (source attribute @key, target attribute manager) it returns the values of the SOURCE's manager attribute: Alice gave her manager, the manager gave nothing. So this is the 'go up a level' list, not the reports. group2users from a group gave nothing (the group has no 'group' attribute). Only relationships whose source and target entity are the same are used; others are skipped silently. Paging with size=1 still gave nextIndex 0 for one result. Both dn and relationshipkey are required ('Value for … is missing in payload').
 
 <a id="get-idmprov-rest-access-orgchart-v2"></a>
 ### GET `/IDMProv/rest/access/orgChart/v2`
 
 Returns an entity with its related targets per relationship for the org chart.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -801,11 +802,11 @@ Returns an entity with its related targets per relationship for the org chart.
 | `size` | query | no | default 10 |  |
 | `clientId` | query | no | dashboard client configuration id; defaults to 1 (lab: 1) | per installation |
 
-**Answer:** {fullName, entityKey(dn), primaryAttributes, secondaryAttributes, photoAttribute, emailAttributes, entityDefinitionKey, isHidden, isLoginDisabled, targets:[{relationshipKey, relationshipDisplayName, isRecursiveRelationship, orgChartEntityNodes?, nextIndex, total, hasMore}]}
+**Answer:** {fullName, entityKey, primaryAttributes, secondaryAttributes, photoAttribute, emailAttributes, entityDefinitionKey, isHidden, isLoginDisabled, targets:[{relationshipKey, relationshipDisplayName, isRecursiveRelationship, orgChartEntityNodes:[{fullName, entityKey, primaryAttributes, …}], nextIndex, total, hasMore}]}
 
-**Example:** GET …/orgChart/v2?entityDN=cn=uaadmin,ou=sa,o=data&entityDefKey=user&relationshipKeys=user2users&clientId=1
+**Example:** GET …/access/orgChart/v2?entityDN=<manager DN>&entityDefKey=user&relationshipKeys=user2users&clientId=1
 
-**Notes:** Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object, and the call fails with 'Invalid entity relationship key : {"key":"user2users",…}'. So always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart.
+**Notes:** With data: for user2users the targets are the users whose manager is the entity (query on the target attribute), so the manager showed both reports; for entityDefKey=group with group2users the group showed its members. STALE CACHE: right after the fixture was made every v2 call (even the one that worked earlier for uaadmin) answered 489 'Internal Error'; after DELETE /admin/cache/holder/items {cacheHolderItems:[{cacheHolderID:'All Cache'}]} (204) all worked. For user2users total is the directReports count. Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object and the call fails with 'Invalid entity relationship key : {"key":"user2users",…}' (seen again with data), so always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart.
 
 <a id="post-idmprov-rest-access-query-global"></a>
 ### POST `/IDMProv/rest/access/query/global`
@@ -1105,6 +1106,33 @@ Clears the DirXML-EntitlementResult attribute on a user.
 
 **Notes:** Not called (it clears data despite being a GET). Missing userDn: 489 'Invalid input DN: null' (the first pass hit this without a DN, which changed nothing). Not used by the dashboard.
 
+<a id="get-idmprov-rest-access-users-list"></a>
+### GET `/IDMProv/rest/access/users/list`
+
+Searches people in the user search root with the dashboard's display columns.
+
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
+
+| Parameter | In | Required | Accepted values | Kind |
+|---|---|---|---|---|
+| `q` | query | no | text matched against names; * or empty for all |  |
+| `nextIndex` | query | no | 1-based start, default 1 |  |
+| `size` | query | no | page size, default 20 |  |
+| `sortBy` | query | no | a directory attribute key of the user entity, e.g. LastName, FirstName, Title | per installation |
+| `sortOrder` | query | no | asc or desc | fixed |
+| `clientId` | query | no | config client id, default 1 | per installation |
+| `searchAttr` | query | no | attribute key to search instead of names, e.g. Title | per installation |
+| `searchCount` | query | no | true returns only the count |  |
+| `columnCustomization` | query | no | true leaves the attribute columns out |  |
+| `advSearch` | query | no | advanced search expression (not tried) |  |
+| `filter` | query | no | column filter (not tried) |  |
+
+**Answer:** {usersList:[{dn, fullName, canHide, imageAttr, primaryAttributes:[{key, displayLabel, attributeValues:[{@type, $}], …}], secondaryAttributes, disabledLogin, disabledLoginSupported, isHelpdeskUser, teamManger, hideProfilePhoto}], nextIndex (-1 = no more), totalSize}; with searchCount=true only {nextIndex, totalCount, totalSize}
+
+**Example:** GET …/access/users/list?q=*&clientId=1&nextIndex=1&size=10&sortBy=LastName&sortOrder=desc
+
+**Notes:** With users present: primaryAttributes carried Department and Title and secondaryAttributes Email and TelephoneNumber (the client's quick-info columns; per installation), with values only where the user has them. q matches names (Manager found the manager; dctest-a found nothing); searchAttr=Title with q='Test Analyst' found the one user with that title. sortBy works on directory attributes (LastName desc, FirstName asc, Title all sorted correctly); an unknown attribute gives 489 'Sort on Bogus does not work. Please check your Directory Abstraction Layer configuration'. Paging: size=2 gave nextIndex 3; totalSize is the whole count. searchCount=true returns the count alone (totalCount 3) and no list. columnCustomization=true dropped primaryAttributes and secondaryAttributes from each row.
+
 <a id="get-idmprov-rest-access-users-userdefaults"></a>
 ### GET `/IDMProv/rest/access/users/userDefaults`
 
@@ -1128,7 +1156,7 @@ Returns the signed-in user's basic details as configured for the client (header 
 
 Searches users whose request history the caller may view (helpdesk).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1145,11 +1173,11 @@ Searches users whose request history the caller may view (helpdesk).
 | `isHistory` | query | no | boolean, default false | fixed |
 | `clientId` | query | no | dashboard client configuration id; defaults to 1 (lab: 1) | per installation |
 
-**Answer:** {users?:[…], nextIndex:int, totalCount?:int}
+**Answer:** {usersList:[same rows as /users/list], nextIndex (-1 = no more)}; with searchCount=true {nextIndex, totalCount}
 
-**Example:** GET …/users/usersForHistory?q=*&clientId=1&nextIndex=1&size=5&isHistory=true
+**Example:** GET …/access/users/usersForHistory?q=*&clientId=1&nextIndex=1&size=2&sortBy=LastName&sortOrder=desc
 
-**Notes:** Lab user root is empty, so nextIndex -1 and totalCount 0. Callers who are neither domain administrators nor helpdesk users for a client get an unauthorized error. Not used by the dashboard.
+**Notes:** Same rows as GET /access/users/list, but the answer has no totalSize. isHistory true or false made no difference here. Paging size=2 gave nextIndex 3. sortBy LastName/FirstName with desc sorted correctly. q=Alice found Alice. Callers who are neither domain administrators nor helpdesk users for a client get an unauthorized error. Not used by the dashboard.
 
 <a id="post-idmprov-rest-catalog-codemaprefresh-driver"></a>
 ### POST `/IDMProv/rest/catalog/codemaprefresh/driver`

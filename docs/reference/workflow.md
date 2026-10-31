@@ -8,8 +8,8 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 40 |
-| answered on the lab, which had no data to show | 21 |
+| validated on the lab | 53 |
+| answered on the lab, which had no data to show | 10 |
 | not run: worked out from the server's and the dashboard's code | 9 |
 | did not work on the lab | 2 |
 
@@ -43,9 +43,11 @@ signing in and errors.
 - [POST `/IDMProv/rest/access/monitoring/process/terminate`](#post-idmprov-rest-access-monitoring-process-terminate)
 - [POST `/IDMProv/rest/access/monitoring/reassign`](#post-idmprov-rest-access-monitoring-reassign)
 - [GET `/IDMProv/rest/access/monitoring/workentries`](#get-idmprov-rest-access-monitoring-workentries)
+- [GET `/IDMProv/rest/access/proxy/all`](#get-idmprov-rest-access-proxy-all)
 - [POST `/IDMProv/rest/access/proxy/create`](#post-idmprov-rest-access-proxy-create)
 - [POST `/IDMProv/rest/access/proxy/delete`](#post-idmprov-rest-access-proxy-delete)
 - [POST `/IDMProv/rest/access/proxy/edit`](#post-idmprov-rest-access-proxy-edit)
+- [GET `/IDMProv/rest/access/proxy/for`](#get-idmprov-rest-access-proxy-for)
 - [DELETE `/IDMProv/rest/access/queue/entry`](#delete-idmprov-rest-access-queue-entry)
 - [GET `/IDMProv/rest/access/queue/entry`](#get-idmprov-rest-access-queue-entry)
 - [DELETE `/IDMProv/rest/access/queue/entry/item/assignees`](#delete-idmprov-rest-access-queue-entry-item-assignees)
@@ -185,7 +187,7 @@ Change an availability entry.
 
 List the availability entries of one user.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -198,11 +200,11 @@ List the availability entries of one user.
 }
 ```
 
-**Answer:** {totalAvailability:int, availabilityStatus:int, hasDelegatesAssigned:bool, newable:bool, availability:[…]}
+**Answer:** {availability:[{availabilityId, principalUser:{dn, name}, effectiveDate, expiryDate, hasExpiry, allRequests, enableAllRequests, availableRequestDefs:[{dn, name}], type:'DELEGATION_TYPE'}], totalAvailability, availabilityStatus, hasDelegatesAssigned, newable}
 
-**Example:** POST …/availability/list {"dn":"cn=uaadmin,ou=sa,o=data"}
+**Example:** POST …/access/availability/list {dn:<user DN>}
 
-**Notes:** Empty body or blank dn → 489 'Invalid input DN: null'. A DN that does not exist → 489 'User with dn [...] does not exist.' Caller must be provisioning administrator or the user's team manager (AVAILABILITY). Lab: uaadmin has no entries (totalAvailability 0). The dashboard's own list uses GET …/availability (no body) for the signed-in user.
+**Notes:** With an availability entry for Alice: totalAvailability 1, availabilityStatus 1, hasDelegatesAssigned true; availableRequestDefs lists the PRDs her delegation covers (on the lab two: HelpDesk Ticket and Request Mobile Approval App). enableAllRequests was true right after the create and false a minute later. For Bob (the delegate, no entry of his own): totalAvailability 0, availabilityStatus 0, hasDelegatesAssigned false. Empty body or blank dn: 489 'Invalid input DN: null'. A DN that does not exist: 489 'User with dn [...] does not exist.'. Caller must be provisioning administrator or the user's team manager (AVAILABILITY). The dashboard's own list uses GET …/availability (no body) for the signed-in user.
 
 <a id="get-idmprov-rest-access-availability-prds"></a>
 ### GET `/IDMProv/rest/access/availability/prds`
@@ -559,7 +561,7 @@ List the request categories offered when choosing which requests to delegate.
 
 List the delegation assignments of one user.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -571,11 +573,11 @@ List the delegation assignments of one user.
 }
 ```
 
-**Answer:** {totalDelegations:int, delegations:[…]}
+**Answer:** {delegations:[{assignmentId, isExpires, allRequests, assignFromUsers:[{dn, name}], assignToUsers:[{dn, name}], expiryDate, type:'DELEGATEE_TYPE'}], totalDelegations}
 
-**Example:** POST …/delegation/list {"dn":"cn=uaadmin,ou=sa,o=data"}
+**Example:** POST …/access/delegation/list {dn:<user DN>}
 
-**Notes:** Empty body → 489 'Invalid input DN: null'. Query parameters are not read (the dashboard only adds size). Lab: none (totalDelegations 0). The signed-in user's own list is GET …/delegation (q, nextIndex, size, sortBy, sortOrder).
+**Notes:** With a delegation from Alice to Bob, the same entry shows for both dn=Alice and dn=Bob (the list covers delegations from and to the user). No expiry is stored as 4102444799000. Empty body: 489 'Invalid input DN: null'. Query parameters are not read (the dashboard only adds size). The signed-in user's own list is GET …/delegation (q, nextIndex, size, sortBy, sortOrder).
 
 <a id="get-idmprov-rest-access-delegation-relationships"></a>
 ### GET `/IDMProv/rest/access/delegation/relationships`
@@ -809,6 +811,19 @@ List the work entries (tasks/activities) of one request.
 
 **Notes:** No requestId → 489 'Invalid requestId'. All tried requests (completed, retracted, failed) answered {totalSize:0}; entries probably exist only for requests with open work.
 
+<a id="get-idmprov-rest-access-proxy-all"></a>
+### GET `/IDMProv/rest/access/proxy/all`
+
+Lists all proxy definitions the caller may see.
+
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
+
+**Answer:** {proxyDefinitions:[{dn, proxyForUsers:[{dn, username}], assignedUserDN, assignedUserName, editable, expirytime}], configureProxy, userType}
+
+**Example:** GET …/access/proxy/all
+
+**Notes:** With uaadmin as proxy for Bob: one definition, expirytime '4102444799000' (no expiry), configureProxy true and userType 'admin' for the administrator.
+
 <a id="post-idmprov-rest-access-proxy-create"></a>
 ### POST `/IDMProv/rest/access/proxy/create`
 
@@ -900,6 +915,19 @@ Change a proxy definition.
 **Example:** POST …/access/proxy/edit {dn, assignedUserDN, proxyForUsers, expirytime:'1830000000000'}
 
 **Notes:** GET /access/proxy/all showed the new expiry.
+
+<a id="get-idmprov-rest-access-proxy-for"></a>
+### GET `/IDMProv/rest/access/proxy/for`
+
+Lists the people the signed-in user can act for as a proxy.
+
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
+
+**Answer:** {proxyForUsers:[{dn, fullName, canHide, disabledLogin, disabledLoginSupported, isHelpdeskUser, teamManger, hideProfilePhoto}], nextUserIndex, userArraySize}
+
+**Example:** GET …/access/proxy/for
+
+**Notes:** The people the caller may act for as a proxy: Bob, once uaadmin was made his proxy.
 
 <a id="delete-idmprov-rest-access-queue-entry"></a>
 ### DELETE `/IDMProv/rest/access/queue/entry`
@@ -1308,7 +1336,7 @@ Request history of a team member, for team managers.
 
 List the workflow tasks of one member of a team the caller manages.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1323,11 +1351,11 @@ List the workflow tasks of one member of a team the caller manages.
 | `status` | query | no | only Claimed is accepted; any other value → 489 'Invalid task status' | fixed |
 | `assignStatus` | query | no | assignment status filter |  |
 
-**Answer:** task list (same shape as the other task lists) when the caller manages the team
+**Answer:** {total, hasMore, totalSize, nextIndex, userTypeInTask, tasks?:[…]}
 
-**Example:** GET …/tasks/list/others/team?memberDn=…&teamDN=…
+**Example:** GET …/access/tasks/list/others/team?memberDn=<member DN>&teamDN=<team DN>&fromIndex=1&size=10
 
-**Notes:** Missing memberDn or teamDN → 489 'Team member input is empty…'. The caller must be a team manager; the member must belong to one of the caller's teams. Lab: no teams, so 489 'You are unauthorized for this operation.' for uaadmin.
+**Notes:** With a real team and uaadmin as its manager the call is now authorized (200; before: 489 'You are unauthorized for this operation.'). The members had no tasks, so total 0. Tasks need a workflow with an approval for a member; the test made none. Missing memberDn or teamDN: 489 'Team member input is empty…'. The caller must be a team manager and the member must belong to one of the caller's teams, else 489 'You are unauthorized for this operation.'.
 
 <a id="delete-idmprov-rest-access-teams"></a>
 ### DELETE `/IDMProv/rest/access/teams`
@@ -1503,7 +1531,7 @@ List roles under one role container (for picking team permissions).
 
 List the teams the caller manages, optionally only those with one permission.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1515,18 +1543,18 @@ List the teams the caller manages, optionally only those with one permission.
 | `proxyUser` | query | no | DN to act as | per installation |
 | `sortOrder / forceRefresh` | query | no | sent by the dashboard in some modes; not read by the server |  |
 
-**Answer:** {teams:[…], arraySize:int, nextIndex:int} when the caller manages teams
+**Answer:** {teams:[{name, dn, allUsers, includeManager, readOnly}], arraySize, totalCount, nextIndex}
 
-**Example:** GET …/teams/managelist?q=*&nextIndex=1&size=10&type=A
+**Example:** GET …/access/teams/managelist?q=*&nextIndex=1&size=10
 
-**Notes:** When the caller is not a team manager the answer is 489 'No Teams found with Manage Addressee Permission' (misleading text: it is the generic empty-list message). The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Lists the teams the caller manages (uaadmin is a team manager of the test team). type=A, type=R and no type all gave the same one team; totalCount came back 0 even with one team (only arraySize is reliable). When the caller manages no team the answer is 489 'No Teams found with Manage Addressee Permission' (the generic empty-list message).
 
 <a id="get-idmprov-rest-access-teams-members"></a>
 ### GET `/IDMProv/rest/access/teams/members`
 
 List the members of the teams that contain a given member and that the caller manages.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1534,11 +1562,11 @@ List the members of the teams that contain a given member and that the caller ma
 | `nextIndex` | query | no | default 1 |  |
 | `size` | query | no | default -1 = all |  |
 
-**Answer:** {recipients:[…]} when teams exist
+**Answer:** {recipients:[{name, dn, isGroupAssignment}], arraySize, nextIndex}
 
-**Example:** GET …/teams/members?memberDn=cn=uaadmin,ou=sa,o=data
+**Example:** GET …/access/teams/members?memberDn=<any DN>
 
-**Notes:** Lab: 403 'Team manger does not belong to any Team'. Without memberDn → 489 'Internal Error' (the server tests the value before checking it is present). The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Returns the members of every team the CALLER manages; memberDn must be present but its value is not used (Alice's DN and uaadmin's DN gave the same list). Alice and Bob came back. A caller who manages no team: 403 'Team manger does not belong to any Team'. Without memberDn: 489 'Internal Error' (the server tests the value before checking it is present).
 
 <a id="delete-idmprov-rest-access-teams-permissions"></a>
 ### DELETE `/IDMProv/rest/access/teams/permissions`
@@ -1578,7 +1606,7 @@ Remove team permissions.
 
 List the permissions the caller may request for others through their teams.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1603,11 +1631,11 @@ List the permissions the caller may request for others through their teams.
 }
 ```
 
-**Answer:** {nextIndex:int, arraySize:int, permissions?:[…]}
+**Answer:** {nextIndex, arraySize, permissions?:[…]}
 
-**Example:** POST …/teams/permissions?q=*&nextIndex=1&size=3 {}
+**Example:** POST …/access/teams/permissions?q=*&nextIndex=1&size=10 {targetSetDnList:[<team DN>], useExcludePermList:false}
 
-**Notes:** A read despite POST (the dashboard's request-on-behalf permission list). {} and an empty targetSetDnList both answered {nextIndex:0, arraySize:0}. The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Still {nextIndex:0, arraySize:0} although the team holds Assign/Revoke Role on a role (shown by /teams/team/permissions and /admin/permission/assignment), with q * or the role's name and with useExcludePermList true or false. The server builds this list from a vault search plus the permission index, filtered by the request operation 'grantToUser'; why the role grant did not appear was not found. PRD grants (nrfAccessMgrInitiatePRD) were not tried, because granting on a PRD writes to a PRD object the test did not create. A read despite POST (the dashboard's request-on-behalf permission list). {} and an empty targetSetDnList answer {nextIndex:0, arraySize:0}.
 
 <a id="put-idmprov-rest-access-teams-permissions"></a>
 ### PUT `/IDMProv/rest/access/teams/permissions`
@@ -1668,7 +1696,7 @@ Search the PRDs that can be added to a team.
 
 List groups the caller may choose as recipients (request on behalf).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1677,18 +1705,18 @@ List groups the caller may choose as recipients (request on behalf).
 | `size` | query | no | default -1 = all |  |
 | `proxyUser` | query | no | DN to act as | per installation |
 
-**Answer:** {recipients?:[{dn, name, type:'group'}], arraySize:int, nextIndex:int}
+**Answer:** {recipients:[{name, dn, type:'group', isGroupAssignment, targetSetList:[…]}], …}
 
-**Example:** GET …/teams/recipients/groups?q=*&nextIndex=1&size=3
+**Example:** GET …/access/teams/recipients/groups?q=&nextIndex=1&size=10
 
-**Notes:** Domain administrators get all vault groups; team managers get their teams' member groups. Lab: none returned.
+**Notes:** As a domain administrator uaadmin got every group in the search root (both test groups, not only the team's member group); each lists the teams that reach it (the team for the member group, the virtual admin teams for both). Domain administrators get all vault groups; team managers get their teams' member groups.
 
 <a id="post-idmprov-rest-access-teams-recipients-list"></a>
 ### POST `/IDMProv/rest/access/teams/recipients/list`
 
 List all members of one team.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1700,18 +1728,18 @@ List all members of one team.
 }
 ```
 
-**Answer:** {recipients:[…]} when the team exists
+**Answer:** {recipients:[{name, dn, isGroupAssignment}], arraySize}
 
-**Example:** POST …/teams/recipients/list {"dn":"<team DN>"}
+**Example:** POST …/access/teams/recipients/list {dn:<team DN>}
 
-**Notes:** Blank dn → 489 'Invalid input DN: '; a DN that is not a team → 489 'Internal Error'. The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Gave the team's users (Alice, Bob) without the member group itself. Blank dn: 489 'Invalid input DN: '; a DN that is not a team: 489 'Internal Error'.
 
 <a id="get-idmprov-rest-access-teams-recipients-userlist-v2"></a>
 ### GET `/IDMProv/rest/access/teams/recipients/userlist/v2`
 
 List users the caller may choose as recipients, optionally within one team.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1722,18 +1750,18 @@ List users the caller may choose as recipients, optionally within one team.
 | `teamDn` | query | no | limit to one team | per installation |
 | `proxyUser` | query | no | DN to act as | per installation |
 
-**Answer:** {recipients?:[…], arraySize:int, nextIndex:int, total:int}
+**Answer:** {recipients:[{name, dn, isGroupAssignment, targetSetList?}], arraySize, nextIndex, total?}
 
-**Example:** GET …/teams/recipients/userlist/v2?q=*&nextIndex=1&size=3&client=1
+**Example:** GET …/access/teams/recipients/userlist/v2?q=Bob&nextIndex=1&size=10&client=1&teamDn=<team DN>
 
-**Notes:** Domain administrators search the user search root; the lab's user root is empty, so nothing comes back.
+**Notes:** Without teamDn (domain administrator): everyone in the user search root, each with targetSetList. With teamDn: just that team's users, without targetSetList, and with total. q matches the name (Bob). size=2 with two members: nextIndex 0.
 
 <a id="post-idmprov-rest-access-teams-recipients-users-v2"></a>
 ### POST `/IDMProv/rest/access/teams/recipients/users/v2`
 
 List users the caller may act for as proxy, or the members of given teams.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1756,11 +1784,11 @@ List users the caller may act for as proxy, or the members of given teams.
 }
 ```
 
-**Answer:** {recipients?:[…], arraySize:int, nextIndex:int}
+**Answer:** {recipients:[{name, dn, isGroupAssignment, targetSetList:[the team]}], arraySize, nextIndex}
 
-**Example:** POST …/teams/recipients/users/v2?q=*&nextIndex=1&size=3 {}
+**Example:** POST …/access/teams/recipients/users/v2?q=&nextIndex=1&size=10&client=1 {teams:[{dn:<team DN>}]}
 
-**Notes:** A read despite POST. Both {} and a non-existent team answered {arraySize:0, nextIndex:0}, without an error.
+**Notes:** With a team in the body: its users, each naming that team in targetSetList. {} still answers {arraySize:0, nextIndex:0} without an error. A read despite POST. A non-existent team also answers {arraySize:0, nextIndex:0} without an error.
 
 <a id="get-idmprov-rest-access-teams-resources"></a>
 ### GET `/IDMProv/rest/access/teams/resources`
@@ -1787,7 +1815,7 @@ Search the resources that can be added to a team.
 
 List the roles the caller may request through their teams.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1796,11 +1824,11 @@ List the roles the caller may request through their teams.
 | `size` | query | no | default 10 |  |
 | `column` | query | no | columns to search |  |
 
-**Answer:** {nextIndex:int, arraySize:int, permissions?:[…]}
+**Answer:** {nextIndex, arraySize, permissions?:[…]}
 
-**Example:** GET …/teams/role/permissions?q=*&nextIndex=1&size=3
+**Example:** GET …/access/teams/role/permissions?q=*&nextIndex=1&size=10
 
-**Notes:** Lab: {nextIndex:0, arraySize:0} even for the administrator. The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Still empty with a team that has role permissions and uaadmin as its manager; it uses the same team permission search as POST /teams/permissions (roles only, operation 'grantToUser'), which also stayed empty.
 
 <a id="get-idmprov-rest-access-teams-roles"></a>
 ### GET `/IDMProv/rest/access/teams/roles`
@@ -1827,7 +1855,7 @@ Search the roles that can be added to a team.
 
 Read one team's details.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1839,18 +1867,18 @@ Read one team's details.
 }
 ```
 
-**Answer:** the team object (name, dn, description, recipients, requestors, permissionList, domainTypes, readOnly …)
+**Answer:** the team: {name, dn, description, recipients, requestors, allUsers, includeManager, localizedNames, localizedDescriptions, readOnly, domainTypes}
 
-**Example:** POST …/teams/team {"dn":"<team DN>"}
+**Example:** POST …/access/teams/team {dn:<team DN>}
 
-**Notes:** A read despite POST. A DN that is not a team, or {}, → 489 'Internal Error'. Read-only teams are only shown to domain administrators of their domains. The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Same object as one entry of /teams/list. A read despite POST. A DN that is not a team, or {}, gives 489 'Internal Error'. Read-only teams are only shown to domain administrators of their domains.
 
 <a id="post-idmprov-rest-access-teams-team-permissions"></a>
 ### POST `/IDMProv/rest/access/teams/team/permissions`
 
 List the permissions assigned to one team.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1870,18 +1898,18 @@ List the permissions assigned to one team.
 }
 ```
 
-**Answer:** {permissions:[…], nextIndex, arraySize}
+**Answer:** {permissionsList:[{authObjDN, domainType, excluded, name, objClass, objType, permission, permissionDisplay, resolvedAuthObjDN}], arraySize, nextIndex, totalSize}
 
-**Example:** POST …/teams/team/permissions?nextIndex=1&size=3&sortOrder=asc&forceRefresh=false {"dn":"<team DN>"}
+**Example:** POST …/access/teams/team/permissions?nextIndex=1&size=10&sortOrder=asc&forceRefresh=false {dn:<team DN>}
 
-**Notes:** A read despite POST; the dashboard always sends nextIndex, sortOrder, size and forceRefresh. A DN that is not a team → 489 'Internal Error'. The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Lists the grants made with PUT /access/teams/permissions: one row per access key (nrfAccessMgrAssignRole 'Assign Role To User', nrfAccessMgrRevokeRole 'Revoke Role From User') on the role, with domainType ROLES. A read despite POST; the dashboard always sends nextIndex, sortOrder, size and forceRefresh. A DN that is not a team gives 489 'Internal Error'.
 
 <a id="get-idmprov-rest-access-teams-team-userlist"></a>
 ### GET `/IDMProv/rest/access/teams/team/userlist`
 
 List the users in one team the caller can see.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1892,11 +1920,11 @@ List the users in one team the caller can see.
 | `client` | query | no | config client id, default 1 | per installation |
 | `sortOrder` | query | no | asc (default) or desc | fixed |
 
-**Answer:** user list for the team
+**Answer:** {recipients:[{name, dn, isGroupAssignment, targetSetList:[team refs incl. virtual admin teams]}], arraySize, nextIndex (0 = no more, else next start), total}
 
-**Example:** GET …/teams/team/userlist?teamDn=<team DN>
+**Example:** GET …/access/teams/team/userlist?teamDn=<team DN>&q=&nextIndex=1&size=10
 
-**Notes:** No teamDn → 489 'Team DN input is empty…'; a DN that is not a team → 489 'Internal Error'. The lab has no teams (GET …/teams/list answers totalCount 0).
+**Notes:** Lists the team's member users (Alice and Bob; the member group's members are the same two, and no user came twice). size=1 gave nextIndex 2 and total 2; sortOrder=desc reversed the order. No teamDn: 489 'Team DN input is empty…'; a DN that is not a team: 489 'Internal Error'.
 
 <a id="post-idmprov-rest-access-workflow"></a>
 ### POST `/IDMProv/rest/access/workflow`
@@ -1997,13 +2025,13 @@ Create a PRD from raw process-flow and request XML.
 
 Read the proxy settings: notification template and retention time.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
-**Answer:** {proxyNotfTemplate?: string, proxyRetentionTime?: int minutes}; fields left out when unset
+**Answer:** {} or {template?, retention?}
 
-**Example:** GET /IDMProv/rest/admin/proxy/configuration
+**Example:** GET …/admin/proxy/configuration
 
-**Notes:** Lab answers {} (no template chosen, retention 0). Allowed for a team manager or anyone with the delegation/proxy configuration right. Retention is stored in ms and returned in minutes.
+**Notes:** Still {} with a proxy definition in place: this is the global proxy setting (notification template, retention), not the list of proxies; the lab has none set. Proxies themselves read from GET /access/proxy/all. Allowed for a team manager or anyone with the delegation/proxy configuration right. Retention is stored in ms and returned in minutes.
 
 <a id="post-idmprov-rest-admin-proxy-configuration"></a>
 ### POST `/IDMProv/rest/admin/proxy/configuration`

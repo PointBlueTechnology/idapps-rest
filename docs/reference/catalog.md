@@ -8,14 +8,15 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 43 |
-| answered on the lab, which had no data to show | 19 |
+| validated on the lab | 46 |
+| answered on the lab, which had no data to show | 18 |
 | not run: worked out from the server's and the dashboard's code | 9 |
 | did not work on the lab | 3 |
 
 ## Contents
 
 - [DELETE `/IDMProv/rest/access/assignments`](#delete-idmprov-rest-access-assignments)
+- [GET `/IDMProv/rest/access/assignments/identities`](#get-idmprov-rest-access-assignments-identities)
 - [DELETE `/IDMProv/rest/admin/administrator/assignments`](#delete-idmprov-rest-admin-administrator-assignments)
 - [GET `/IDMProv/rest/admin/administrator/assignments`](#get-idmprov-rest-admin-administrator-assignments)
 - [GET `/IDMProv/rest/admin/administrator/assignments/adminDomains`](#get-idmprov-rest-admin-administrator-assignments-admindomains)
@@ -68,6 +69,7 @@ signing in and errors.
 - [DELETE `/IDMProv/rest/catalog/roles/parentRoles`](#delete-idmprov-rest-catalog-roles-parentroles)
 - [POST `/IDMProv/rest/catalog/roles/parentRoles`](#post-idmprov-rest-catalog-roles-parentroles)
 - [POST `/IDMProv/rest/catalog/roles/parentRoles/list`](#post-idmprov-rest-catalog-roles-parentroles-list)
+- [POST `/IDMProv/rest/catalog/roles/role/assignments`](#post-idmprov-rest-catalog-roles-role-assignments)
 - [POST `/IDMProv/rest/catalog/roles/role/assignments/assign`](#post-idmprov-rest-catalog-roles-role-assignments-assign)
 - [PUT `/IDMProv/rest/catalog/roles/roles`](#put-idmprov-rest-catalog-roles-roles)
 - [POST `/IDMProv/rest/catalog/roles/roleV2`](#post-idmprov-rest-catalog-roles-rolev2)
@@ -126,6 +128,29 @@ Removes the signed-in user's own role/resource/PRD permission assignments (self-
 **Example:** DELETE …/access/assignments {reason, assignments:[{id, entityType, instanceId}]}
 
 **Notes:** Not called (write). Acts on the caller's own assignments only. Inherited assignments (not directly assigned) and non-removable ones are refused with their own messages.
+
+<a id="get-idmprov-rest-access-assignments-identities"></a>
+### GET `/IDMProv/rest/access/assignments/identities`
+
+Lists who holds a role or a resource.
+
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
+
+| Parameter | In | Required | Accepted values | Kind |
+|---|---|---|---|---|
+| `permissionId` | query | yes | role or resource DN | per installation |
+| `permissionType` | query | yes | role or resource | fixed |
+| `nextIndex` | query | no | default 1 |  |
+| `size` | query | no | default 20 |  |
+| `sortBy` | query | no | default FirstName |  |
+| `sortOrder` | query | no | asc or desc | fixed |
+| `q` | query | no | default * |  |
+
+**Answer:** {assignmentToList:[{subtype:'USER', assignedToDn, assigneeFullName}], nextIndex (-1 = no more), totalCount}
+
+**Example:** GET …/access/assignments/identities?permissionId=<role DN>&permissionType=role&nextIndex=1&size=20
+
+**Notes:** With a holder in the user search root the role's holder appears (before, holders outside the root were never shown). sortBy=LastName with sortOrder=desc and q=Alice were accepted (one holder, so the sort could not be seen). Without permissionType: HTML 500.
 
 <a id="delete-idmprov-rest-admin-administrator-assignments"></a>
 ### DELETE `/IDMProv/rest/admin/administrator/assignments`
@@ -396,7 +421,7 @@ Lists the granular permissions that can be delegated in an administration domain
 
 Lists the granular permissions a delegated administrator holds in one domain.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -409,11 +434,11 @@ Lists the granular permissions a delegated administrator holds in one domain.
 | `size` | query | no | page size (default 20) |  |
 | `filterSearch` | query | no | optional filter; the dashboard appends extra filterKey=filterValue pairs |  |
 
-**Answer:** {authObjects:[…], nextIndex, totalSize, total}
+**Answer:** {authObjectPermissions:[{objectType, objectClass, authObjectDn, resolvedNameAuthObject, permissionKey, permissionLabel}], nextIndex, totalSize, total}
 
-**Example:** GET …/admin/permission/assignment?assigneeDn=cn=uaadmin,ou=sa,o=data&domain=ROLES&q=*&nextIndex=1&size=5
+**Example:** GET …/admin/permission/assignment?assigneeDn=<team DN>&domain=ROLES&q=*&nextIndex=1&size=5
 
-**Notes:** Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; PRD refused as above. Lab uaadmin has no granular permissions, so nextIndex -1, total 0.
+**Notes:** assigneeDn can be a team DN: it then lists the team's granted permissions (Assign Role To User, Revoke Role From User on the role). A team manager's own DN showed nothing: team grants are held by the team, not by its managers. Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; domain PRD refused.
 
 <a id="get-idmprov-rest-admin-permission-rights"></a>
 ### GET `/IDMProv/rest/admin/permission/rights`
@@ -1491,6 +1516,40 @@ Lists a role's parent roles.
 **Example:** POST …/catalog/roles/parentRoles/list?nextIndex=1&size=10&q=* {id:"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}
 
 **Notes:** Lab system roles have no parents. Unknown role → 400 'not found'.
+
+<a id="post-idmprov-rest-catalog-roles-role-assignments"></a>
+### POST `/IDMProv/rest/catalog/roles/role/assignments`
+
+Lists a role's assignments (who has it and how).
+
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
+
+| Parameter | In | Required | Accepted values | Kind |
+|---|---|---|---|---|
+| `q` | query | no | default * |  |
+| `nextIndex` | query | no | default 1 |  |
+| `size` | query | no | default 10 |  |
+| `sortBy` | query | no | default identityDisplayName |  |
+| `sortOrder` | query | no | asc or desc | fixed |
+| `onlyDirectAssignments` | query | no | default true |  |
+| `assignType` | query | no | filter by assignment type (not tried) |  |
+| `column` | query | no | columns (not tried) |  |
+
+| Body field | Required | Accepted values | Kind |
+|---|---|---|---|
+| `id` | yes | role DN | per installation |
+
+```json
+{
+  "id": "<role DN>"
+}
+```
+
+**Answer:** {dn, arraySize, nextIndex, roleAssignments:[{identity, identityDisplayName, assignmentType, assignmentStatus, statusDetails, effectiveDate, reason}]}
+
+**Example:** POST …/catalog/roles/role/assignments?nextIndex=1&size=20 {id:<role DN>}
+
+**Notes:** With a direct assignment: assignmentType 'User Assigned to Role', assignmentStatus and statusDetails 'Completed', reason = the text given at assign time, effectiveDate as a formatted date ('Oct 31, 2026', server time zone, not epoch). onlyDirectAssignments=false with q=Alice gave the same row.
 
 <a id="post-idmprov-rest-catalog-roles-role-assignments-assign"></a>
 ### POST `/IDMProv/rest/catalog/roles/role/assignments/assign`

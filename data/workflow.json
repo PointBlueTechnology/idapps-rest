@@ -127,7 +127,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/availability/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the availability entries of one user.",
   "params": [],
   "body": {
@@ -149,10 +149,10 @@
     }
    ]
   },
-  "answer": "{totalAvailability:int, availabilityStatus:int, hasDelegatesAssigned:bool, newable:bool, availability:[\u2026]}",
-  "example": "POST \u2026/availability/list {\"dn\":\"cn=uaadmin,ou=sa,o=data\"}",
-  "notes": "Empty body or blank dn \u2192 489 'Invalid input DN: null'. A DN that does not exist \u2192 489 'User with dn [...] does not exist.' Caller must be provisioning administrator or the user's team manager (AVAILABILITY). Lab: uaadmin has no entries (totalAvailability 0). The dashboard's own list uses GET \u2026/availability (no body) for the signed-in user.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{availability:[{availabilityId, principalUser:{dn, name}, effectiveDate, expiryDate, hasExpiry, allRequests, enableAllRequests, availableRequestDefs:[{dn, name}], type:'DELEGATION_TYPE'}], totalAvailability, availabilityStatus, hasDelegatesAssigned, newable}",
+  "example": "POST \u2026/access/availability/list {dn:<user DN>}",
+  "notes": "With an availability entry for Alice: totalAvailability 1, availabilityStatus 1, hasDelegatesAssigned true; availableRequestDefs lists the PRDs her delegation covers (on the lab two: HelpDesk Ticket and Request Mobile Approval App). enableAllRequests was true right after the create and false a minute later. For Bob (the delegate, no entry of his own): totalAvailability 0, availabilityStatus 0, hasDelegatesAssigned false. Empty body or blank dn: 489 'Invalid input DN: null'. A DN that does not exist: 489 'User with dn [...] does not exist.'. Caller must be provisioning administrator or the user's team manager (AVAILABILITY). The dashboard's own list uses GET \u2026/availability (no body) for the signed-in user.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -749,7 +749,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/delegation/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the delegation assignments of one user.",
   "params": [],
   "body": {
@@ -765,10 +765,10 @@
     }
    ]
   },
-  "answer": "{totalDelegations:int, delegations:[\u2026]}",
-  "example": "POST \u2026/delegation/list {\"dn\":\"cn=uaadmin,ou=sa,o=data\"}",
-  "notes": "Empty body \u2192 489 'Invalid input DN: null'. Query parameters are not read (the dashboard only adds size). Lab: none (totalDelegations 0). The signed-in user's own list is GET \u2026/delegation (q, nextIndex, size, sortBy, sortOrder).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{delegations:[{assignmentId, isExpires, allRequests, assignFromUsers:[{dn, name}], assignToUsers:[{dn, name}], expiryDate, type:'DELEGATEE_TYPE'}], totalDelegations}",
+  "example": "POST \u2026/access/delegation/list {dn:<user DN>}",
+  "notes": "With a delegation from Alice to Bob, the same entry shows for both dn=Alice and dn=Bob (the list covers delegations from and to the user). No expiry is stored as 4102444799000. Empty body: 489 'Invalid input DN: null'. Query parameters are not read (the dashboard only adds size). The signed-in user's own list is GET \u2026/delegation (q, nextIndex, size, sortBy, sortOrder).",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -1174,10 +1174,10 @@
   "purpose": "Read the proxy settings: notification template and retention time.",
   "params": [],
   "body": null,
-  "answer": "{proxyNotfTemplate?: string, proxyRetentionTime?: int minutes}; fields left out when unset",
-  "example": "GET /IDMProv/rest/admin/proxy/configuration",
-  "notes": "Lab answers {} (no template chosen, retention 0). Allowed for a team manager or anyone with the delegation/proxy configuration right. Retention is stored in ms and returned in minutes.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{} or {template?, retention?}",
+  "example": "GET \u2026/admin/proxy/configuration",
+  "notes": "Still {} with a proxy definition in place: this is the global proxy setting (notification template, retention), not the list of proxies; the lab has none set. Proxies themselves read from GET /access/proxy/all. Allowed for a team manager or anyone with the delegation/proxy configuration right. Retention is stored in ms and returned in minutes.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
@@ -2228,10 +2228,10 @@
    }
   ],
   "body": null,
-  "answer": "task list (same shape as the other task lists) when the caller manages the team",
-  "example": "GET \u2026/tasks/list/others/team?memberDn=\u2026&teamDN=\u2026",
-  "notes": "Missing memberDn or teamDN \u2192 489 'Team member input is empty\u2026'. The caller must be a team manager; the member must belong to one of the caller's teams. Lab: no teams, so 489 'You are unauthorized for this operation.' for uaadmin.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{total, hasMore, totalSize, nextIndex, userTypeInTask, tasks?:[\u2026]}",
+  "example": "GET \u2026/access/tasks/list/others/team?memberDn=<member DN>&teamDN=<team DN>&fromIndex=1&size=10",
+  "notes": "With a real team and uaadmin as its manager the call is now authorized (200; before: 489 'You are unauthorized for this operation.'). The members had no tasks, so total 0. Tasks need a workflow with an approval for a member; the test made none. Missing memberDn or teamDN: 489 'Team member input is empty\u2026'. The caller must be a team manager and the member must belong to one of the caller's teams, else 489 'You are unauthorized for this operation.'.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "DELETE",
@@ -2487,7 +2487,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/teams/managelist",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the teams the caller manages, optionally only those with one permission.",
   "params": [
    {
@@ -2541,15 +2541,15 @@
    }
   ],
   "body": null,
-  "answer": "{teams:[\u2026], arraySize:int, nextIndex:int} when the caller manages teams",
-  "example": "GET \u2026/teams/managelist?q=*&nextIndex=1&size=10&type=A",
-  "notes": "When the caller is not a team manager the answer is 489 'No Teams found with Manage Addressee Permission' (misleading text: it is the generic empty-list message). The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{teams:[{name, dn, allUsers, includeManager, readOnly}], arraySize, totalCount, nextIndex}",
+  "example": "GET \u2026/access/teams/managelist?q=*&nextIndex=1&size=10",
+  "notes": "Lists the teams the caller manages (uaadmin is a team manager of the test team). type=A, type=R and no type all gave the same one team; totalCount came back 0 even with one team (only arraySize is reliable). When the caller manages no team the answer is 489 'No Teams found with Manage Addressee Permission' (the generic empty-list message).",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/teams/members",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the members of the teams that contain a given member and that the caller manages.",
   "params": [
    {
@@ -2575,10 +2575,10 @@
    }
   ],
   "body": null,
-  "answer": "{recipients:[\u2026]} when teams exist",
-  "example": "GET \u2026/teams/members?memberDn=cn=uaadmin,ou=sa,o=data",
-  "notes": "Lab: 403 'Team manger does not belong to any Team'. Without memberDn \u2192 489 'Internal Error' (the server tests the value before checking it is present). The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{recipients:[{name, dn, isGroupAssignment}], arraySize, nextIndex}",
+  "example": "GET \u2026/access/teams/members?memberDn=<any DN>",
+  "notes": "Returns the members of every team the CALLER manages; memberDn must be present but its value is not used (Alice's DN and uaadmin's DN gave the same list). Alice and Bob came back. A caller who manages no team: 403 'Team manger does not belong to any Team'. Without memberDn: 489 'Internal Error' (the server tests the value before checking it is present).",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "DELETE",
@@ -2693,10 +2693,10 @@
     }
    ]
   },
-  "answer": "{nextIndex:int, arraySize:int, permissions?:[\u2026]}",
-  "example": "POST \u2026/teams/permissions?q=*&nextIndex=1&size=3 {}",
-  "notes": "A read despite POST (the dashboard's request-on-behalf permission list). {} and an empty targetSetDnList both answered {nextIndex:0, arraySize:0}. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{nextIndex, arraySize, permissions?:[\u2026]}",
+  "example": "POST \u2026/access/teams/permissions?q=*&nextIndex=1&size=10 {targetSetDnList:[<team DN>], useExcludePermList:false}",
+  "notes": "Still {nextIndex:0, arraySize:0} although the team holds Assign/Revoke Role on a role (shown by /teams/team/permissions and /admin/permission/assignment), with q * or the role's name and with useExcludePermList true or false. The server builds this list from a vault search plus the permission index, filtered by the request operation 'grantToUser'; why the role grant did not appear was not found. PRD grants (nrfAccessMgrInitiatePRD) were not tried, because granting on a PRD writes to a PRD object the test did not create. A read despite POST (the dashboard's request-on-behalf permission list). {} and an empty targetSetDnList answer {nextIndex:0, arraySize:0}.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "PUT",
@@ -2796,7 +2796,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/teams/recipients/groups",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List groups the caller may choose as recipients (request on behalf).",
   "params": [
    {
@@ -2829,15 +2829,15 @@
    }
   ],
   "body": null,
-  "answer": "{recipients?:[{dn, name, type:'group'}], arraySize:int, nextIndex:int}",
-  "example": "GET \u2026/teams/recipients/groups?q=*&nextIndex=1&size=3",
-  "notes": "Domain administrators get all vault groups; team managers get their teams' member groups. Lab: none returned.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{recipients:[{name, dn, type:'group', isGroupAssignment, targetSetList:[\u2026]}], \u2026}",
+  "example": "GET \u2026/access/teams/recipients/groups?q=&nextIndex=1&size=10",
+  "notes": "As a domain administrator uaadmin got every group in the search root (both test groups, not only the team's member group); each lists the teams that reach it (the team for the member group, the virtual admin teams for both). Domain administrators get all vault groups; team managers get their teams' member groups.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/teams/recipients/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List all members of one team.",
   "params": [],
   "body": {
@@ -2853,15 +2853,15 @@
     }
    ]
   },
-  "answer": "{recipients:[\u2026]} when the team exists",
-  "example": "POST \u2026/teams/recipients/list {\"dn\":\"<team DN>\"}",
-  "notes": "Blank dn \u2192 489 'Invalid input DN: '; a DN that is not a team \u2192 489 'Internal Error'. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{recipients:[{name, dn, isGroupAssignment}], arraySize}",
+  "example": "POST \u2026/access/teams/recipients/list {dn:<team DN>}",
+  "notes": "Gave the team's users (Alice, Bob) without the member group itself. Blank dn: 489 'Invalid input DN: '; a DN that is not a team: 489 'Internal Error'.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/teams/recipients/userlist/v2",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List users the caller may choose as recipients, optionally within one team.",
   "params": [
    {
@@ -2908,15 +2908,15 @@
    }
   ],
   "body": null,
-  "answer": "{recipients?:[\u2026], arraySize:int, nextIndex:int, total:int}",
-  "example": "GET \u2026/teams/recipients/userlist/v2?q=*&nextIndex=1&size=3&client=1",
-  "notes": "Domain administrators search the user search root; the lab's user root is empty, so nothing comes back.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList?}], arraySize, nextIndex, total?}",
+  "example": "GET \u2026/access/teams/recipients/userlist/v2?q=Bob&nextIndex=1&size=10&client=1&teamDn=<team DN>",
+  "notes": "Without teamDn (domain administrator): everyone in the user search root, each with targetSetList. With teamDn: just that team's users, without targetSetList, and with total. q matches the name (Bob). size=2 with two members: nextIndex 0.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/teams/recipients/users/v2",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List users the caller may act for as proxy, or the members of given teams.",
   "params": [
    {
@@ -2965,10 +2965,10 @@
     }
    ]
   },
-  "answer": "{recipients?:[\u2026], arraySize:int, nextIndex:int}",
-  "example": "POST \u2026/teams/recipients/users/v2?q=*&nextIndex=1&size=3 {}",
-  "notes": "A read despite POST. Both {} and a non-existent team answered {arraySize:0, nextIndex:0}, without an error.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[the team]}], arraySize, nextIndex}",
+  "example": "POST \u2026/access/teams/recipients/users/v2?q=&nextIndex=1&size=10&client=1 {teams:[{dn:<team DN>}]}",
+  "notes": "With a team in the body: its users, each naming that team in targetSetList. {} still answers {arraySize:0, nextIndex:0} without an error. A read despite POST. A non-existent team also answers {arraySize:0, nextIndex:0} without an error.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -3047,10 +3047,10 @@
    }
   ],
   "body": null,
-  "answer": "{nextIndex:int, arraySize:int, permissions?:[\u2026]}",
-  "example": "GET \u2026/teams/role/permissions?q=*&nextIndex=1&size=3",
-  "notes": "Lab: {nextIndex:0, arraySize:0} even for the administrator. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{nextIndex, arraySize, permissions?:[\u2026]}",
+  "example": "GET \u2026/access/teams/role/permissions?q=*&nextIndex=1&size=10",
+  "notes": "Still empty with a team that has role permissions and uaadmin as its manager; it uses the same team permission search as POST /teams/permissions (roles only, operation 'grantToUser'), which also stayed empty.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
@@ -3096,7 +3096,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/teams/team",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Read one team's details.",
   "params": [],
   "body": {
@@ -3112,15 +3112,15 @@
     }
    ]
   },
-  "answer": "the team object (name, dn, description, recipients, requestors, permissionList, domainTypes, readOnly \u2026)",
-  "example": "POST \u2026/teams/team {\"dn\":\"<team DN>\"}",
-  "notes": "A read despite POST. A DN that is not a team, or {}, \u2192 489 'Internal Error'. Read-only teams are only shown to domain administrators of their domains. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "the team: {name, dn, description, recipients, requestors, allUsers, includeManager, localizedNames, localizedDescriptions, readOnly, domainTypes}",
+  "example": "POST \u2026/access/teams/team {dn:<team DN>}",
+  "notes": "Same object as one entry of /teams/list. A read despite POST. A DN that is not a team, or {}, gives 489 'Internal Error'. Read-only teams are only shown to domain administrators of their domains.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/teams/team/permissions",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the permissions assigned to one team.",
   "params": [
    {
@@ -3172,15 +3172,15 @@
     }
    ]
   },
-  "answer": "{permissions:[\u2026], nextIndex, arraySize}",
-  "example": "POST \u2026/teams/team/permissions?nextIndex=1&size=3&sortOrder=asc&forceRefresh=false {\"dn\":\"<team DN>\"}",
-  "notes": "A read despite POST; the dashboard always sends nextIndex, sortOrder, size and forceRefresh. A DN that is not a team \u2192 489 'Internal Error'. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{permissionsList:[{authObjDN, domainType, excluded, name, objClass, objType, permission, permissionDisplay, resolvedAuthObjDN}], arraySize, nextIndex, totalSize}",
+  "example": "POST \u2026/access/teams/team/permissions?nextIndex=1&size=10&sortOrder=asc&forceRefresh=false {dn:<team DN>}",
+  "notes": "Lists the grants made with PUT /access/teams/permissions: one row per access key (nrfAccessMgrAssignRole 'Assign Role To User', nrfAccessMgrRevokeRole 'Revoke Role From User') on the role, with domainType ROLES. A read despite POST; the dashboard always sends nextIndex, sortOrder, size and forceRefresh. A DN that is not a team gives 489 'Internal Error'.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/teams/team/userlist",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the users in one team the caller can see.",
   "params": [
    {
@@ -3227,10 +3227,10 @@
    }
   ],
   "body": null,
-  "answer": "user list for the team",
-  "example": "GET \u2026/teams/team/userlist?teamDn=<team DN>",
-  "notes": "No teamDn \u2192 489 'Team DN input is empty\u2026'; a DN that is not a team \u2192 489 'Internal Error'. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[team refs incl. virtual admin teams]}], arraySize, nextIndex (0 = no more, else next start), total}",
+  "example": "GET \u2026/access/teams/team/userlist?teamDn=<team DN>&q=&nextIndex=1&size=10",
+  "notes": "Lists the team's member users (Alice and Bob; the member group's members are the same two, and no user came twice). size=1 gave nextIndex 2 and total 2; sortOrder=desc reversed the order. No teamDn: 489 'Team DN input is empty\u2026'; a DN that is not a team: 489 'Internal Error'.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
   "method": "POST",
@@ -3541,5 +3541,29 @@
   "example": "POST \u2026/access/requests/historylist/permission?item=<role DN>&type=role {}",
   "notes": "The permission goes in the item query parameter. With id or permissionId (query or body) it answers 489 'Permission id (id:) is required', which misled earlier attempts.",
   "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/proxy/all",
+  "status": "validated",
+  "purpose": "Lists all proxy definitions the caller may see.",
+  "params": [],
+  "body": null,
+  "answer": "{proxyDefinitions:[{dn, proxyForUsers:[{dn, username}], assignedUserDN, assignedUserName, editable, expirytime}], configureProxy, userType}",
+  "example": "GET \u2026/access/proxy/all",
+  "notes": "With uaadmin as proxy for Bob: one definition, expirytime '4102444799000' (no expiry), configureProxy true and userType 'admin' for the administrator.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/proxy/for",
+  "status": "validated",
+  "purpose": "Lists the people the signed-in user can act for as a proxy.",
+  "params": [],
+  "body": null,
+  "answer": "{proxyForUsers:[{dn, fullName, canHide, disabledLogin, disabledLoginSupported, isHelpdeskUser, teamManger, hideProfilePhoto}], nextUserIndex, userArraySize}",
+  "example": "GET \u2026/access/proxy/for",
+  "notes": "The people the caller may act for as a proxy: Bob, once uaadmin was made his proxy.",
+  "evidence": "live 2026-10-30 (test users, groups and a team)"
  }
 ]
