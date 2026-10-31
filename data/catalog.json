@@ -99,8 +99,8 @@
   "body": null,
   "answer": "{adminAssignments:[{assignee, assigneeDn, assignmentType, assignmentTypeKey, adminType, adminTypeKey, comment, domain, domainType, effectiveDate, status}], nextIndex, totalSize, total}",
   "example": "GET \u2026/admin/administrator/assignments?q=*&nextIndex=1&size=5&sortColumn=assignee&sortOrder=asc",
-  "notes": "Lab: uaadmin holds both Domain Admin and Delegated Admin rows for Provisioning, etc. Values seen: adminTypeKey DOMAIN_ADMIN / DELEGATED_ADMIN, assignmentTypeKey USER, domainType PROVISIONING/ROLES/RESOURCES/SECURITY, status COMPLETED. Dates are epoch milliseconds. filterSearch=bogus gave the same rows as ALL.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lab: uaadmin holds both Domain Admin and Delegated Admin rows for Provisioning, etc. Values seen: adminTypeKey DOMAIN_ADMIN / DELEGATED_ADMIN, assignmentTypeKey USER, domainType PROVISIONING/ROLES/RESOURCES/SECURITY, status COMPLETED. Dates are epoch milliseconds. filterSearch=bogus gave the same rows as ALL. The end of the list is marked nextIndex -1 (other lists use 0). A delegated administrator made with \u2026/assignments/create shows with status COMPLETED at once.",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31"
  },
  {
   "method": "GET",
@@ -379,7 +379,7 @@
   },
   "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/access/assignments {reason, assignments:[{id, entityType, instanceId}]}",
-  "notes": "Removed a role the caller held directly (entityType role, no instanceId needed); GET /access/assignments no longer listed it 20 s later. Acts on the caller's own assignments only. Inherited assignments and non-removable ones are refused with their own messages.",
+  "notes": "Removed a role the caller held directly (entityType role, no instanceId needed); GET /access/assignments no longer listed it 20 s later. Acts on the caller's own assignments only. Inherited assignments and non-removable ones are refused with their own messages. Errors seen on the lab: an empty assignments list \u2192 489 'No permission assignment(s) were specified for removal'.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -499,7 +499,7 @@
   },
   "answer": "{id, name, entitlements:[{id, displayName, description, isSingleValued, entitlementType, views?:[{displayName, viewID, description}]}]}",
   "example": "POST \u2026/catalog/drivers/driver {id:\"cn=<driver>,cn=driverset1,o=system\"}",
-  "notes": "entitlementType is STATIC_PARAMS for an entitlement with a fixed list of values and APP_QUERY_PARAMS for one whose values come from a query of the connected system (query-app). Only query entitlements have views; a view's viewID is the code map key (an escaped GUID such as \\97\\64\\89\u2026), used by the code map calls. The entitlement ids come back lower-cased. cprsSupported=true gave the same list when every entitlement is cprs-supported. Entitlements whose configuration is missing or not resource-mapping-enabled are left out.",
+  "notes": "entitlementType is STATIC_PARAMS for an entitlement with a fixed list of values and APP_QUERY_PARAMS for one whose values come from a query of the connected system (query-app). Only query entitlements have views; a view's viewID is the code map key (an escaped GUID such as \\97\\64\\89\u2026), used by the code map calls. The entitlement ids come back lower-cased. cprsSupported=true gave the same list when every entitlement is cprs-supported. Entitlements whose configuration is missing or not resource-mapping-enabled are left out. Errors seen on the lab: {} \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -610,7 +610,7 @@
   },
   "answer": "{nextIndex:int, arraySize:int, entitlementValues:[{name, description, value, id, entitlementName}]}",
   "example": "POST \u2026/drivers/driverEntitlementViewValues/listV2?query=*&pageSize=10&nextIndex=1 {id, viewID, entitlements:[{id, displayName, paramLogicSystem}]}",
-  "notes": "Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing.",
+  "notes": "Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing. Errors seen on the lab: entitlements without paramLogicSystem \u2192 489 'Error occurred retrieving data from Provisioning Param Code Map table.'.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -837,7 +837,7 @@
   },
   "answer": "{entResourcesList:[{resources:[{id, name, description, driver, entitlements:[{id, displayName, description, parameterValue, entitlementType}]}]}]}",
   "example": "POST \u2026/catalog/entitlements/resources {entitlements:[{id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\", parameterValue:\"{\\\"ID\\\":\\\"<value>\\\"}\", driverName:\"<driver name>\"}]}",
-  "notes": "Read-only: finds the resources bound to each entitlement and value. The value must match what the resource stores exactly: compact JSON for a query entitlement ({\"ID\":\"\u2026\"}, no spaces), the plain value for a fixed-value one. When no resource matches, the server proposes an unsaved one built from the entitlement. A made-up entitlement DN gave 489 'Internal Error'.",
+  "notes": "Read-only: finds the resources bound to each entitlement and value. The value must match what the resource stores exactly: compact JSON for a query entitlement ({\"ID\":\"\u2026\"}, no spaces), the plain value for a fixed-value one. When no resource matches, the server proposes an unsaved one built from the entitlement. A made-up entitlement DN gave 489 'Internal Error'. Errors seen on the lab: an entitlement DN that does not exist \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -1013,8 +1013,8 @@
   "body": null,
   "answer": "{authObjectPermissions:[{objectType, objectClass, authObjectDn, resolvedNameAuthObject, permissionKey, permissionLabel}], nextIndex, totalSize, total}",
   "example": "GET \u2026/admin/permission/assignment?assigneeDn=<team DN>&domain=ROLES&q=*&nextIndex=1&size=5",
-  "notes": "assigneeDn can be a team DN: it then lists the team's granted permissions (Assign Role To User, Revoke Role From User on the role). A team manager's own DN showed nothing: team grants are held by the team, not by its managers. Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; domain PRD refused.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "notes": "assigneeDn can be a team DN: it then lists the team's granted permissions (Assign Role To User, Revoke Role From User on the role). A team manager's own DN showed nothing: team grants are held by the team, not by its managers. Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; domain PRD refused. The end of the list is marked nextIndex -1 (other lists use 0).",
+  "evidence": "live 2026-10-30 (test users, groups and a team), live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1033,7 +1033,7 @@
   "body": null,
   "answer": "{permissionKey, isAccesible: bool}",
   "example": "GET \u2026/admin/permission/rights?objectType=role",
-  "notes": "Field is spelled isAccesible. Lab (uaadmin): role \u2192 'create Role' true, resource \u2192 'create Resource' true, sod \u2192 'create Sod' true; 'Role' (capital) and 'prd' \u2192 {isAccesible:false}. Domain admins of ROLES (role, sod) / RESOURCES (resource) get true; delegated admins are checked against their create rights.",
+  "notes": "Field is spelled isAccesible. Lab (uaadmin): role \u2192 'create Role' true, resource \u2192 'create Resource' true, sod \u2192 'create Sod' true; 'Role' (capital) and 'prd' \u2192 {isAccesible:false}. Domain admins of ROLES (role, sod) / RESOURCES (resource) get true; delegated admins are checked against their create rights. Errors seen on the lab: no objectType \u2192 412 'Cannot invoke \u2026' (a null-pointer message).",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1053,7 +1053,7 @@
   "body": null,
   "answer": "{mapList:[{key, value}]}",
   "example": "GET \u2026/admin/permission/rootContainer?domain=ROLES",
-  "notes": "ROLES \u2192 RoleDefs, configuration, SoDDefs; RESOURCES \u2192 ResourceDefs, configuration, driverset1; PROVISIONING \u2192 RequestDefs, User Application Driver. Missing domain: 489 'Internal Error'; PRD 489; SECURITY 412 not supported. The dashboard picks SoDDefs from the ROLES answer for new SoDs.",
+  "notes": "ROLES \u2192 RoleDefs, configuration, SoDDefs; RESOURCES \u2192 ResourceDefs, configuration, driverset1; PROVISIONING \u2192 RequestDefs, User Application Driver. Missing domain: 489 'Internal Error'; PRD 489; SECURITY 412 not supported. The dashboard picks SoDDefs from the ROLES answer for new SoDs. Errors seen on the lab: no domain \u2192 489 'Internal Error. Please contact Administrator.'; domain=SECURITY \u2192 412 'Given Domain type is not supported for Administartion Type' (sic).",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1174,7 +1174,7 @@
   },
   "answer": "the resource with id = cn=<id>,cn=ResourceDefs,cn=RoleConfig,\u2026",
   "example": "POST \u2026/catalog/resources {id, name, description}",
-  "notes": "No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {\"ID\":\"\u2026\"} (live 2026-10-31).",
+  "notes": "No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {\"ID\":\"\u2026\"} (live 2026-10-31). Errors seen on the lab: entitlements without action \u2192 489 'Internal Error. Please contact Administrator.' (null pointer in the server log).",
   "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
  },
  {
@@ -1348,7 +1348,7 @@
   "body": null,
   "answer": "{nextIndex, arraySize, resources:[{id, name, description, allowMultiple, localizedNames, localizedDescriptions}], totalSize, total}",
   "example": "GET \u2026/catalog/resources/list?q=*&nextIndex=1&size=3&categoryKeys=helpdesk&sortBy=description&sortOrder=desc",
-  "notes": "Lab: 6 resources, all helpdesk system resources. Only domain or delegated resource admins (else 489 security). sortBy=driver \u2192 489.",
+  "notes": "Lab: 6 resources, all helpdesk system resources. Only domain or delegated resource admins (else 489 security). sortBy=driver \u2192 489. Errors seen on the lab: sortBy=driver \u2192 489 'Invalid sort-by column: driver'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1410,7 +1410,7 @@
   },
   "answer": "{arraySize, resources:[{id, name, description, categories, subContainer, approvalOverRide, approvalRequired, approvalIsStandard, revokeRequired, revokeEqualsGrant, localizedNames, localizedDescriptions, managedBy}]}",
   "example": "POST \u2026/catalog/resources/resource {resources:[{id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
-  "notes": "Read despite the POST. Only resource domain/delegated admins. The dashboard uses resourceV2 instead.",
+  "notes": "Read despite the POST. Only resource domain/delegated admins. The dashboard uses resourceV2 instead. Errors seen on the lab: a resource that was deleted \u2192 489 'Permission with id [<DN>] does not exist.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1750,7 +1750,7 @@
   },
   "answer": "{arraySize, resources:[{name, isNameExist, suggestedName}]}",
   "example": "POST \u2026/catalog/resources/validateResourceNames {resourceNames:[{name:\"Group Access\"}]}",
-  "notes": "Invalid characters are stripped/replaced in suggestedName ('Group/Access' \u2192 'Group_Access'); names over 64 characters are cut. The existence check looks for the id in the default resource container, so even existing System resources ('Helpdesk-Group') answered isNameExist false. Not called by the dashboard bundles.",
+  "notes": "Invalid characters are stripped/replaced in suggestedName ('Group/Access' \u2192 'Group_Access'); names over 64 characters are cut. The existence check looks for the id in the default resource container, so even existing System resources ('Helpdesk-Group') answered isNameExist false. Not called by the dashboard bundles. Errors seen on the lab: {name} instead of {resourceNames:[{name}]} \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1879,7 +1879,7 @@
   "body": null,
   "answer": "{nextIndex, arraySize, roles:[{id, name, description, localizedNames, localizedDescriptions}], totalSize, total}",
   "example": "GET \u2026/catalog/roles/list?q=*&nextIndex=1&size=3&roleLevel=20&sortBy=name&sortOrder=desc",
-  "notes": "Lab: 10 system roles, all level 20; categoryKeys=system finds them, default finds none. Only role domain or delegated admins (else 489). sortBy=level \u2192 489 'Invalid sort-by column: level'.",
+  "notes": "Lab: 10 system roles, all level 20; categoryKeys=system finds them, default finds none. Only role domain or delegated admins (else 489). sortBy=level \u2192 489 'Invalid sort-by column: level'. Errors seen on the lab: roleLevel=bogus \u2192 489 'Internal Error. Please contact Administrator.'; sortOrder=up \u2192 489 'Invalid sort order: up'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1921,7 +1921,7 @@
   },
   "answer": "{succeeded:[{id}]}",
   "example": "DELETE \u2026/catalog/roles/mappedResources {roleId, mappedResources:[{id, entityKey}]}",
-  "notes": "entityKey is what the server deletes by; the mapping list was empty afterwards.",
+  "notes": "entityKey is what the server deletes by; the mapping list was empty afterwards. Errors seen on the lab: a mapping without entityKey \u2192 489 'Internal Error. Please contact Administrator.' (entityKey is what the server deletes by).",
   "evidence": "live 2026-10-30 (scratch objects)"
  },
  {
@@ -2193,7 +2193,7 @@
   },
   "answer": "{nextIndex:int, arraySize:int, roles:[\u2026]}",
   "example": "POST \u2026/catalog/roles/parentRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lists the role's parents (a level-20 role over a level-10 one here), with the requestDescription given when the link was made. Unknown role \u2192 400 'not found'.",
+  "notes": "Lists the role's parents (a level-20 role over a level-10 one here), with the requestDescription given when the link was made. Unknown role \u2192 400 'not found'. Each parent's level comes as roleLevel: {level}, while POST \u2026/subRoles/list gives a plain level number.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -2301,7 +2301,7 @@
   },
   "answer": "{arraySize, roles:[{id, name, description, categories, level, roleLevel:{name, level, cn\u2026}, subContainer, approvalIsStandard, approvalRequired, localizedNames, localizedDescriptions}]}",
   "example": "POST \u2026/catalog/roles/roleV2 {roles:[{id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
-  "notes": "A bare {id} (without the roles list) gives 489. Callers without read rights on a system role get 489 'unauthorized to view System Role Details'.",
+  "notes": "A bare {id} (without the roles list) gives 489. Callers without read rights on a system role get 489 'unauthorized to view System Role Details'. Errors seen on the lab: {id} instead of {roles:[{id}]} \u2192 489 'Permission with id [] does not exist.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -2494,7 +2494,7 @@
   },
   "answer": "{nextIndex:int, arraySize:int, roles:[\u2026]}",
   "example": "POST \u2026/catalog/roles/subRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lists the role's children with level and the link's requestDescription. Dashboard always asks from nextIndex 1.",
+  "notes": "Lists the role's children with level and the link's requestDescription. Dashboard always asks from nextIndex 1. Each child's level is a plain number (level: 10), while POST \u2026/parentRoles/list gives each parent's as an object (roleLevel: {level: 20}). Errors seen on the lab: {} \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -2559,7 +2559,7 @@
   },
   "answer": "the SoD as sent, with id = its DN under cn=SoDDefs",
   "example": "POST \u2026/catalog/sods {id:\"<cn>\", name, description, roles:[{id:<role 1>},{id:<role 2>}], sodApprovalType:\"alwaysAllow\"}",
-  "notes": "sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error' (a null approval type, seen in the server log); that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written.",
+  "notes": "sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error' (a null approval type, seen in the server log); that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written. Errors seen on the lab: sodApprovalType as an enum name or code \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -2713,8 +2713,8 @@
   "body": null,
   "answer": "{clusterName, localAdrress, sentBytes, rcvdBytes, sentMessages, rcvdMessages, isOpen, isConnected, dumpStats} or {}",
   "example": "GET \u2026/catalog/statistics/clusterinfo",
-  "notes": "Lab is not clustered: {}. Field is spelled localAdrress.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lab is not clustered: {}. Field is spelled localAdrress. An ordinary user gets 403 (GarnetLoginUnAuthorizedSecurityException).",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31 (non-admin test user)"
  },
  {
   "method": "GET",
@@ -2737,8 +2737,8 @@
   "body": null,
   "answer": "{memoryInfo:{jvmMemoryUsage, jvmMemoryPool, systemMemoryUsage, commitedVirtualMemory}, runtimeStats:[{uptime, startTime, systemProperties:[{key,value}]}], operatingSystemStats, classLoaderStats}",
   "example": "GET \u2026/catalog/statistics/memoryinfo",
-  "notes": "systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. The method itself checks no rights; on the lab it was called as the applications administrator. Value not recorded here.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. The method itself checks no rights; on the lab it was called as the applications administrator. Value not recorded here. Signed in as an ordinary user (no administrator role) the call was refused with 403 (a 199-byte fault, the same size as the clusterinfo refusal): a filter in front of the statistics calls blocks non-administrators, though the method itself checks no rights. So the trust-store password is exposed to administrators, not to every user.",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31 (non-admin test user)"
  },
  {
   "method": "GET",
@@ -2800,8 +2800,8 @@
   "body": null,
   "answer": "same shape as memoryinfo",
   "example": "GET \u2026/catalog/statistics/workflowmemoryinfo",
-  "notes": "Like memoryinfo, it returns every JVM system property, the trust store's password among them (not recorded here).",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Like memoryinfo, it returns every JVM system property, the trust store's password among them (not recorded here). Signed in as an ordinary user it was refused with 403, like memoryinfo.",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31 (non-admin test user)"
  },
  {
   "method": "GET",

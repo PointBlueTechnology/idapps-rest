@@ -347,7 +347,7 @@ Meant to read the navigation access rights per page section of a client's settin
 
 **Example:** GET …/access/config/access?client=1
 
-**Notes:** Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'.
+**Notes:** Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId=1 instead of client=1 → 489 'Create User Payload is empty' (a misleading message: the parameter is client); a client id that does not exist (client=2 before one was made) → 489 'Admin access settings not found'.
 
 <a id="post-idmprov-rest-access-config-access"></a>
 ### POST `/IDMProv/rest/access/config/access`
@@ -394,7 +394,7 @@ Meant to read the header/footer branding section of a client's settings.
 
 **Example:** GET …/access/config/branding?client=1
 
-**Notes:** Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'.
+**Notes:** Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId instead of client → 489 'Create User Payload is empty'.
 
 <a id="post-idmprov-rest-access-config-branding"></a>
 ### POST `/IDMProv/rest/access/config/branding`
@@ -598,7 +598,7 @@ Meant to read the dashboard widget access section of a client's settings.
 
 **Example:** GET …/access/config/dashboard?client=1
 
-**Notes:** Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'.
+**Notes:** Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId instead of client → 489 'Create User Payload is empty'.
 
 <a id="post-idmprov-rest-access-config-dashboard"></a>
 ### POST `/IDMProv/rest/access/config/dashboard`
@@ -698,7 +698,7 @@ Reset one section of a client's settings to the defaults.
 
 Download a stored custom stylesheet as text.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -708,7 +708,7 @@ Download a stored custom stylesheet as text.
 
 **Example:** GET …/access/config/style/idmdashcustom1.css
 
-**Notes:** A name without .css: 400 'Error reading custom style'; a .css name that does not exist (custom.css, style.css): 404 with the same message. The dashboard links the sample as /custom/css/idmdashcustom1.css.
+**Notes:** A name without .css: 400 'Error reading custom style'; a .css name that does not exist (custom.css, style.css): 404 with the same message. The dashboard links the sample as /custom/css/idmdashcustom1.css. Request it with Accept */* or text/plain: Accept: text/css answered 406 with an HTML error page.
 
 <a id="put-idmprov-rest-access-config-uploadstyle"></a>
 ### PUT `/IDMProv/rest/access/config/uploadStyle`
@@ -731,7 +731,7 @@ Upload a custom CSS file for a client's branding.
 
 **Answer:** 200, no body
 
-**Notes:** Body is the CSS text (Content-Type text/plain). Valid CSS: 200 with no body; text the CSS parser rejects: 489 'CSS file to upload is invalid'. Blank client or body: 'payload is empty'; content failing the XSS check: 400. The server method makes no page-right check.
+**Notes:** Body is the CSS text (Content-Type text/plain). Valid CSS: 200 with no body; text the CSS parser rejects: 489 'CSS file to upload is invalid'. Blank client or body: 'payload is empty'; content failing the XSS check: 400. The server method makes no page-right check. Errors seen on the lab: text that is not CSS → 489 'CSS file to upload is invalid'.
 
 <a id="get-idmprov-rest-access-dashboard"></a>
 ### GET `/IDMProv/rest/access/dashboard`
@@ -825,13 +825,13 @@ Delete featured items.
 
 List the featured items by category, as shown on the request catalog.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 **Answer:** {itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder, subType, items:[{image, idmdashImage, itemId, name, desc, entityType, id, itemOrder, bulkRequestable, itemCategoryId}]}], editable: bool}
 
 **Example:** GET …/access/featuredItems -> category 18 'Featured Items' with the HelpDesk Ticket PRD
 
-**Notes:** Images are inline base64 data URIs, so the answer is large (about 20 KB for one item). Items are landing-page entries: itemId is the item's numeric id, id is the permission DN, itemCategoryId the category.
+**Notes:** Images are inline base64 data URIs, so the answer is large (about 20 KB for one item). Items are landing-page entries: itemId is the item's numeric id, id is the permission DN, itemCategoryId the category. An item added with POST …/ulp/featuredItems under the featured category was NOT listed here, though GET …/ulp/landingItems/v2 showed it in that category.
 
 <a id="post-idmprov-rest-access-featureditems"></a>
 ### POST `/IDMProv/rest/access/featuredItems`
@@ -1086,13 +1086,13 @@ Check the signed-in user's right to each named dashboard page.
 
 Password synchronisation status of the signed-in user, per driver.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30, live 2026-10-31 (non-admin test user).
 
 **Answer:** {messages?:[{message, driverName, driverImage, status}]}
 
 **Example:** GET …/access/info/user/passwordsyncstatus -> {}
 
-**Notes:** uaadmin has no password sync messages, so the answer is {}.
+**Notes:** uaadmin has no password sync messages, so the answer is {}. A test user with a password, signed in as themselves, also got {}: the messages come from drivers that synchronise passwords, and the lab has none.
 
 <a id="post-idmprov-rest-access-info-user-passwordsyncstatus"></a>
 ### POST `/IDMProv/rest/access/info/user/passwordsyncstatus`
@@ -1115,7 +1115,7 @@ Password synchronisation status of a given user, per driver.
 
 **Example:** POST …/access/info/user/passwordsyncstatus {dn:<user DN>}
 
-**Notes:** A real user without a password (and no driver password sync) also gives 204; messages would need a password change going through drivers, which the test did not do. Read-only POST. An invalid DN also answers 204. An empty body gives 489 'Internal Error'.
+**Notes:** A real user without a password (and no driver password sync) also gives 204; messages would need a password change going through drivers, which the test did not do. Read-only POST. An invalid DN also answers 204. An empty body gives 489 'Internal Error'. Errors seen on the lab: {} → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-info-user-rights"></a>
 ### GET `/IDMProv/rest/access/info/user/rights`
@@ -2056,13 +2056,13 @@ List the Java packages that can be given a logger.
 
 List the workflow engines in the cluster with their state.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 **Answer:** {wfEngineInfoList:[{engineId, engineState}]}
 
 **Example:** GET …/admin/workflowengines -> engines 1, 3 Timedout; 6 Running
 
-**Notes:** engineState is a localised word (Running, Timedout, …). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right. Each start of the applications adds a new engine id; earlier ids stay listed as Timedout or Shutdown (2026-10-31).
+**Notes:** engineState is a localised word (Running, Timedout, …). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right. Each start of the applications adds a new engine id; earlier ids stay listed as Timedout or Shutdown (2026-10-31). On the lab the engine's own cleanup of old timed-out engine ids failed every 2 minutes ('Engine Monitor Timer task failed … Error persisting cluster state', server log), so they are never removed. After a stop and start over POST …/workflowengines/status, or a migration import, the running engine kept showing 'Starting' until the applications were restarted.
 
 <a id="get-idmprov-rest-admin-workflowengines-configuration"></a>
 ### GET `/IDMProv/rest/admin/workflowengines/configuration`

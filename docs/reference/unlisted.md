@@ -129,7 +129,7 @@ List a group's members.
 
 **Example:** POST …/access/groups/groupmembers?q=&nextIndex=1&size=5 {dn:<group DN>}
 
-**Notes:** Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'.
+**Notes:** Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'. Errors seen on the lab: right after a group was created, or a group that does not exist → 489 'Invalid Group Detected: [<DN>].'.
 
 <a id="get-idmprov-rest-access-orgchart-position"></a>
 ### GET `/IDMProv/rest/access/orgChart/position`

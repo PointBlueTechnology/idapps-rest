@@ -149,7 +149,7 @@ Mark a user unavailable for a period, so their tasks go to delegates.
 
 **Example:** POST …/access/availability {principalUser:{dn}, effectiveDate, allRequests:true, hasExpiry:true, expiryDate}
 
-**Notes:** Needs a delegation first: without one 489 'User [<dn>] has no delegatee assignment configured for [cn=RequestDefs,…] provisioning request definitions.'. The real id (cn=<32 hex>,cn=DelegationDefs,…) is in POST /access/availability/list {dn}; dates come back rounded to seconds.
+**Notes:** Needs a delegation first: without one 489 'User [<dn>] has no delegatee assignment configured for [cn=RequestDefs,…] provisioning request definitions.'. The real id (cn=<32 hex>,cn=DelegationDefs,…) is in POST /access/availability/list {dn}; dates come back rounded to seconds. Errors seen on the lab: for a user with no delegatee for the chosen requests → 489 'User [<DN>] has no delegatee assignment configured for [<request container>]…'.
 
 <a id="put-idmprov-rest-access-availability"></a>
 ### PUT `/IDMProv/rest/access/availability`
@@ -204,7 +204,7 @@ List the availability entries of one user.
 
 **Example:** POST …/access/availability/list {dn:<user DN>}
 
-**Notes:** With an availability entry for Alice: totalAvailability 1, availabilityStatus 1, hasDelegatesAssigned true; availableRequestDefs lists the PRDs her delegation covers (on the lab two: HelpDesk Ticket and Request Mobile Approval App). enableAllRequests was true right after the create and false a minute later. For Bob (the delegate, no entry of his own): totalAvailability 0, availabilityStatus 0, hasDelegatesAssigned false. Empty body or blank dn: 489 'Invalid input DN: null'. A DN that does not exist: 489 'User with dn [...] does not exist.'. Caller must be provisioning administrator or the user's team manager (AVAILABILITY). The dashboard's own list uses GET …/availability (no body) for the signed-in user.
+**Notes:** With an availability entry for Alice: totalAvailability 1, availabilityStatus 1, hasDelegatesAssigned true; availableRequestDefs lists the PRDs her delegation covers (on the lab two: HelpDesk Ticket and Request Mobile Approval App). enableAllRequests was true right after the create and false a minute later. For Bob (the delegate, no entry of his own): totalAvailability 0, availabilityStatus 0, hasDelegatesAssigned false. Empty body or blank dn: 489 'Invalid input DN: null'. A DN that does not exist: 489 'User with dn [...] does not exist.'. Caller must be provisioning administrator or the user's team manager (AVAILABILITY). The dashboard's own list uses GET …/availability (no body) for the signed-in user. Errors seen on the lab: {} → 489 'Invalid input DN: null'; a DN that does not exist → 489 'User with dn [<DN>] does not exist.'.
 
 <a id="get-idmprov-rest-access-availability-prds"></a>
 ### GET `/IDMProv/rest/access/availability/prds`
@@ -415,7 +415,7 @@ List past CPRS requests for a driver/entitlement, newest first.
 
 **Example:** POST …/cprs/cprsrequest/status/list?nextIndex=1&size=5 {"driverDn":"cn=User Application Driver,cn=driverset1,o=system"}
 
-**Notes:** An empty body {} → 489 'Internal Error'; give driverDn (entitlementDn alone answered nothing). opStatus 1 = running (requestCompletionTime empty). Unlike the other CPRS calls this one does not require CPRS to be enabled, only Resources domain administrator.
+**Notes:** An empty body {} → 489 'Internal Error'; give driverDn (entitlementDn alone answered nothing). opStatus 1 = running (requestCompletionTime empty). Unlike the other CPRS calls this one does not require CPRS to be enabled, only Resources domain administrator. Errors seen on the lab: {} with sortBy empty → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-cprs-settings"></a>
 ### GET `/IDMProv/rest/access/cprs/settings`
@@ -577,7 +577,7 @@ List the delegation assignments of one user.
 
 **Example:** POST …/access/delegation/list {dn:<user DN>}
 
-**Notes:** With a delegation from Alice to Bob, the same entry shows for both dn=Alice and dn=Bob (the list covers delegations from and to the user). No expiry is stored as 4102444799000. Empty body: 489 'Invalid input DN: null'. Query parameters are not read (the dashboard only adds size). The signed-in user's own list is GET …/delegation (q, nextIndex, size, sortBy, sortOrder).
+**Notes:** With a delegation from Alice to Bob, the same entry shows for both dn=Alice and dn=Bob (the list covers delegations from and to the user). No expiry is stored as 4102444799000. Empty body: 489 'Invalid input DN: null'. Query parameters are not read (the dashboard only adds size). The signed-in user's own list is GET …/delegation (q, nextIndex, size, sortBy, sortOrder). Errors seen on the lab: {} → 489 'Invalid input DN: null'; a user that was deleted → 489 'User with dn [<DN>] does not exist.'.
 
 <a id="get-idmprov-rest-access-delegation-relationships"></a>
 ### GET `/IDMProv/rest/access/delegation/relationships`
@@ -645,7 +645,7 @@ List the data-item fields a stored form exposes.
 
 **Example:** GET …/forms/dataItemsList?formId=cn=Create Workflow Form,cn=WorkflowTemplateForms,cn=WorkflowForms,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system
 
-**Notes:** No formId → 489 'Form ID is empty.'; a bare form name → 489 'Internal Error'. Provisioning domain administrator only. Comment fields are left out.
+**Notes:** No formId → 489 'Form ID is empty.'; a bare form name → 489 'Internal Error'. Provisioning domain administrator only. Comment fields are left out. Errors seen on the lab: formId=Create Workflow Form (a template form) → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-forms-listtemplates"></a>
 ### GET `/IDMProv/rest/access/forms/listTemplates`
@@ -686,7 +686,7 @@ List the stored workflow forms of one container.
 
 Read the comments of one workflow request.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -700,14 +700,14 @@ Read the comments of one workflow request.
 
 **Example:** GET …/monitoring/comments?requestId=34f1826bc4594d29b8b62d2171fc2cb8
 
-**Notes:** No requestId → 489 'Invalid requestId'. Ids from historylist and from process/list both work.
+**Notes:** No requestId → 489 'Invalid requestId'. Ids from historylist and from process/list both work. An id that is not a workflow request id (e.g. a role request's correlation id) gives 489 'Error retrieving comment details.' rather than an empty list. A terminated process lists the terminate comment first. Errors seen on the lab: sortOrder=bogus → 489 'Invalid sort order: bogus'.
 
 <a id="get-idmprov-rest-access-monitoring-process-list"></a>
 ### GET `/IDMProv/rest/access/monitoring/process/list`
 
 List workflow processes (requests) for monitoring, with filters.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -727,7 +727,7 @@ List workflow processes (requests) for monitoring, with filters.
 
 **Example:** GET …/monitoring/process/list?startIndex=1&size=5&processStatus=Completed
 
-**Notes:** No parameter is required. totalSize was 20 for the unfiltered list and 17 with processStatus=Completed; creationTime=…&operator=GT narrowed it to 2. A wrong sortField gives 489 'An error occurred while obtaining the process or comment details from the database'. The call goes to the workflow engine client, whose code is not in the REST jars. 2026-10-31: the list returned one row fewer than totalSize (21 of 22; running: 1 of 2), and the missing one was a just-created process, so a new process may not be listed.
+**Notes:** No parameter is required. totalSize was 20 for the unfiltered list and 17 with processStatus=Completed; creationTime=…&operator=GT narrowed it to 2. A wrong sortField gives 489 'An error occurred while obtaining the process or comment details from the database'. The call goes to the workflow engine client, whose code is not in the REST jars. 2026-10-31: the list returned one row fewer than totalSize (21 of 22; running: 1 of 2), and the missing one was a just-created process, so a new process may not be listed. A recipient filter (recipient=<user DN>) answered 489, alone or with processStatus; sortField=creationTime with sortOrder=desc also answered 489.
 
 <a id="post-idmprov-rest-access-monitoring-process-terminate"></a>
 ### POST `/IDMProv/rest/access/monitoring/process/terminate`
@@ -853,7 +853,7 @@ Make a user a proxy for other users.
 
 **Example:** POST …/access/proxy/create {assignedUserDN:<uaadmin>, proxyForUsers:[{dn:<scratch user>}]}
 
-**Notes:** No expiry is stored as 4102444799000 (end of 2099). expirytime '-1': 489 SecurityException 'Invalid proxy definition … Expiration time is prior to current time.'. The id is cn=<32 hex>,cn=ProxyDefs,cn=AppConfig,….
+**Notes:** No expiry is stored as 4102444799000 (end of 2099). expirytime '-1': 489 SecurityException 'Invalid proxy definition … Expiration time is prior to current time.'. The id is cn=<32 hex>,cn=ProxyDefs,cn=AppConfig,…. Errors seen on the lab: with expirytime '-1' → 489 'Invalid proxy definition. Definition: …'.
 
 <a id="post-idmprov-rest-access-proxy-delete"></a>
 ### POST `/IDMProv/rest/access/proxy/delete`
@@ -967,7 +967,7 @@ Read the signed-in user's cart for one cart action, with its items.
 
 **Example:** GET …/queue/entry?cartAction=revoke
 
-**Notes:** Missing cartAction → 489 'Value for cartAction is missing in payload…'. Another user's cartOwner → 489 'You are unauthorized for this operation.'. After a restart of the applications, 20 reads in a row all answered 200 (the earlier 1-in-20 489 was the hung transaction, see DELETE).
+**Notes:** Missing cartAction → 489 'Value for cartAction is missing in payload…'. Another user's cartOwner → 489 'You are unauthorized for this operation.'. After a restart of the applications, 20 reads in a row all answered 200 (the earlier 1-in-20 489 was the hung transaction, see DELETE). Errors seen on the lab: while the cart transaction hung, about 1 call in 20 → 489 'Internal Error. Please contact Administrator.' (gone after a restart).
 
 <a id="delete-idmprov-rest-access-queue-entry-item-assignees"></a>
 ### DELETE `/IDMProv/rest/access/queue/entry/item/assignees`
@@ -1075,7 +1075,7 @@ Add items (permission + assignees) to the caller's cart.
 
 **Example:** POST …/access/queue/entry/items {cartAction:'<name>', cartItems:[…]}
 
-**Notes:** A cart is per (owner, cartAction); a scratch cartAction name kept the real carts (revoke, request) untouched. GET /access/queue/entry?cartAction=<name> reads it; totalCount counts assignees, not items.
+**Notes:** A cart is per (owner, cartAction); a scratch cartAction name kept the real carts (revoke, request) untouched. GET /access/queue/entry?cartAction=<name> reads it; totalCount counts assignees, not items. Errors seen on the lab: a role that was deleted → 489 'Permission with id [<DN>] does not exist.'; while the cart transaction hung, a call timed out with no answer.
 
 <a id="get-idmprov-rest-access-requests-history"></a>
 ### GET `/IDMProv/rest/access/requests/history`
@@ -1100,7 +1100,7 @@ The signed-in user's request history (PRD, role and resource requests), newest f
 
 Request history of another user, for administrators and authorised help-desk users.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1132,7 +1132,7 @@ Request history of another user, for administrators and authorised help-desk use
 
 **Example:** POST …/requests/historyForUser?nextIndex=1&size=3 {"dn":"cn=uaadmin,ou=sa,o=data"}
 
-**Notes:** No dn → 489 'User DN is required in the payload'. Allowed for a domain administrator, or a help-desk user whose client list includes the user's client. Lab: 20 requests for uaadmin.
+**Notes:** No dn → 489 'User DN is required in the payload'. Allowed for a domain administrator, or a help-desk user whose client list includes the user's client. Lab: 20 requests for uaadmin. After POST …/administrator/assignments/create made a user a delegated role administrator, the user's role history showed a 'Role Manager' request (Completed): the admin assignment is itself a role assignment.
 
 <a id="post-idmprov-rest-access-requests-historylist"></a>
 ### POST `/IDMProv/rest/access/requests/historylist`
@@ -1353,7 +1353,7 @@ List the workflow tasks of one member of a team the caller manages.
 
 **Example:** GET …/tasks/list/others/team?memberDn=<member DN>&teamDN=<team DN>
 
-**Notes:** The team needs the task permission on the PRD the task belongs to: PUT /access/teams/permissions with {dn: PRD DN, objClass: srvprvRequest, permission: nrfAccessMgrTaskAddressee} ('Manage Addressee Task'). Without it the call answers 200 with total 0 even though the member has tasks; with it, the member's role approval task was listed. The caller must be a team manager and the member must belong to one of the caller's teams, else 489 'You are unauthorized for this operation.'. Missing memberDn or teamDN: 489 'Team member input is empty…'.
+**Notes:** The team needs the task permission on the PRD the task belongs to: PUT /access/teams/permissions with {dn: PRD DN, objClass: srvprvRequest, permission: nrfAccessMgrTaskAddressee} ('Manage Addressee Task'). Without it the call answers 200 with total 0 even though the member has tasks; with it, the member's role approval task was listed. The caller must be a team manager and the member must belong to one of the caller's teams, else 489 'You are unauthorized for this operation.'. Missing memberDn or teamDN: 489 'Team member input is empty…'. Errors seen on the lab: teamId instead of teamDN, or no memberDn → 489 'Team member input is empty, please input team member detail'; a team that does not exist → 489 'You are unauthorized for this operation.'; status=bogus → 489 'Invalid task status'.
 
 <a id="delete-idmprov-rest-access-teams"></a>
 ### DELETE `/IDMProv/rest/access/teams`
@@ -1545,7 +1545,7 @@ List the teams the caller manages, optionally only those with one permission.
 
 **Example:** GET …/access/teams/managelist?q=*&nextIndex=1&size=10
 
-**Notes:** Lists the teams the caller manages (uaadmin is a team manager of the test team). type=A, type=R and no type all gave the same one team; totalCount came back 0 even with one team (only arraySize is reliable). When the caller manages no team the answer is 489 'No Teams found with Manage Addressee Permission' (the generic empty-list message).
+**Notes:** Lists the teams the caller manages (uaadmin is a team manager of the test team). type=A, type=R and no type all gave the same one team; totalCount came back 0 even with one team (only arraySize is reliable). When the caller manages no team the answer is 489 'No Teams found with Manage Addressee Permission' (the generic empty-list message). Errors seen on the lab: no team with that permission → 489 'No Teams found with Manage Addressee Permission'; type=ALL → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-teams-members"></a>
 ### GET `/IDMProv/rest/access/teams/members`
@@ -1564,7 +1564,7 @@ List the members of the teams that contain a given member and that the caller ma
 
 **Example:** GET …/access/teams/members?memberDn=<any DN>
 
-**Notes:** Returns the members of every team the CALLER manages; memberDn must be present but its value is not used (Alice's DN and uaadmin's DN gave the same list). Alice and Bob came back. A caller who manages no team: 403 'Team manger does not belong to any Team'. Without memberDn: 489 'Internal Error' (the server tests the value before checking it is present).
+**Notes:** Returns the members of every team the CALLER manages; memberDn must be present but its value is not used (Alice's DN and uaadmin's DN gave the same list). Alice and Bob came back. A caller who manages no team: 403 'Team manger does not belong to any Team'. Without memberDn: 489 'Internal Error' (the server tests the value before checking it is present). Errors seen on the lab: no memberDn → 489 'Internal Error. Please contact Administrator.'; memberDn of a manager without teams → 403 'Team manger does not belong to any Team' (sic).
 
 <a id="delete-idmprov-rest-access-teams-permissions"></a>
 ### DELETE `/IDMProv/rest/access/teams/permissions`
@@ -1640,7 +1640,7 @@ List the permissions the caller may request for others through their teams.
 
 Grant a team permissions on roles, resources or PRDs.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects), live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1668,7 +1668,7 @@ Grant a team permissions on roles, resources or PRDs.
 
 **Example:** PUT …/access/teams/permissions {teamDN, permissions:[{dn, objClass:'nrfRole', permission:'nrfAccessMgrAssignRole'}]}
 
-**Notes:** The permission key is NOT checked: 'AssignRole' (the dashboard's checkbox id) also answered success but was invisible in POST /access/teams/team/permissions; it was removed with the matching DELETE. With nrfAccessMgrAssignRole the grant appears there (permissionDisplay 'Assign Role To User').
+**Notes:** The permission key is NOT checked: 'AssignRole' (the dashboard's checkbox id) also answered success but was invisible in POST /access/teams/team/permissions; it was removed with the matching DELETE. With nrfAccessMgrAssignRole the grant appears there (permissionDisplay 'Assign Role To User'). PRD grants work too: {dn: PRD DN, objClass: srvprvRequest, permission: nrfAccessMgrTaskAddressee or nrfAccessMgrInitiatePRD} (they write to the PRD object); the matching DELETE removed them.
 
 <a id="get-idmprov-rest-access-teams-prds"></a>
 ### GET `/IDMProv/rest/access/teams/prds`
@@ -1730,7 +1730,7 @@ List all members of one team.
 
 **Example:** POST …/access/teams/recipients/list {dn:<team DN>}
 
-**Notes:** Gave the team's users (Alice, Bob) without the member group itself. Blank dn: 489 'Invalid input DN: '; a DN that is not a team: 489 'Internal Error'.
+**Notes:** Gave the team's users (Alice, Bob) without the member group itself. Blank dn: 489 'Invalid input DN: '; a DN that is not a team: 489 'Internal Error'. Errors seen on the lab: a team DN that does not exist → 489 'Internal Error. Please contact Administrator.'; dn '' → 489 'Invalid input DN: '.
 
 <a id="get-idmprov-rest-access-teams-recipients-userlist-v2"></a>
 ### GET `/IDMProv/rest/access/teams/recipients/userlist/v2`
@@ -1869,7 +1869,7 @@ Read one team's details.
 
 **Example:** POST …/access/teams/team {dn:<team DN>}
 
-**Notes:** Same object as one entry of /teams/list. A read despite POST. A DN that is not a team, or {}, gives 489 'Internal Error'. Read-only teams are only shown to domain administrators of their domains.
+**Notes:** Same object as one entry of /teams/list. A read despite POST. A DN that is not a team, or {}, gives 489 'Internal Error'. Read-only teams are only shown to domain administrators of their domains. Errors seen on the lab: a team just deleted → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="post-idmprov-rest-access-teams-team-permissions"></a>
 ### POST `/IDMProv/rest/access/teams/team/permissions`
@@ -1900,7 +1900,7 @@ List the permissions assigned to one team.
 
 **Example:** POST …/access/teams/team/permissions?nextIndex=1&size=10&sortOrder=asc&forceRefresh=false {dn:<team DN>}
 
-**Notes:** Lists the grants made with PUT /access/teams/permissions: one row per access key (nrfAccessMgrAssignRole 'Assign Role To User', nrfAccessMgrRevokeRole 'Revoke Role From User') on the role, with domainType ROLES. A read despite POST; the dashboard always sends nextIndex, sortOrder, size and forceRefresh. A DN that is not a team gives 489 'Internal Error'.
+**Notes:** Lists the grants made with PUT /access/teams/permissions: one row per access key (nrfAccessMgrAssignRole 'Assign Role To User', nrfAccessMgrRevokeRole 'Revoke Role From User') on the role, with domainType ROLES. A read despite POST; the dashboard always sends nextIndex, sortOrder, size and forceRefresh. A DN that is not a team gives 489 'Internal Error'. Errors seen on the lab: a team DN that does not exist → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-teams-team-userlist"></a>
 ### GET `/IDMProv/rest/access/teams/team/userlist`
@@ -1922,7 +1922,7 @@ List the users in one team the caller can see.
 
 **Example:** GET …/access/teams/team/userlist?teamDn=<team DN>&q=&nextIndex=1&size=10
 
-**Notes:** Lists the team's member users (Alice and Bob; the member group's members are the same two, and no user came twice). size=1 gave nextIndex 2 and total 2; sortOrder=desc reversed the order. No teamDn: 489 'Team DN input is empty…'; a DN that is not a team: 489 'Internal Error'.
+**Notes:** Lists the team's member users (Alice and Bob; the member group's members are the same two, and no user came twice). size=1 gave nextIndex 2 and total 2; sortOrder=desc reversed the order. No teamDn: 489 'Team DN input is empty…'; a DN that is not a team: 489 'Internal Error'. Errors seen on the lab: no teamDn → 489 'Team DN input is empty, please input team dn detail'; a team DN that does not exist → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="post-idmprov-rest-access-workflow"></a>
 ### POST `/IDMProv/rest/access/workflow`

@@ -139,6 +139,12 @@ Every parameter is optional:
   `expirationTime` (epoch ms), `approvalFormId`, `isNewForm` (true for a JSON form), `taskClaimed`, and more.
 - **Missing process id:** `processId` was empty in the list. `GET /tasks/workEntries` (§2.4) gives the request id for
   a task.
+- **Other people's tasks:** signed in as the provisioning administrator, the list also held tasks addressed to other
+  users (an approval waiting for a test user), while `GET /access/tasks` answered `{"total": 0}` **[live]**.
+- **Stale tasks:** a task stayed in the list after its process was terminated (`POST /access/monitoring/process/terminate`),
+  as after a retraction (§3.5) **[live]**.
+- **Task ids can change:** after a workflow migration import (`POST /access/data/migration/workflow`) the same open
+  tasks came back with new `taskId`s **[live]**.
 
 ### 2.2 One task: `POST /access/tasks/item` [live]
 
@@ -316,6 +322,8 @@ returns `{"requests": [...]}`.
 - **Fields per assignment:** `id`, `name`, `description`, `entityType`, `requestedBy`, `effectiveDate` (epoch ms)
   and `categories` (`[{"categoryId", "categoryName"}]`; the ids are per installation).
 - **`total`:** in `list/v2` and `advanced` it was the page's count; in `role/list` it was everything.
+- **Lower-cased ids:** `GET /access/assignments` returned the permission DNs in lower case
+  (`cn=…,cn=level10,cn=roledefs,…`); compare DNs case-insensitively **[live]**.
 - **Not here:** the assignment's instance id, which a resource revocation needs (§4.3). Read it from §4.2.
 
 ### 4.2 Who has a role or a resource [live]
@@ -339,6 +347,11 @@ Returns `{"dn", "arraySize", "roleAssignments": [{"identity", "identityDisplayNa
 "statusDisplay", "requestDate", "requesterDn", "description", "instanceGuId"}]}`.
 
 - **`instanceGuId`** (that spelling) is what a resource revocation needs.
+- **`grant` is not the state:** a completed assignment made with `…/assignments/assign` was listed with
+  `"grant": false` and `statusCode` "50" (Completed) **[live]**. Go by `statusCode`/`statusDisplay`.
+- **Resource parameters:** a helpdesk resource assigned through the client's helpdesk settings carried
+  `"dynamicParams": {"dynamicParamList": [{"paramName": "param1", "paramValues": ["\"client1(1)\""]}]}` (the client)
+  **[live]**.
 
 ### 4.3 Revoke: `DELETE /access/assignments/list` [live]
 
@@ -424,7 +437,9 @@ it, and create and delete roles through the catalog API (§5.2) so it stays in s
 - **Requestable at once:** the role was requestable immediately, without waiting for the permission index.
 
 **Read:** `POST /catalog/roles/role` with body `{"roles": [{"id": "<role DN>"}]}` returns
-`{"roles": [{... "approvalRequired", "approvalIsStandard", "status": 50, "localizedNames", …}]}`.
+`{"roles": [{... "approvalRequired", "approvalIsStandard", "status": 50, "localizedNames", …}]}`. A role that was
+deleted gives 489 "Permission with id [] does not exist." (empty brackets) when it is the only one asked for; with
+several deleted roles the message named one of them **[live]**.
 
 **Change:** `PUT /catalog/roles/role` with the role, its `id` the DN. To require a standard approval:
 
@@ -447,7 +462,7 @@ it, and create and delete roles through the catalog API (§5.2) so it stays in s
 |---|---|
 | `GET /catalog/users?q=<text>&nextIndex=1&size=20` | `{"users": [{"id", "firstName", "lastName", "cn"}], "arraySize"}`. `q` matched first and last names (`Api*`), not `cn` |
 | `GET /access/users/list?q=<text>&nextIndex=1&size=20` | `{"usersList": [{"dn", "fullName", "primaryAttributes", …}], "totalSize"}`; `clientId`, `columnCustomization` and `filter` shape the columns |
-| `GET /access/users/details?userDn=<DN>` | the person as the dashboard shows them: `fullName`, `primaryAttributes`, `secondaryAttributes`, `groupMemberof`, `disabledLogin`, … (attribute keys per installation) |
+| `GET /access/users/details?userDn=<DN>` | the person as the dashboard shows them: `fullName`, `primaryAttributes`, `secondaryAttributes`, `groupMemberof`, `disabledLogin`, … (attribute keys per installation). A DN that does not exist gives 489 with the raw LDAP error text (`javax.naming.NameNotFoundException: [LDAP: error code 32 - NDS error: no such entry (-601)]`) **[live]** |
 
 User searches, and the "who has" reads (§4.2), only see users under the applications' user search root. That's
 `DirectoryService/realms/jndi/params/USER_ROOT_CONTAINER` in the applications' `ism-configuration.properties` (per
@@ -462,8 +477,8 @@ All **[live]**:
 | Call | Notes |
 |---|---|
 | `GET /catalog/sods` | `{"arraySize", "nextIndex", …}`: the separation of duties constraints |
-| `GET /access/sods/violations?sodDn=<DN>` | **`sodDn` required** (else 489 "Value for sodDn is missing in payload"). Returns `{"sodId", "sodViolations"}` |
-| `GET /access/sods/violations/user?userDn=<DN>` | `{"id", "sods": [...]}`: the constraints a person violates |
+| `GET /access/sods/violations?sodDn=<DN>` | **`sodDn` required** (else 489 "Value for sodDn is missing in payload"). Returns `{"sodId", "sodViolations"}`; with no violations just `{"sodId"}` |
+| `GET /access/sods/violations/user?userDn=<DN>` | `{"id", "sods": [...]}`: the constraints a person violates; with none just `{"id"}` |
 | `GET /access/delegation` | `{"totalDelegations", …}`: the caller's delegations |
 | `GET /access/proxy/all` | `{"configureProxy", "userType", …}` |
 | `GET /access/proxy/for` | the people the caller may act for: `{"userArraySize", …}` |
@@ -482,6 +497,8 @@ item's detail when it is in the index **[live]**.
 
 - **Required:** both fields; `entityType` is fixed: `prd`, `role`, `resource`.
 - **Not in the index:** 489 `PermissionIndexException`.
+- **Roles refused:** `{"id": "<role DN>", "entityType": "role"}` answered 489 "Permission type [role] is not supported
+  for this operation." **[live]**: it works for PRDs; check roles and resources in the catalog instead.
 - **For a PRD:** the detail includes `requestFormId`, `isNewForm`, `categories`, and `dataItems` for a legacy form.
 
 **Deployment timing.** A PRD deployed straight to the vault reaches the index only on the index's refresh interval

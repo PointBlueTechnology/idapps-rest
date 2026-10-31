@@ -8,9 +8,8 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 48 |
+| validated on the lab | 49 |
 | answered on the lab, which had no data to show | 2 |
-| not run: worked out from the server's and the dashboard's code | 1 |
 
 ## Contents
 
@@ -226,7 +225,7 @@ Lists the Directory Abstraction Layer entity definitions, or one by key.
 
 **Example:** GET …/entities/definitions?key=user&clientId=1
 
-**Notes:** Lab has 54 definitions (user, group, container, quick-user-info, user-lookup, many sys-*). An unknown key gives 489 'Internal Error'. The dashboard uses creatable=true&viewable=true for its entity list (lab: group and user) and key=group&clientId=… for group attributes.
+**Notes:** Lab has 54 definitions (user, group, container, quick-user-info, user-lookup, many sys-*). An unknown key gives 489 'Internal Error'. The dashboard uses creatable=true&viewable=true for its entity list (lab: group and user) and key=group&clientId=… for group attributes. Errors seen on the lab: an unknown key (key=nosuch) → 489 'Internal Error. Please contact Administrator.' rather than a not-found message.
 
 <a id="post-idmprov-rest-access-entities-details-list"></a>
 ### POST `/IDMProv/rest/access/entities/details/list`
@@ -260,7 +259,7 @@ Reads chosen attributes of a list of entities by DN (a read despite POST).
 
 **Example:** POST …/entities/details/list?entityKey=user&filterAttr=FirstName,LastName {userList:[{dn:'cn=uaadmin,ou=sa,o=data'}]}
 
-**Notes:** Missing entityKey: 'Entity key cannot be empty'. Missing userList: 'User dn is not found in the request payload'. A DN that is not of the given entity also gives that message. Not used by the dashboard.
+**Notes:** Missing entityKey: 'Entity key cannot be empty'. Missing userList: 'User dn is not found in the request payload'. A DN that is not of the given entity also gives that message. Not used by the dashboard. Errors seen on the lab: {} → 489 'Entity key cannot be empty'; entityKey=user with filterAttr and a dns list → 489 'Internal Error. Please contact Administrator.'; entityKey=group with userList → 489 'User dn is not found in the request payload.'.
 
 <a id="get-idmprov-rest-access-entities-globallist"></a>
 ### GET `/IDMProv/rest/access/entities/globalList`
@@ -278,7 +277,7 @@ Returns the key/value pairs of one global choice list (ChoiceDefs).
 
 **Example:** GET …/entities/globalList?key=request-scope&locale=en
 
-**Notes:** Without key the server fails with a 500 HTML page; an unknown key gives 489 'Identifier [x] does not exist for this service operation.'
+**Notes:** Without key the server fails with a 500 HTML page; an unknown key gives 489 'Identifier [x] does not exist for this service operation.' Errors seen on the lab: no parameters → HTML 500; an unknown key → 489 'Identifier [nosuch] does not exist for this service operation.'.
 
 <a id="delete-idmprov-rest-access-entities-item"></a>
 ### DELETE `/IDMProv/rest/access/entities/item`
@@ -319,7 +318,7 @@ Delete one or more directory objects.
 
 Create a directory object of any creatable entity (user, group, …) from its entity definition.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects), live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -362,7 +361,7 @@ Create a directory object of any creatable entity (user, group, …) from its en
 
 **Example:** POST …/access/entities/item?clientId=1 {key:'user', attributes:[cn, FirstName, LastName, container]}
 
-**Notes:** Also creates a user WITHOUT a password (key user, FirstName and LastName required on the lab): the way to get a scratch user when POST /access/user is refused by the password policy. Same DN again: 489 EntityAlreadyExist.
+**Notes:** Also creates a user WITHOUT a password (key user, FirstName and LastName required on the lab): the way to get a scratch user when POST /access/user is refused by the password policy. Same DN again: 489 EntityAlreadyExist. It only creates: a body {key, dn} meant as a read answered 489 'Attribute: Container is required'. Errors seen on the lab: a group without the required Description → 489 'Attribute: Description is required'; the same cn again → 489 'Entity ID already exists. Specify a different Entity ID.'.
 
 <a id="put-idmprov-rest-access-entities-item"></a>
 ### PUT `/IDMProv/rest/access/entities/item`
@@ -430,7 +429,7 @@ Searches objects of one DAL entity, paged, or reads one object by DN.
 
 **Example:** GET …/access/entities/list?entityKey=user&q=*&searchKeys=FirstName&nextIndex=1&size=2
 
-**Notes:** With searchKeys the rows carry only those attributes; with isDynamic=true all the entity's display attributes (Department, Email, FirstName, …). Paging: size=2 gave nextIndex 3, totalCount 3. entityDN + filterAttr reads DN-valued attributes of one object, resolved to names: filterAttr=directReports on the manager listed both reports; filterAttr=manager,group on Alice gave her manager and her group (comma-separated keys work). entityKey=group with searchKeys=Description listed both groups; searchKeys=cn for groups gave 489 'Internal Error' (use an attribute the definition has; cn is not one for group). sortBy FirstName or LastName: 489 'Sort column is not specified as entity display attribute' (no per-client entity configuration on the lab, so no display attributes to sort by). With no per-client entity configuration (dashboard Configuration > Entities) and neither searchKeys nor isDynamic, the server answers 489 'Entity configuration is missing'. sys-nrf-role with searchKeys=cn also gave 'Internal Error'.
+**Notes:** With searchKeys the rows carry only those attributes; with isDynamic=true all the entity's display attributes (Department, Email, FirstName, …). Paging: size=2 gave nextIndex 3, totalCount 3. entityDN + filterAttr reads DN-valued attributes of one object, resolved to names: filterAttr=directReports on the manager listed both reports; filterAttr=manager,group on Alice gave her manager and her group (comma-separated keys work). entityKey=group with searchKeys=Description listed both groups; searchKeys=cn for groups gave 489 'Internal Error' (use an attribute the definition has; cn is not one for group). sortBy FirstName or LastName: 489 'Sort column is not specified as entity display attribute' (no per-client entity configuration on the lab, so no display attributes to sort by). With no per-client entity configuration (dashboard Configuration > Entities) and neither searchKeys nor isDynamic, the server answers 489 'Entity configuration is missing'. sys-nrf-role with searchKeys=cn also gave 'Internal Error'. Errors seen on the lab: no entityKey → 489 'Entity key cannot be empty'; entityKey=group with searchKeys=cn → 489 'Internal Error. Please contact Administrator.'; sortBy on a column that is not a display attribute → 489 'Sort column is not specified as entity display attribute'; entityKey=group on the lab → 489 'Entity configuration is missing'.
 
 <a id="get-idmprov-rest-access-entities-quickinfo"></a>
 ### GET `/IDMProv/rest/access/entities/quickInfo`
@@ -494,7 +493,7 @@ Returns the attribute schema of an entity, or of the client's user-settings attr
 
 **Example:** GET …/entities/schema?entityName=user  /  …?minimalData=true&entityName=clientSettings&binaryAttr=true
 
-**Notes:** Missing entityName: 489 'Internal Error'. The answer carries a field named password (an attribute-name setting, not a credential). clientSettings also returns the user create container (lab ou=users,o=data) and namingAttr cn. The dashboard puts entityName twice in some URLs (…&entityName=clientSettings&editable=true appended to a URL that already has it).
+**Notes:** Missing entityName: 489 'Internal Error'. The answer carries a field named password (an attribute-name setting, not a credential). clientSettings also returns the user create container (lab ou=users,o=data) and namingAttr cn. The dashboard puts entityName twice in some URLs (…&entityName=clientSettings&editable=true appended to a URL that already has it). Errors seen on the lab: no parameters → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-entities-schema-rra"></a>
 ### GET `/IDMProv/rest/access/entities/schema/rra`
@@ -515,7 +514,7 @@ Returns the attribute schema used for role, resource and assignment lists.
 
 **Example:** GET …/entities/schema/rra?entityName=sys-nrf-role
 
-**Notes:** The dashboard's own constant puts a trailing space after the name ('sys-nrf-role '); sent literally that gives 489 'Internal Error', so the browser must be trimming or the space is URL-dropped. Without entityName: 'Internal Error'.
+**Notes:** The dashboard's own constant puts a trailing space after the name ('sys-nrf-role '); sent literally that gives 489 'Internal Error', so the browser must be trimming or the space is URL-dropped. Without entityName: 'Internal Error'. Errors seen on the lab: no parameters → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-gcv-value"></a>
 ### GET `/IDMProv/rest/access/gcv/value`
@@ -555,7 +554,7 @@ Delete one group.
 
 **Example:** DELETE …/access/groups {dn}
 
-**Notes:** A second delete of the same DN gives 489 'Entity/object not found: <dn>.'. One group per call.
+**Notes:** A second delete of the same DN gives 489 'Entity/object not found: <dn>.'. One group per call. Errors seen on the lab: a group already deleted → 489 'Entity/object not found: <DN>.'.
 
 <a id="get-idmprov-rest-access-groups"></a>
 ### GET `/IDMProv/rest/access/groups`
@@ -665,7 +664,7 @@ Lists a group's members, filtered by full name and paged (a read despite POST).
 
 **Example:** POST …/access/groups/members?q=*&nextIndex=1&size=5 {dn:<group DN>}
 
-**Notes:** Lists the group's members with full names. size=1 gave nextIndex 2 with total 2; sortOrder=desc reversed the order (by name); q=Bob filtered to Bob (q matches the name). A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name, in memory.
+**Notes:** Lists the group's members with full names. size=1 gave nextIndex 2 with total 2; sortOrder=desc reversed the order (by name); q=Bob filtered to Bob (q matches the name). A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name, in memory. Errors seen on the lab: a group that does not exist → 489 'Invalid Group Detected: [<DN>].'; {} → 489 'Invalid Group Detected: [null].'.
 
 <a id="get-idmprov-rest-access-groups-membershipinfo"></a>
 ### GET `/IDMProv/rest/access/groups/membershipInfo`
@@ -689,7 +688,7 @@ Lists the groups a user belongs to.
 
 Lists, per helpdesk access resource, the helpdesk users for a user.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -699,7 +698,7 @@ Lists, per helpdesk access resource, the helpdesk users for a user.
 
 **Example:** GET …/helpdesk?userDN=cn=uaadmin,ou=sa,o=data
 
-**Notes:** Lab returns six system helpdesk resources (Teams, User Catalog, Reassign, History, Organization Chart, Group) each with an empty users list. Missing userDN: 'Value for userDN is missing in payload'.
+**Notes:** Lab returns six system helpdesk resources (Teams, User Catalog, Reassign, History, Organization Chart, Group) each with an empty users list. Missing userDN: 'Value for userDN is missing in payload'. After POST /access/config/helpdesk added a user to a helpdesk resource, that resource listed the user as {dn, fullName} (the save takes {userDn, action}).
 
 <a id="get-idmprov-rest-access-helpdesk-category"></a>
 ### GET `/IDMProv/rest/access/helpdesk/category`
@@ -717,7 +716,7 @@ Lists the helpdesk addressees for a user and one helpdesk resource.
 
 **Example:** GET …/access/helpdesk/category?userDn=<user DN>&resDn=<helpdesk resource DN>
 
-**Notes:** Returns the helpdesk addressees for a ticket: the users who hold that helpdesk resource with the requester's client as its parameter. Assign them through POST /access/config/helpdesk (accessRights users {userDn, action:'add'}). Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.
+**Notes:** Returns the helpdesk addressees for a ticket: the users who hold that helpdesk resource with the requester's client as its parameter. Assign them through POST /access/config/helpdesk (accessRights users {userDn, action:'add'}). Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk. Errors seen on the lab: no userDn → 489 'Value for userDn is missing in payload…'; no resDn → 489 'Value for resDn is missing in payload…'.
 
 <a id="post-idmprov-rest-access-helpdesk-ticket"></a>
 ### POST `/IDMProv/rest/access/helpdesk/ticket`
@@ -746,7 +745,7 @@ Returns a user's quick info and number of direct reports for the classic org cha
 
 **Example:** GET …/access/orgChart?dn=<manager DN>&clientId=1
 
-**Notes:** With reports set: the manager's totalNumberOfReportees 2 and a reportees list with each report's quick info (only appears when the user has directReports). Here attributes carry a single value field, unlike the attributeValues lists of /users/list. Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN …'. The current dashboard uses /orgChart/v2 instead.
+**Notes:** With reports set: the manager's totalNumberOfReportees 2 and a reportees list with each report's quick info (only appears when the user has directReports). Here attributes carry a single value field, unlike the attributeValues lists of /users/list. Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN …'. The current dashboard uses /orgChart/v2 instead. Errors seen on the lab: no dn → 489 'Internal Error. Please contact Administrator.'; a DN that does not exist → 489 'Id (id:) must be a valid DN <DN>'.
 
 <a id="get-idmprov-rest-access-orgchart-managers"></a>
 ### GET `/IDMProv/rest/access/orgChart/managers`
@@ -764,7 +763,7 @@ Returns a user's manager chain (hierarchy upward).
 
 **Example:** GET …/access/orgChart/managers?dn=<user DN>&clientId=1
 
-**Notes:** Reads the user's manager attribute (the DAL key manager) and walks up while each manager has one; each step names the person below it in directReportee and gives the manager's directReports count. For Alice: one manager with totalNumberOfReportees 2. For the manager himself (no manager): only totalNumberOfReportees 0 (the top-level count is not the user's own reports). The org chart uses two separate attributes: manager on each report, directReports on the manager; the server does not keep them in step, so set both. Without dn: 'Internal Error'. The dashboard defines it (task approval pages).
+**Notes:** Reads the user's manager attribute (the DAL key manager) and walks up while each manager has one; each step names the person below it in directReportee and gives the manager's directReports count. For Alice: one manager with totalNumberOfReportees 2. For the manager himself (no manager): only totalNumberOfReportees 0 (the top-level count is not the user's own reports). The org chart uses two separate attributes: manager on each report, directReports on the manager; the server does not keep them in step, so set both. Without dn: 'Internal Error'. The dashboard defines it (task approval pages). Errors seen on the lab: no parameters → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-orgchart-target-list"></a>
 ### GET `/IDMProv/rest/access/orgChart/target/list`
@@ -785,7 +784,7 @@ Lists the targets of one relationship from an entity (the org chart 'level up' o
 
 **Example:** GET …/access/orgChart/target/list?dn=<user DN>&relationshipkey=user2users&clientId=1
 
-**Notes:** For user2users (source attribute @key, target attribute manager) it returns the values of the SOURCE's manager attribute: Alice gave her manager, the manager gave nothing. So this is the 'go up a level' list, not the reports. group2users from a group gave nothing (the group has no 'group' attribute). Only relationships whose source and target entity are the same are used; others are skipped silently. Paging with size=1 still gave nextIndex 0 for one result. Both dn and relationshipkey are required ('Value for … is missing in payload').
+**Notes:** For user2users (source attribute @key, target attribute manager) it returns the values of the SOURCE's manager attribute: Alice gave her manager, the manager gave nothing. So this is the 'go up a level' list, not the reports. group2users from a group gave nothing (the group has no 'group' attribute). Only relationships whose source and target entity are the same are used; others are skipped silently. Paging with size=1 still gave nextIndex 0 for one result. Both dn and relationshipkey are required ('Value for … is missing in payload'). Errors seen on the lab: no dn → 489 'Value for dn is missing in payload…'; no relationshipkey → 489 'Value for relationshipkey is missing in payload…'.
 
 <a id="get-idmprov-rest-access-orgchart-v2"></a>
 ### GET `/IDMProv/rest/access/orgChart/v2`
@@ -807,7 +806,7 @@ Returns an entity with its related targets per relationship for the org chart.
 
 **Example:** GET …/access/orgChart/v2?entityDN=<manager DN>&entityDefKey=user&relationshipKeys=user2users&clientId=1
 
-**Notes:** With data: for user2users the targets are the users whose manager is the entity (query on the target attribute), so the manager showed both reports; for entityDefKey=group with group2users the group showed its members. STALE CACHE: right after the fixture was made every v2 call (even the one that worked earlier for uaadmin) answered 489 'Internal Error'; after DELETE /admin/cache/holder/items {cacheHolderItems:[{cacheHolderID:'All Cache'}]} (204) all worked. For user2users total is the directReports count. Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object and the call fails with 'Invalid entity relationship key : {"key":"user2users",…}' (seen again with data), so always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart.
+**Notes:** With data: for user2users the targets are the users whose manager is the entity (query on the target attribute), so the manager showed both reports; for entityDefKey=group with group2users the group showed its members. STALE CACHE: right after the fixture was made every v2 call (even the one that worked earlier for uaadmin) answered 489 'Internal Error'; after DELETE /admin/cache/holder/items {cacheHolderItems:[{cacheHolderID:'All Cache'}]} (204) all worked. For user2users total is the directReports count. Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object and the call fails with 'Invalid entity relationship key : {"key":"user2users",…}' (seen again with data), so always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart. Errors seen on the lab: right after test users were created, every call → 489 'Internal Error. Please contact Administrator.' until an All Cache flush; no relationshipKeys → 489 'Invalid entity relationship key : {…}' (the client's default relationship is stored as a JSON object); no entityDN → 489 'Invalid input'.
 
 <a id="post-idmprov-rest-access-query-global"></a>
 ### POST `/IDMProv/rest/access/query/global`
@@ -845,7 +844,7 @@ Runs a predefined global query and returns matching entities (a read despite POS
 
 **Answer:** query result entities
 
-**Notes:** Missing key: 'Provide the query key'. The lab defines no global queries (/query/list total 0); an unknown key gives 'Internal Error'. Not used by the dashboard.
+**Notes:** Missing key: 'Provide the query key'. The lab defines no global queries (/query/list total 0); an unknown key gives 'Internal Error'. Not used by the dashboard. Errors seen on the lab: an unknown key → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-access-query-list"></a>
 ### GET `/IDMProv/rest/access/query/list`
@@ -910,7 +909,7 @@ Tells what the signed-in user (or the user they act for) may do when requesting 
 
 **Example:** GET …/rob
 
-**Notes:** proxyUser must be someone the caller is a proxy for, otherwise 489 SecurityException 'User x is not a proxy for y' (even for yourself). Lab: uaadmin is admin in PROVISIONING, ROLES, RESOURCES.
+**Notes:** proxyUser must be someone the caller is a proxy for, otherwise 489 SecurityException 'User x is not a proxy for y' (even for yourself). Lab: uaadmin is admin in PROVISIONING, ROLES, RESOURCES. Errors seen on the lab: proxyUser = the caller → 489 'Error getting proxy security context. User '<DN>' is not a proxy for '<DN>'.'.
 
 <a id="get-idmprov-rest-access-rob-ismproperties-oauth"></a>
 ### GET `/IDMProv/rest/access/rob/ismproperties/oauth`
@@ -958,7 +957,7 @@ Delete users.
 
 Creates a user and optionally sets the password.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + server log + live 2026-10-31.
+**Status:** validated on the lab. **Evidence:** server code + server log + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1005,9 +1004,9 @@ Creates a user and optionally sets the password.
 }
 ```
 
-**Answer:** password-update result for the new user
+**Answer:** {dn}
 
-**Notes:** Every attribute needs isRequired (true or false): without it the server fails with 489 'Internal Error' (seen in the server log). On the lab the create then stopped at the password policy: 489 'Cannot create the user. The password does not meet the password policy criteria.' (subcode errorResponseDuringNmasPasswordMgmt), because no initial password was sent; a user without a password can be created with POST /access/entities/item key=user. An existing DN gives 489 existing-user. Values are XSS-checked (400).
+**Notes:** Creates a user with an initial password. Every attribute needs isRequired (true or false): without it the server fails with 489 'Internal Error' (a null pointer in the server log). The password must meet the password policy that applies to the new user, which is per installation: on the lab a 15-character password was refused with 489 'Cannot create the user. The password does not meet the password policy criteria.' (subcode errorResponseDuringNmasPasswordMgmt; the lab's policy allows at most 12) and a 12-character one with upper and lower case, digits and two special characters worked; no password at all gave the same refusal. The new user could then sign in with the OSP password grant. A user without a password can be created with POST /access/entities/item key=user. An existing DN gives 489 existing-user. Values are XSS-checked (400).
 
 <a id="put-idmprov-rest-access-user"></a>
 ### PUT `/IDMProv/rest/access/user`
@@ -1067,7 +1066,7 @@ Says whether a user is a domain or delegated administrator of a domain.
 
 **Example:** GET …/user/admin?userDn=cn=uaadmin,ou=sa,o=data&level=1&type=ROLES
 
-**Notes:** The reference lists PRD as a type, but the server only accepts PROVISIONING for that domain. Missing type: 'Value for type is either invalid or not supported'. Lab uaadmin, level 1: ROLES/COMPLIANCE/PROVISIONING/RBPM-APP true, SECURITY false. Not used by the dashboard.
+**Notes:** The reference lists PRD as a type, but the server only accepts PROVISIONING for that domain. Missing type: 'Value for type is either invalid or not supported'. Lab uaadmin, level 1: ROLES/COMPLIANCE/PROVISIONING/RBPM-APP true, SECURITY false. Not used by the dashboard. Errors seen on the lab: no userDN → 489 'Value for userDN is missing in payload…'; no type → 489 'Value for type is either invalid or not supported…'; level=3 → 489 'Value for level is either invalid or not supported…'.
 
 <a id="post-idmprov-rest-access-user-dn"></a>
 ### POST `/IDMProv/rest/access/user/dn`

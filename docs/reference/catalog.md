@@ -126,7 +126,7 @@ Removes the signed-in user's own role/resource/PRD permission assignments (self-
 
 **Example:** DELETE …/access/assignments {reason, assignments:[{id, entityType, instanceId}]}
 
-**Notes:** Removed a role the caller held directly (entityType role, no instanceId needed); GET /access/assignments no longer listed it 20 s later. Acts on the caller's own assignments only. Inherited assignments and non-removable ones are refused with their own messages.
+**Notes:** Removed a role the caller held directly (entityType role, no instanceId needed); GET /access/assignments no longer listed it 20 s later. Acts on the caller's own assignments only. Inherited assignments and non-removable ones are refused with their own messages. Errors seen on the lab: an empty assignments list → 489 'No permission assignment(s) were specified for removal'.
 
 <a id="get-idmprov-rest-access-assignments-identities"></a>
 ### GET `/IDMProv/rest/access/assignments/identities`
@@ -188,7 +188,7 @@ Revokes domain or delegated administrator assignments from identities.
 
 Lists the administrator assignments (domain and delegated admins) in all domains.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -203,7 +203,7 @@ Lists the administrator assignments (domain and delegated admins) in all domains
 
 **Example:** GET …/admin/administrator/assignments?q=*&nextIndex=1&size=5&sortColumn=assignee&sortOrder=asc
 
-**Notes:** Lab: uaadmin holds both Domain Admin and Delegated Admin rows for Provisioning, etc. Values seen: adminTypeKey DOMAIN_ADMIN / DELEGATED_ADMIN, assignmentTypeKey USER, domainType PROVISIONING/ROLES/RESOURCES/SECURITY, status COMPLETED. Dates are epoch milliseconds. filterSearch=bogus gave the same rows as ALL.
+**Notes:** Lab: uaadmin holds both Domain Admin and Delegated Admin rows for Provisioning, etc. Values seen: adminTypeKey DOMAIN_ADMIN / DELEGATED_ADMIN, assignmentTypeKey USER, domainType PROVISIONING/ROLES/RESOURCES/SECURITY, status COMPLETED. Dates are epoch milliseconds. filterSearch=bogus gave the same rows as ALL. The end of the list is marked nextIndex -1 (other lists use 0). A delegated administrator made with …/assignments/create shows with status COMPLETED at once.
 
 <a id="get-idmprov-rest-admin-administrator-assignments-admindomains"></a>
 ### GET `/IDMProv/rest/admin/administrator/assignments/adminDomains`
@@ -420,7 +420,7 @@ Lists the granular permissions that can be delegated in an administration domain
 
 Lists the granular permissions a delegated administrator holds in one domain.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (test users, groups and a team), live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -437,7 +437,7 @@ Lists the granular permissions a delegated administrator holds in one domain.
 
 **Example:** GET …/admin/permission/assignment?assigneeDn=<team DN>&domain=ROLES&q=*&nextIndex=1&size=5
 
-**Notes:** assigneeDn can be a team DN: it then lists the team's granted permissions (Assign Role To User, Revoke Role From User on the role). A team manager's own DN showed nothing: team grants are held by the team, not by its managers. Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; domain PRD refused.
+**Notes:** assigneeDn can be a team DN: it then lists the team's granted permissions (Assign Role To User, Revoke Role From User on the role). A team manager's own DN showed nothing: team grants are held by the team, not by its managers. Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; domain PRD refused. The end of the list is marked nextIndex -1 (other lists use 0).
 
 <a id="get-idmprov-rest-admin-permission-rights"></a>
 ### GET `/IDMProv/rest/admin/permission/rights`
@@ -454,7 +454,7 @@ Tells whether the signed-in administrator may create roles, resources or SoDs.
 
 **Example:** GET …/admin/permission/rights?objectType=role
 
-**Notes:** Field is spelled isAccesible. Lab (uaadmin): role → 'create Role' true, resource → 'create Resource' true, sod → 'create Sod' true; 'Role' (capital) and 'prd' → {isAccesible:false}. Domain admins of ROLES (role, sod) / RESOURCES (resource) get true; delegated admins are checked against their create rights.
+**Notes:** Field is spelled isAccesible. Lab (uaadmin): role → 'create Role' true, resource → 'create Resource' true, sod → 'create Sod' true; 'Role' (capital) and 'prd' → {isAccesible:false}. Domain admins of ROLES (role, sod) / RESOURCES (resource) get true; delegated admins are checked against their create rights. Errors seen on the lab: no objectType → 412 'Cannot invoke …' (a null-pointer message).
 
 <a id="get-idmprov-rest-admin-permission-rootcontainer"></a>
 ### GET `/IDMProv/rest/admin/permission/rootContainer`
@@ -471,7 +471,7 @@ Gives the container DNs that granular permissions of a domain can be scoped to.
 
 **Example:** GET …/admin/permission/rootContainer?domain=ROLES
 
-**Notes:** ROLES → RoleDefs, configuration, SoDDefs; RESOURCES → ResourceDefs, configuration, driverset1; PROVISIONING → RequestDefs, User Application Driver. Missing domain: 489 'Internal Error'; PRD 489; SECURITY 412 not supported. The dashboard picks SoDDefs from the ROLES answer for new SoDs.
+**Notes:** ROLES → RoleDefs, configuration, SoDDefs; RESOURCES → ResourceDefs, configuration, driverset1; PROVISIONING → RequestDefs, User Application Driver. Missing domain: 489 'Internal Error'; PRD 489; SECURITY 412 not supported. The dashboard picks SoDDefs from the ROLES answer for new SoDs. Errors seen on the lab: no domain → 489 'Internal Error. Please contact Administrator.'; domain=SECURITY → 412 'Given Domain type is not supported for Administartion Type' (sic).
 
 <a id="post-idmprov-rest-catalog-delegatedadmin-rights"></a>
 ### POST `/IDMProv/rest/catalog/delegatedAdmin/rights`
@@ -547,7 +547,7 @@ Returns a driver with its entitlements (types, views/logical systems, parameter 
 
 **Example:** POST …/catalog/drivers/driver {id:"cn=<driver>,cn=driverset1,o=system"}
 
-**Notes:** entitlementType is STATIC_PARAMS for an entitlement with a fixed list of values and APP_QUERY_PARAMS for one whose values come from a query of the connected system (query-app). Only query entitlements have views; a view's viewID is the code map key (an escaped GUID such as \97\64\89…), used by the code map calls. The entitlement ids come back lower-cased. cprsSupported=true gave the same list when every entitlement is cprs-supported. Entitlements whose configuration is missing or not resource-mapping-enabled are left out.
+**Notes:** entitlementType is STATIC_PARAMS for an entitlement with a fixed list of values and APP_QUERY_PARAMS for one whose values come from a query of the connected system (query-app). Only query entitlements have views; a view's viewID is the code map key (an escaped GUID such as \97\64\89…), used by the code map calls. The entitlement ids come back lower-cased. cprsSupported=true gave the same list when every entitlement is cprs-supported. Entitlements whose configuration is missing or not resource-mapping-enabled are left out. Errors seen on the lab: {} → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="post-idmprov-rest-catalog-drivers-driverentitlementviewvalues-list"></a>
 ### POST `/IDMProv/rest/catalog/drivers/driverEntitlementViewValues/list`
@@ -620,7 +620,7 @@ Paged variant: lists code-map values of entitlements that have a logical system 
 
 **Example:** POST …/drivers/driverEntitlementViewValues/listV2?query=*&pageSize=10&nextIndex=1 {id, viewID, entitlements:[{id, displayName, paramLogicSystem}]}
 
-**Notes:** Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing.
+**Notes:** Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing. Errors seen on the lab: entitlements without paramLogicSystem → 489 'Error occurred retrieving data from Provisioning Param Code Map table.'.
 
 <a id="post-idmprov-rest-catalog-drivers-entitlementvalues-list"></a>
 ### POST `/IDMProv/rest/catalog/drivers/entitlementValues/list`
@@ -776,7 +776,7 @@ Finds the existing resources bound to an entitlement value, or proposes a new on
 
 **Example:** POST …/catalog/entitlements/resources {entitlements:[{id:"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system", parameterValue:"{\"ID\":\"<value>\"}", driverName:"<driver name>"}]}
 
-**Notes:** Read-only: finds the resources bound to each entitlement and value. The value must match what the resource stores exactly: compact JSON for a query entitlement ({"ID":"…"}, no spaces), the plain value for a fixed-value one. When no resource matches, the server proposes an unsaved one built from the entitlement. A made-up entitlement DN gave 489 'Internal Error'.
+**Notes:** Read-only: finds the resources bound to each entitlement and value. The value must match what the resource stores exactly: compact JSON for a query entitlement ({"ID":"…"}, no spaces), the plain value for a fixed-value one. When no resource matches, the server proposes an unsaved one built from the entitlement. A made-up entitlement DN gave 489 'Internal Error'. Errors seen on the lab: an entitlement DN that does not exist → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="post-idmprov-rest-catalog-entitlements-tempresources"></a>
 ### POST `/IDMProv/rest/catalog/entitlements/tempResources`
@@ -869,7 +869,7 @@ Create a resource (here without an entitlement binding).
 
 **Example:** POST …/catalog/resources {id, name, description}
 
-**Notes:** No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {"ID":"…"} (live 2026-10-31).
+**Notes:** No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {"ID":"…"} (live 2026-10-31). Errors seen on the lab: entitlements without action → 489 'Internal Error. Please contact Administrator.' (null pointer in the server log).
 
 <a id="post-idmprov-rest-catalog-resources-category"></a>
 ### POST `/IDMProv/rest/catalog/resources/category`
@@ -951,7 +951,7 @@ Searches resources (v1 list; the dashboard uses listV2 instead).
 
 **Example:** GET …/catalog/resources/list?q=*&nextIndex=1&size=3&categoryKeys=helpdesk&sortBy=description&sortOrder=desc
 
-**Notes:** Lab: 6 resources, all helpdesk system resources. Only domain or delegated resource admins (else 489 security). sortBy=driver → 489.
+**Notes:** Lab: 6 resources, all helpdesk system resources. Only domain or delegated resource admins (else 489 security). sortBy=driver → 489. Errors seen on the lab: sortBy=driver → 489 'Invalid sort-by column: driver'.
 
 <a id="delete-idmprov-rest-catalog-resources-resource"></a>
 ### DELETE `/IDMProv/rest/catalog/resources/resource`
@@ -1006,7 +1006,7 @@ Returns full details of one or more resources (v1).
 
 **Example:** POST …/catalog/resources/resource {resources:[{id:"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}]}
 
-**Notes:** Read despite the POST. Only resource domain/delegated admins. The dashboard uses resourceV2 instead.
+**Notes:** Read despite the POST. Only resource domain/delegated admins. The dashboard uses resourceV2 instead. Errors seen on the lab: a resource that was deleted → 489 'Permission with id [<DN>] does not exist.'.
 
 <a id="put-idmprov-rest-catalog-resources-resource"></a>
 ### PUT `/IDMProv/rest/catalog/resources/resource`
@@ -1267,7 +1267,7 @@ Checks proposed resource names: whether the resulting id already exists, and a u
 
 **Example:** POST …/catalog/resources/validateResourceNames {resourceNames:[{name:"Group Access"}]}
 
-**Notes:** Invalid characters are stripped/replaced in suggestedName ('Group/Access' → 'Group_Access'); names over 64 characters are cut. The existence check looks for the id in the default resource container, so even existing System resources ('Helpdesk-Group') answered isNameExist false. Not called by the dashboard bundles.
+**Notes:** Invalid characters are stripped/replaced in suggestedName ('Group/Access' → 'Group_Access'); names over 64 characters are cut. The existence check looks for the id in the default resource container, so even existing System resources ('Helpdesk-Group') answered isNameExist false. Not called by the dashboard bundles. Errors seen on the lab: {name} instead of {resourceNames:[{name}]} → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-catalog-resources-views"></a>
 ### GET `/IDMProv/rest/catalog/resources/views`
@@ -1325,7 +1325,7 @@ Searches roles (v1 list; the dashboard uses listV2).
 
 **Example:** GET …/catalog/roles/list?q=*&nextIndex=1&size=3&roleLevel=20&sortBy=name&sortOrder=desc
 
-**Notes:** Lab: 10 system roles, all level 20; categoryKeys=system finds them, default finds none. Only role domain or delegated admins (else 489). sortBy=level → 489 'Invalid sort-by column: level'.
+**Notes:** Lab: 10 system roles, all level 20; categoryKeys=system finds them, default finds none. Only role domain or delegated admins (else 489). sortBy=level → 489 'Invalid sort-by column: level'. Errors seen on the lab: roleLevel=bogus → 489 'Internal Error. Please contact Administrator.'; sortOrder=up → 489 'Invalid sort order: up'.
 
 <a id="delete-idmprov-rest-catalog-roles-mappedresources"></a>
 ### DELETE `/IDMProv/rest/catalog/roles/mappedResources`
@@ -1356,7 +1356,7 @@ Remove resource mappings from a role.
 
 **Example:** DELETE …/catalog/roles/mappedResources {roleId, mappedResources:[{id, entityKey}]}
 
-**Notes:** entityKey is what the server deletes by; the mapping list was empty afterwards.
+**Notes:** entityKey is what the server deletes by; the mapping list was empty afterwards. Errors seen on the lab: a mapping without entityKey → 489 'Internal Error. Please contact Administrator.' (entityKey is what the server deletes by).
 
 <a id="post-idmprov-rest-catalog-roles-mappedresources"></a>
 ### POST `/IDMProv/rest/catalog/roles/mappedResources`
@@ -1514,7 +1514,7 @@ Lists a role's parent roles.
 
 **Example:** POST …/catalog/roles/parentRoles/list?nextIndex=1&size=10&q=* {id:"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}
 
-**Notes:** Lists the role's parents (a level-20 role over a level-10 one here), with the requestDescription given when the link was made. Unknown role → 400 'not found'.
+**Notes:** Lists the role's parents (a level-20 role over a level-10 one here), with the requestDescription given when the link was made. Unknown role → 400 'not found'. Each parent's level comes as roleLevel: {level}, while POST …/subRoles/list gives a plain level number.
 
 <a id="post-idmprov-rest-catalog-roles-role-assignments"></a>
 ### POST `/IDMProv/rest/catalog/roles/role/assignments`
@@ -1652,7 +1652,7 @@ Returns full details of roles (what the dashboard uses).
 
 **Example:** POST …/catalog/roles/roleV2 {roles:[{id:"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}]}
 
-**Notes:** A bare {id} (without the roles list) gives 489. Callers without read rights on a system role get 489 'unauthorized to view System Role Details'.
+**Notes:** A bare {id} (without the roles list) gives 489. Callers without read rights on a system role get 489 'unauthorized to view System Role Details'. Errors seen on the lab: {id} instead of {roles:[{id}]} → 489 'Permission with id [] does not exist.'.
 
 <a id="delete-idmprov-rest-catalog-roles-subroles"></a>
 ### DELETE `/IDMProv/rest/catalog/roles/subRoles`
@@ -1746,7 +1746,7 @@ Lists a role's child roles with their request details.
 
 **Example:** POST …/catalog/roles/subRoles/list?nextIndex=1&size=10&q=* {id:"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}
 
-**Notes:** Lists the role's children with level and the link's requestDescription. Dashboard always asks from nextIndex 1.
+**Notes:** Lists the role's children with level and the link's requestDescription. Dashboard always asks from nextIndex 1. Each child's level is a plain number (level: 10), while POST …/parentRoles/list gives each parent's as an object (roleLevel: {level: 20}). Errors seen on the lab: {} → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="post-idmprov-rest-catalog-sods"></a>
 ### POST `/IDMProv/rest/catalog/sods`
@@ -1785,7 +1785,7 @@ Create a separation-of-duties constraint between two roles.
 
 **Example:** POST …/catalog/sods {id:"<cn>", name, description, roles:[{id:<role 1>},{id:<role 2>}], sodApprovalType:"alwaysAllow"}
 
-**Notes:** sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error' (a null approval type, seen in the server log); that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written.
+**Notes:** sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error' (a null approval type, seen in the server log); that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written. Errors seen on the lab: sodApprovalType as an enum name or code → 489 'Internal Error. Please contact Administrator.'.
 
 <a id="get-idmprov-rest-catalog-sods-defaultapprovals"></a>
 ### GET `/IDMProv/rest/catalog/sods/defaultApprovals`
@@ -1913,13 +1913,13 @@ Lists the User Application cache holders and their object counts.
 
 Shows the cache cluster (JGroups) name, local address and state.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30, live 2026-10-31 (non-admin test user).
 
 **Answer:** {clusterName, localAdrress, sentBytes, rcvdBytes, sentMessages, rcvdMessages, isOpen, isConnected, dumpStats} or {}
 
 **Example:** GET …/catalog/statistics/clusterinfo
 
-**Notes:** Lab is not clustered: {}. Field is spelled localAdrress.
+**Notes:** Lab is not clustered: {}. Field is spelled localAdrress. An ordinary user gets 403 (GarnetLoginUnAuthorizedSecurityException).
 
 <a id="get-idmprov-rest-catalog-statistics-jvmstats"></a>
 ### GET `/IDMProv/rest/catalog/statistics/jvmstats`
@@ -1939,13 +1939,13 @@ Per-node JVM memory statistics.
 
 JVM memory, runtime, OS and class-loader statistics.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31 (non-admin test user).
 
 **Answer:** {memoryInfo:{jvmMemoryUsage, jvmMemoryPool, systemMemoryUsage, commitedVirtualMemory}, runtimeStats:[{uptime, startTime, systemProperties:[{key,value}]}], operatingSystemStats, classLoaderStats}
 
 **Example:** GET …/catalog/statistics/memoryinfo
 
-**Notes:** systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. The method itself checks no rights; on the lab it was called as the applications administrator. Value not recorded here.
+**Notes:** systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. The method itself checks no rights; on the lab it was called as the applications administrator. Value not recorded here. Signed in as an ordinary user (no administrator role) the call was refused with 403 (a 199-byte fault, the same size as the clusterinfo refusal): a filter in front of the statistics calls blocks non-administrators, though the method itself checks no rights. So the trust-store password is exposed to administrators, not to every user.
 
 <a id="get-idmprov-rest-catalog-statistics-threadinfo"></a>
 ### GET `/IDMProv/rest/catalog/statistics/threadinfo`
@@ -1996,13 +1996,13 @@ JVM memory statistics of the workflow engine nodes.
 
 Memory/runtime statistics of the workflow engine.
 
-**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-30, live 2026-10-31 (non-admin test user).
 
 **Answer:** same shape as memoryinfo
 
 **Example:** GET …/catalog/statistics/workflowmemoryinfo
 
-**Notes:** Like memoryinfo, it returns every JVM system property, the trust store's password among them (not recorded here).
+**Notes:** Like memoryinfo, it returns every JVM system property, the trust store's password among them (not recorded here). Signed in as an ordinary user it was refused with 403, like memoryinfo.
 
 <a id="get-idmprov-rest-catalog-statistics-workflowstatistics"></a>
 ### GET `/IDMProv/rest/catalog/statistics/workflowstatistics`

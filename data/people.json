@@ -319,7 +319,7 @@
   "body": null,
   "answer": "{entities:[{key, editKey, display, isCreatable, isEditable, isViewable, isRemovable, namingAttribute, attributes:[{key, displayLabel, dataType, isSearchable, isRequired, isEditable, isMultivalued, formatType, lookupEntity?, choiceList?\u2026}]}], totalCount:int}; with key: one entity object",
   "example": "GET \u2026/entities/definitions?key=user&clientId=1",
-  "notes": "Lab has 54 definitions (user, group, container, quick-user-info, user-lookup, many sys-*). An unknown key gives 489 'Internal Error'. The dashboard uses creatable=true&viewable=true for its entity list (lab: group and user) and key=group&clientId=\u2026 for group attributes.",
+  "notes": "Lab has 54 definitions (user, group, container, quick-user-info, user-lookup, many sys-*). An unknown key gives 489 'Internal Error'. The dashboard uses creatable=true&viewable=true for its entity list (lab: group and user) and key=group&clientId=\u2026 for group attributes. Errors seen on the lab: an unknown key (key=nosuch) \u2192 489 'Internal Error. Please contact Administrator.' rather than a not-found message.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -375,7 +375,7 @@
   },
   "answer": "{entityList:[{dn, attributes:[{key, displayLabel, attributeValues:[{@type,$}], dataType, \u2026}]}]}",
   "example": "POST \u2026/entities/details/list?entityKey=user&filterAttr=FirstName,LastName {userList:[{dn:'cn=uaadmin,ou=sa,o=data'}]}",
-  "notes": "Missing entityKey: 'Entity key cannot be empty'. Missing userList: 'User dn is not found in the request payload'. A DN that is not of the given entity also gives that message. Not used by the dashboard.",
+  "notes": "Missing entityKey: 'Entity key cannot be empty'. Missing userList: 'User dn is not found in the request payload'. A DN that is not of the given entity also gives that message. Not used by the dashboard. Errors seen on the lab: {} \u2192 489 'Entity key cannot be empty'; entityKey=user with filterAttr and a dns list \u2192 489 'Internal Error. Please contact Administrator.'; entityKey=group with userList \u2192 489 'User dn is not found in the request payload.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -402,7 +402,7 @@
   "body": null,
   "answer": "{mapList:[{key, value}]}",
   "example": "GET \u2026/entities/globalList?key=request-scope&locale=en",
-  "notes": "Without key the server fails with a 500 HTML page; an unknown key gives 489 'Identifier [x] does not exist for this service operation.'",
+  "notes": "Without key the server fails with a 500 HTML page; an unknown key gives 489 'Identifier [x] does not exist for this service operation.' Errors seen on the lab: no parameters \u2192 HTML 500; an unknown key \u2192 489 'Identifier [nosuch] does not exist for this service operation.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -521,8 +521,8 @@
   },
   "answer": "{dn}",
   "example": "POST \u2026/access/entities/item?clientId=1 {key:'user', attributes:[cn, FirstName, LastName, container]}",
-  "notes": "Also creates a user WITHOUT a password (key user, FirstName and LastName required on the lab): the way to get a scratch user when POST /access/user is refused by the password policy. Same DN again: 489 EntityAlreadyExist.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "Also creates a user WITHOUT a password (key user, FirstName and LastName required on the lab): the way to get a scratch user when POST /access/user is refused by the password policy. Same DN again: 489 EntityAlreadyExist. It only creates: a body {key, dn} meant as a read answered 489 'Attribute: Container is required'. Errors seen on the lab: a group without the required Description \u2192 489 'Attribute: Description is required'; the same cn again \u2192 489 'Entity ID already exists. Specify a different Entity ID.'.",
+  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
  },
  {
   "method": "PUT",
@@ -685,7 +685,7 @@
   "body": null,
   "answer": "{entityList:[{dn, attributes:[{key, displayLabel, attributeValues:[\u2026], dataType, \u2026}]}], nextIndex (-1 = no more), totalCount, hasMore}; with entityDN+filterAttr: {entityList:[{dn, attributes:[{key, attributeValues:[{@type:'entityInfoNode', dn, name, type}]}]}]}",
   "example": "GET \u2026/access/entities/list?entityKey=user&q=*&searchKeys=FirstName&nextIndex=1&size=2",
-  "notes": "With searchKeys the rows carry only those attributes; with isDynamic=true all the entity's display attributes (Department, Email, FirstName, \u2026). Paging: size=2 gave nextIndex 3, totalCount 3. entityDN + filterAttr reads DN-valued attributes of one object, resolved to names: filterAttr=directReports on the manager listed both reports; filterAttr=manager,group on Alice gave her manager and her group (comma-separated keys work). entityKey=group with searchKeys=Description listed both groups; searchKeys=cn for groups gave 489 'Internal Error' (use an attribute the definition has; cn is not one for group). sortBy FirstName or LastName: 489 'Sort column is not specified as entity display attribute' (no per-client entity configuration on the lab, so no display attributes to sort by). With no per-client entity configuration (dashboard Configuration > Entities) and neither searchKeys nor isDynamic, the server answers 489 'Entity configuration is missing'. sys-nrf-role with searchKeys=cn also gave 'Internal Error'.",
+  "notes": "With searchKeys the rows carry only those attributes; with isDynamic=true all the entity's display attributes (Department, Email, FirstName, \u2026). Paging: size=2 gave nextIndex 3, totalCount 3. entityDN + filterAttr reads DN-valued attributes of one object, resolved to names: filterAttr=directReports on the manager listed both reports; filterAttr=manager,group on Alice gave her manager and her group (comma-separated keys work). entityKey=group with searchKeys=Description listed both groups; searchKeys=cn for groups gave 489 'Internal Error' (use an attribute the definition has; cn is not one for group). sortBy FirstName or LastName: 489 'Sort column is not specified as entity display attribute' (no per-client entity configuration on the lab, so no display attributes to sort by). With no per-client entity configuration (dashboard Configuration > Entities) and neither searchKeys nor isDynamic, the server answers 489 'Entity configuration is missing'. sys-nrf-role with searchKeys=cn also gave 'Internal Error'. Errors seen on the lab: no entityKey \u2192 489 'Entity key cannot be empty'; entityKey=group with searchKeys=cn \u2192 489 'Internal Error. Please contact Administrator.'; sortBy on a column that is not a display attribute \u2192 489 'Sort column is not specified as entity display attribute'; entityKey=group on the lab \u2192 489 'Entity configuration is missing'.",
   "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
@@ -798,7 +798,7 @@
   "body": null,
   "answer": "{attributesList:[{key, displayLabel, dataType, isSearchable, isRequired, isEditable, isMultivalued, formatType, controlType}], password?, container?, namingAttr?, displayPhoto?}",
   "example": "GET \u2026/entities/schema?entityName=user  /  \u2026?minimalData=true&entityName=clientSettings&binaryAttr=true",
-  "notes": "Missing entityName: 489 'Internal Error'. The answer carries a field named password (an attribute-name setting, not a credential). clientSettings also returns the user create container (lab ou=users,o=data) and namingAttr cn. The dashboard puts entityName twice in some URLs (\u2026&entityName=clientSettings&editable=true appended to a URL that already has it).",
+  "notes": "Missing entityName: 489 'Internal Error'. The answer carries a field named password (an attribute-name setting, not a credential). clientSettings also returns the user create container (lab ou=users,o=data) and namingAttr cn. The dashboard puts entityName twice in some URLs (\u2026&entityName=clientSettings&editable=true appended to a URL that already has it). Errors seen on the lab: no parameters \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -846,7 +846,7 @@
   "body": null,
   "answer": "{attributesList:[{key, displayLabel, dataType, isSearchable, isSortable, isRequired, isEditable, isMultivalued, formatType}]}",
   "example": "GET \u2026/entities/schema/rra?entityName=sys-nrf-role",
-  "notes": "The dashboard's own constant puts a trailing space after the name ('sys-nrf-role '); sent literally that gives 489 'Internal Error', so the browser must be trimming or the space is URL-dropped. Without entityName: 'Internal Error'.",
+  "notes": "The dashboard's own constant puts a trailing space after the name ('sys-nrf-role '); sent literally that gives 489 'Internal Error', so the browser must be trimming or the space is URL-dropped. Without entityName: 'Internal Error'. Errors seen on the lab: no parameters \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -890,7 +890,7 @@
   },
   "answer": "{dn}",
   "example": "DELETE \u2026/access/groups {dn}",
-  "notes": "A second delete of the same DN gives 489 'Entity/object not found: <dn>.'. One group per call.",
+  "notes": "A second delete of the same DN gives 489 'Entity/object not found: <dn>.'. One group per call. Errors seen on the lab: a group already deleted \u2192 489 'Entity/object not found: <DN>.'.",
   "evidence": "live 2026-10-30 (scratch objects)"
  },
  {
@@ -1082,7 +1082,7 @@
   },
   "answer": "{recipients:[{name, dn, isGroupAssignment}], arraySize, nextIndex (0 = no more), currentIndex, endIndex, total}",
   "example": "POST \u2026/access/groups/members?q=*&nextIndex=1&size=5 {dn:<group DN>}",
-  "notes": "Lists the group's members with full names. size=1 gave nextIndex 2 with total 2; sortOrder=desc reversed the order (by name); q=Bob filtered to Bob (q matches the name). A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name, in memory.",
+  "notes": "Lists the group's members with full names. size=1 gave nextIndex 2 with total 2; sortOrder=desc reversed the order (by name); q=Bob filtered to Bob (q matches the name). A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name, in memory. Errors seen on the lab: a group that does not exist \u2192 489 'Invalid Group Detected: [<DN>].'; {} \u2192 489 'Invalid Group Detected: [null].'.",
   "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
@@ -1122,8 +1122,8 @@
   "body": null,
   "answer": "{accessRights:[{resourceDn, key, resourceName, users:[\u2026]}]}",
   "example": "GET \u2026/helpdesk?userDN=cn=uaadmin,ou=sa,o=data",
-  "notes": "Lab returns six system helpdesk resources (Teams, User Catalog, Reassign, History, Organization Chart, Group) each with an empty users list. Missing userDN: 'Value for userDN is missing in payload'.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lab returns six system helpdesk resources (Teams, User Catalog, Reassign, History, Organization Chart, Group) each with an empty users list. Missing userDN: 'Value for userDN is missing in payload'. After POST /access/config/helpdesk added a user to a helpdesk resource, that resource listed the user as {dn, fullName} (the save takes {userDn, action}).",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1149,7 +1149,7 @@
   "body": null,
   "answer": "{users:[user DN]}",
   "example": "GET \u2026/access/helpdesk/category?userDn=<user DN>&resDn=<helpdesk resource DN>",
-  "notes": "Returns the helpdesk addressees for a ticket: the users who hold that helpdesk resource with the requester's client as its parameter. Assign them through POST /access/config/helpdesk (accessRights users {userDn, action:'add'}). Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.",
+  "notes": "Returns the helpdesk addressees for a ticket: the users who hold that helpdesk resource with the requester's client as its parameter. Assign them through POST /access/config/helpdesk (accessRights users {userDn, action:'add'}). Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk. Errors seen on the lab: no userDn \u2192 489 'Value for userDn is missing in payload\u2026'; no resDn \u2192 489 'Value for resDn is missing in payload\u2026'.",
   "evidence": "server code + live 2026-10-31"
  },
  {
@@ -1188,7 +1188,7 @@
   "body": null,
   "answer": "{userQuickInfo:{dn, fullName, primaryAttributes:[{key, displayLabel, value, dataType}], secondaryAttributes, totalNumberOfReportees}, reportees:[{dn, fullName, \u2026}], totalNumberOfReportees}",
   "example": "GET \u2026/access/orgChart?dn=<manager DN>&clientId=1",
-  "notes": "With reports set: the manager's totalNumberOfReportees 2 and a reportees list with each report's quick info (only appears when the user has directReports). Here attributes carry a single value field, unlike the attributeValues lists of /users/list. Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN \u2026'. The current dashboard uses /orgChart/v2 instead.",
+  "notes": "With reports set: the manager's totalNumberOfReportees 2 and a reportees list with each report's quick info (only appears when the user has directReports). Here attributes carry a single value field, unlike the attributeValues lists of /users/list. Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN \u2026'. The current dashboard uses /orgChart/v2 instead. Errors seen on the lab: no dn \u2192 489 'Internal Error. Please contact Administrator.'; a DN that does not exist \u2192 489 'Id (id:) must be a valid DN <DN>'.",
   "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
@@ -1215,7 +1215,7 @@
   "body": null,
   "answer": "{totalNumberOfReportees:int, managers?:[{dn, directReportee, fullName, totalNumberOfReportees}]} \u2014 the chain upward, nearest manager first",
   "example": "GET \u2026/access/orgChart/managers?dn=<user DN>&clientId=1",
-  "notes": "Reads the user's manager attribute (the DAL key manager) and walks up while each manager has one; each step names the person below it in directReportee and gives the manager's directReports count. For Alice: one manager with totalNumberOfReportees 2. For the manager himself (no manager): only totalNumberOfReportees 0 (the top-level count is not the user's own reports). The org chart uses two separate attributes: manager on each report, directReports on the manager; the server does not keep them in step, so set both. Without dn: 'Internal Error'. The dashboard defines it (task approval pages).",
+  "notes": "Reads the user's manager attribute (the DAL key manager) and walks up while each manager has one; each step names the person below it in directReportee and gives the manager's directReports count. For Alice: one manager with totalNumberOfReportees 2. For the manager himself (no manager): only totalNumberOfReportees 0 (the top-level count is not the user's own reports). The org chart uses two separate attributes: manager on each report, directReports on the manager; the server does not keep them in step, so set both. Without dn: 'Internal Error'. The dashboard defines it (task approval pages). Errors seen on the lab: no parameters \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
@@ -1263,7 +1263,7 @@
   "body": null,
   "answer": "{totalCount, nextIndex, hasMore, entityList?:[{dn, fullName, primaryAttributes, secondaryAttributes, relationshipKey, relationshipDisplayName}]}",
   "example": "GET \u2026/access/orgChart/target/list?dn=<user DN>&relationshipkey=user2users&clientId=1",
-  "notes": "For user2users (source attribute @key, target attribute manager) it returns the values of the SOURCE's manager attribute: Alice gave her manager, the manager gave nothing. So this is the 'go up a level' list, not the reports. group2users from a group gave nothing (the group has no 'group' attribute). Only relationships whose source and target entity are the same are used; others are skipped silently. Paging with size=1 still gave nextIndex 0 for one result. Both dn and relationshipkey are required ('Value for \u2026 is missing in payload').",
+  "notes": "For user2users (source attribute @key, target attribute manager) it returns the values of the SOURCE's manager attribute: Alice gave her manager, the manager gave nothing. So this is the 'go up a level' list, not the reports. group2users from a group gave nothing (the group has no 'group' attribute). Only relationships whose source and target entity are the same are used; others are skipped silently. Paging with size=1 still gave nextIndex 0 for one result. Both dn and relationshipkey are required ('Value for \u2026 is missing in payload'). Errors seen on the lab: no dn \u2192 489 'Value for dn is missing in payload\u2026'; no relationshipkey \u2192 489 'Value for relationshipkey is missing in payload\u2026'.",
   "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
@@ -1318,7 +1318,7 @@
   "body": null,
   "answer": "{fullName, entityKey, primaryAttributes, secondaryAttributes, photoAttribute, emailAttributes, entityDefinitionKey, isHidden, isLoginDisabled, targets:[{relationshipKey, relationshipDisplayName, isRecursiveRelationship, orgChartEntityNodes:[{fullName, entityKey, primaryAttributes, \u2026}], nextIndex, total, hasMore}]}",
   "example": "GET \u2026/access/orgChart/v2?entityDN=<manager DN>&entityDefKey=user&relationshipKeys=user2users&clientId=1",
-  "notes": "With data: for user2users the targets are the users whose manager is the entity (query on the target attribute), so the manager showed both reports; for entityDefKey=group with group2users the group showed its members. STALE CACHE: right after the fixture was made every v2 call (even the one that worked earlier for uaadmin) answered 489 'Internal Error'; after DELETE /admin/cache/holder/items {cacheHolderItems:[{cacheHolderID:'All Cache'}]} (204) all worked. For user2users total is the directReports count. Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object and the call fails with 'Invalid entity relationship key : {\"key\":\"user2users\",\u2026}' (seen again with data), so always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart.",
+  "notes": "With data: for user2users the targets are the users whose manager is the entity (query on the target attribute), so the manager showed both reports; for entityDefKey=group with group2users the group showed its members. STALE CACHE: right after the fixture was made every v2 call (even the one that worked earlier for uaadmin) answered 489 'Internal Error'; after DELETE /admin/cache/holder/items {cacheHolderItems:[{cacheHolderID:'All Cache'}]} (204) all worked. For user2users total is the directReports count. Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object and the call fails with 'Invalid entity relationship key : {\"key\":\"user2users\",\u2026}' (seen again with data), so always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart. Errors seen on the lab: right after test users were created, every call \u2192 489 'Internal Error. Please contact Administrator.' until an All Cache flush; no relationshipKeys \u2192 489 'Invalid entity relationship key : {\u2026}' (the client's default relationship is stored as a JSON object); no entityDN \u2192 489 'Invalid input'.",
   "evidence": "live 2026-10-30 (test users, groups and a team)"
  },
  {
@@ -1379,7 +1379,7 @@
   },
   "answer": "query result entities",
   "example": null,
-  "notes": "Missing key: 'Provide the query key'. The lab defines no global queries (/query/list total 0); an unknown key gives 'Internal Error'. Not used by the dashboard.",
+  "notes": "Missing key: 'Provide the query key'. The lab defines no global queries (/query/list total 0); an unknown key gives 'Internal Error'. Not used by the dashboard. Errors seen on the lab: an unknown key \u2192 489 'Internal Error. Please contact Administrator.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1478,7 +1478,7 @@
   "body": null,
   "answer": "{authorized, readOnly, teamReadOnly, proxyFor, isAdmin, isRoleAdmin, domains:[PROVISIONING|ROLES|RESOURCES|\u2026], isDelegationTeamMgr, isAvailabilityTeamMgr}",
   "example": "GET \u2026/rob",
-  "notes": "proxyUser must be someone the caller is a proxy for, otherwise 489 SecurityException 'User x is not a proxy for y' (even for yourself). Lab: uaadmin is admin in PROVISIONING, ROLES, RESOURCES.",
+  "notes": "proxyUser must be someone the caller is a proxy for, otherwise 489 SecurityException 'User x is not a proxy for y' (even for yourself). Lab: uaadmin is admin in PROVISIONING, ROLES, RESOURCES. Errors seen on the lab: proxyUser = the caller \u2192 489 'Error getting proxy security context. User '<DN>' is not a proxy for '<DN>'.'.",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -1542,7 +1542,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/user",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Creates a user and optionally sets the password.",
   "params": [],
   "body": {
@@ -1628,9 +1628,9 @@
     }
    ]
   },
-  "answer": "password-update result for the new user",
+  "answer": "{dn}",
   "example": null,
-  "notes": "Every attribute needs isRequired (true or false): without it the server fails with 489 'Internal Error' (seen in the server log). On the lab the create then stopped at the password policy: 489 'Cannot create the user. The password does not meet the password policy criteria.' (subcode errorResponseDuringNmasPasswordMgmt), because no initial password was sent; a user without a password can be created with POST /access/entities/item key=user. An existing DN gives 489 existing-user. Values are XSS-checked (400).",
+  "notes": "Creates a user with an initial password. Every attribute needs isRequired (true or false): without it the server fails with 489 'Internal Error' (a null pointer in the server log). The password must meet the password policy that applies to the new user, which is per installation: on the lab a 15-character password was refused with 489 'Cannot create the user. The password does not meet the password policy criteria.' (subcode errorResponseDuringNmasPasswordMgmt; the lab's policy allows at most 12) and a 12-character one with upper and lower case, digits and two special characters worked; no password at all gave the same refusal. The new user could then sign in with the OSP password grant. A user without a password can be created with POST /access/entities/item key=user. An existing DN gives 489 existing-user. Values are XSS-checked (400).",
   "evidence": "server code + server log + live 2026-10-31"
  },
  {
@@ -1736,7 +1736,7 @@
   "body": null,
   "answer": "{value:bool}",
   "example": "GET \u2026/user/admin?userDn=cn=uaadmin,ou=sa,o=data&level=1&type=ROLES",
-  "notes": "The reference lists PRD as a type, but the server only accepts PROVISIONING for that domain. Missing type: 'Value for type is either invalid or not supported'. Lab uaadmin, level 1: ROLES/COMPLIANCE/PROVISIONING/RBPM-APP true, SECURITY false. Not used by the dashboard.",
+  "notes": "The reference lists PRD as a type, but the server only accepts PROVISIONING for that domain. Missing type: 'Value for type is either invalid or not supported'. Lab uaadmin, level 1: ROLES/COMPLIANCE/PROVISIONING/RBPM-APP true, SECURITY false. Not used by the dashboard. Errors seen on the lab: no userDN \u2192 489 'Value for userDN is missing in payload\u2026'; no type \u2192 489 'Value for type is either invalid or not supported\u2026'; level=3 \u2192 489 'Value for level is either invalid or not supported\u2026'.",
   "evidence": "server code + live 2026-10-30"
  },
  {

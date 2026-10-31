@@ -116,7 +116,7 @@
   },
   "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[{name, dn, allUsers, includeManager, readOnly}]}], arraySize, nextIndex, \u2026}",
   "example": "POST \u2026/access/groups/groupmembers?q=&nextIndex=1&size=5 {dn:<group DN>}",
-  "notes": "Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'.",
+  "notes": "Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'. Errors seen on the lab: right after a group was created, or a group that does not exist \u2192 489 'Invalid Group Detected: [<DN>].'.",
   "evidence": "live 2026-10-30 (test users, groups and a team)",
   "in_reference": false
  },
