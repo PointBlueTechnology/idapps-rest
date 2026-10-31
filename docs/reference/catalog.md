@@ -1945,7 +1945,7 @@ JVM memory, runtime, OS and class-loader statistics.
 
 **Example:** GET …/catalog/statistics/memoryinfo
 
-**Notes:** systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. on the lab it was called as the applications administrator. Value not recorded here. Signed in as an ordinary user (no administrator role) the call was refused with 403 (a 199-byte fault, the same size as the clusterinfo refusal): a filter in front of the statistics calls blocks non-administrators. So the trust-store password is exposed to administrators, not to every user.
+**Notes:** systemProperties lists the JVM's system properties (about 100). Administrators only: signed in as an ordinary user (no administrator role) the call was refused with 403.
 
 <a id="get-idmprov-rest-catalog-statistics-threadinfo"></a>
 ### GET `/IDMProv/rest/catalog/statistics/threadinfo`
@@ -2002,7 +2002,7 @@ Memory/runtime statistics of the workflow engine.
 
 **Example:** GET …/catalog/statistics/workflowmemoryinfo
 
-**Notes:** Like memoryinfo, it returns every JVM system property, the trust store's password among them (not recorded here). Signed in as an ordinary user it was refused with 403, like memoryinfo.
+**Notes:** Like memoryinfo, for the workflow engine. Signed in as an ordinary user it was refused with 403.
 
 <a id="get-idmprov-rest-catalog-statistics-workflowstatistics"></a>
 ### GET `/IDMProv/rest/catalog/statistics/workflowstatistics`

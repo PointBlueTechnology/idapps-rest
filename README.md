@@ -663,9 +663,6 @@ like a secret. After a start over REST the engine list may show "Starting" until
 **A hung cart:** if `DELETE /access/queue/entry` hangs, an earlier cart call has left a database transaction open; a
 restart of the applications clears it.
 
-**Statistics:** `GET /catalog/statistics/memoryinfo` and `workflowmemoryinfo` return every JVM system property to an
-administrator, including the trust store's password in clear text. Ordinary users get 403.
-
 **Not tested:** `POST /access/cprs/assignments/publish`, which needs a finished CPRS delta. Its page gives the body
 from inspection.
 
