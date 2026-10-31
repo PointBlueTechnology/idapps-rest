@@ -1,0 +1,1086 @@
+[
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config",
+  "status": "validated",
+  "purpose": "Save one administration setting by key.",
+  "params": [],
+  "body": {
+   "example": {
+    "key": "<setting key>",
+    "value": "<value>"
+   },
+   "fields": [
+    {
+     "name": "key",
+     "required": true,
+     "values": "a setting key, as GET /access/config lists",
+     "kind": "per-installation"
+    },
+    {
+     "name": "value",
+     "required": false,
+     "values": "single value",
+     "kind": "free"
+    },
+    {
+     "name": "values",
+     "required": false,
+     "values": "list, for multi-valued settings",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "200, no body",
+  "example": "",
+  "notes": "Saves one setting. key is '<section>.<item>' (only access, customization and branding sections), value its value; the server saves it with no client (the default client). GET /access/config?key=<section>.<item>&client=<id> reads one setting as {<item>: value} (both parameters required: 'Invalid or missing JSON Key/value.' otherwise). Tested by saving branding.titleColor with its current value.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/entities/resolvedNames",
+  "status": "validated",
+  "purpose": "Turn DNs of any entity type into display names, with each one's entity type.",
+  "params": [],
+  "body": {
+   "example": {
+    "names": [
+     {
+      "dn": "cn=uaadmin,ou=sa,o=data"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "names[].dn",
+     "required": true,
+     "values": "DNs",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{names:[{dn,name,entityType}]}",
+  "example": "POST \u2026/access/entities/resolvedNames {names:[{dn}]}",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/groups/groupmembers",
+  "status": "validated",
+  "purpose": "List a group's members.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc|desc (default asc)",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "<group DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "a group DN",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[{name, dn, allUsers, includeManager, readOnly}]}], arraySize, nextIndex, \u2026}",
+  "example": "POST \u2026/access/groups/groupmembers?q=&nextIndex=1&size=5 {dn:<group DN>}",
+  "notes": "Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'. Errors seen on the lab: right after a group was created, or a group that does not exist \u2192 489 'Invalid Group Detected: [<DN>].'.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/ulp/items",
+  "status": "validated",
+  "purpose": "The landing page's categories and items (the tiles), with or without their images.",
+  "params": [
+   {
+    "name": "images",
+    "in": "query",
+    "required": false,
+    "values": "true|false (default true)",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{itemCategories:[{itemCategoryId,categoryName,itemCategoryOrder,subType,items:[{itemId,name,desc,entityType,id,\u2026}]}]}",
+  "example": "GET \u2026/access/ulp/items?images=false",
+  "notes": "Item ids and categories are per installation (the landing page's configuration).",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/ulp/items/images",
+  "status": "validated",
+  "purpose": "Images for a given set of landing-page items.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "itemId": 10
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items",
+     "required": true,
+     "values": "items from GET /ulp/items",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{items:[{image: data URI, \u2026}]}",
+  "example": "",
+  "notes": "Read-only despite POST: returns the images of the given items.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/ulp/items",
+  "status": "validated",
+  "purpose": "Save the landing page's items.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     "\u2026"
+    ]
+   },
+   "fields": [
+    {
+     "name": "items",
+     "required": true,
+     "values": "the full item list",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, instanceId}]}",
+  "example": "",
+  "notes": "Updates existing items by itemId (id = the item's external id, both required). Send the items flattened from the GET. Item names are stored once per item and locale and shared by PUT \u2026/ulp/items and PUT \u2026/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/supportedlocales/userBestLocale",
+  "status": "not-working",
+  "purpose": "For the workflow engine: the best locale for each user.",
+  "params": [],
+  "body": {
+   "example": {
+    "userDn": [
+     "<user DN>"
+    ],
+    "componentName": "<component>"
+   },
+   "fields": [
+    {
+     "name": "userDn",
+     "required": true,
+     "values": "list of user DNs",
+     "kind": "free"
+    },
+    {
+     "name": "componentName",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "",
+  "example": "",
+  "notes": "Only for calls made by the workflow engine (the server checks a workflow-request flag on the session); a person's token gets 489 'Unauthorized user'.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/orgChart/position",
+  "status": "validated",
+  "purpose": "One person's place in the organization chart: their quick info and its attributes.",
+  "params": [
+   {
+    "name": "dn",
+    "in": "query",
+    "required": true,
+    "values": "a user DN",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "config client id (default 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{userQuickInfo:{dn,fullName,primaryAttributes,secondaryAttributes,\u2026}}",
+  "example": "GET \u2026/access/orgChart/position?dn=<user DN>",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/proxy/users",
+  "status": "not-working",
+  "purpose": "For the workflow engine: a user's proxies, and optionally delegatees for a process.",
+  "params": [],
+  "body": {
+   "example": {
+    "addresse": "<user DN>",
+    "includeDelegations": true,
+    "id": "<process id>"
+   },
+   "fields": [
+    {
+     "name": "addresse",
+     "required": true,
+     "values": "user DN (sic: the field is spelled 'addresse')",
+     "kind": "free"
+    },
+    {
+     "name": "includeDelegations",
+     "required": true,
+     "values": "true|false",
+     "kind": "fixed"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "process (PRD) id; required when includeDelegations is true",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{addresse,id,includeDelegations,proxyUserList,delUserList}",
+  "example": "",
+  "notes": "Workflow engine only: a person's token gets 489 'Unauthorized user'.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/rob/ismproperties",
+  "status": "validated",
+  "purpose": "Read named OSP/ISM configuration properties (for request on behalf).",
+  "params": [],
+  "body": {
+   "example": {
+    "keys": [
+     "<property name>"
+    ]
+   },
+   "fields": [
+    {
+     "name": "keys",
+     "required": false,
+     "values": "property names",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{arraySize, \u2026properties}",
+  "example": "POST \u2026/access/rob/ismproperties {}",
+  "notes": "An empty body answers arraySize 0.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/recipients/users",
+  "status": "validated",
+  "purpose": "Users a team manager may act for (the team's recipients).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": " (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "-1 = all (default -1)",
+    "kind": "free"
+   },
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "config client id (default 1)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "proxyUser",
+    "in": "query",
+    "required": false,
+    "values": "DN to act as a proxy for",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[\u2026]}], arraySize, nextIndex}",
+  "example": "GET \u2026/access/teams/recipients/users?q=Alice&nextIndex=1&size=10&client=1",
+  "notes": "Lists the people the caller may act for as a team manager (for a domain administrator: everyone in the user root), each with the teams that reach them. q matches the name.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/list",
+  "status": "validated",
+  "purpose": "Search teams.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": " (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "column",
+    "in": "query",
+    "required": false,
+    "values": "",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": " (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "-1 = all (default -1)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": " (default name)",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc|desc (default asc)",
+    "kind": "fixed"
+   },
+   {
+    "name": "forceRefresh",
+    "in": "query",
+    "required": false,
+    "values": "true|false (default false)",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{teams:[{name, dn, description, recipients:[{name, dn, type, isGroupAssignment}], requestors:[\u2026], allUsers, includeManager, localizedNames, localizedDescriptions, readOnly, domainTypes}], \u2026}",
+  "example": "GET \u2026/access/teams/list?q=<team name>&nextIndex=1&size=10",
+  "notes": "Shows the team at once (no forceRefresh needed); q matched the team name; sortBy=name with sortOrder=desc and forceRefresh=true also worked. Each team comes with its full recipients and requestors (team managers).",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/tasks",
+  "status": "empty-on-lab",
+  "purpose": "The signed-in person's tasks, simple form.",
+  "params": [
+   {
+    "name": "limit",
+    "in": "query",
+    "required": false,
+    "values": "maximum (default 100)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{total,hasMore,userTypeInTask,\u2026}",
+  "example": "GET \u2026/access/tasks?limit=10",
+  "notes": " still {total:0} for the administrator while a role approval task addressed to another user was open (GET \u2026/tasks/list listed that task).",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/users/fullName",
+  "status": "validated",
+  "purpose": "The signed-in person's DN and full name.",
+  "params": [],
+  "body": null,
+  "answer": "{dn,name}",
+  "example": "GET \u2026/access/users/fullName",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/users/fullNames",
+  "status": "validated",
+  "purpose": "Full names for a list of user DNs.",
+  "params": [],
+  "body": {
+   "example": {
+    "names": [
+     {
+      "dn": "<user DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "names[].dn",
+     "required": true,
+     "values": "user DNs",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{names:[{dn,name}]}",
+  "example": "",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/users/images",
+  "status": "validated",
+  "purpose": "Photos for a list of users.",
+  "params": [],
+  "body": {
+   "example": {
+    "users": [
+     {
+      "dn": "<user DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "users[].dn",
+     "required": true,
+     "values": "user DNs",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "204 when none of them has a photo",
+  "example": "",
+  "notes": "The lab's administrator has no photo, so it answered 204.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/users/info",
+  "status": "validated",
+  "purpose": "Quick information on one user: their attributes with labels and data types.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<user DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "a user DN",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{dn,attributes:[{key,displayLabel,value,dataType}]}",
+  "example": "",
+  "notes": "The attributes shown are per installation (the quick-info configuration).",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/users/infos",
+  "status": "validated",
+  "purpose": "Quick information on several users.",
+  "params": [],
+  "body": {
+   "example": {
+    "users": [
+     {
+      "dn": "<user DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "users[].dn",
+     "required": true,
+     "values": "user DNs",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{users:[{dn,attributes:[\u2026]}]}",
+  "example": "",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/users",
+  "status": "validated",
+  "purpose": "Search users (older form of /users/list).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": " (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": " (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "limit",
+    "in": "query",
+    "required": false,
+    "values": " (default -1)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "only FirstName (the default); others refused",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc (checked) but did not change the order on the lab",
+    "kind": "fixed"
+   },
+   {
+    "name": "forceRefresh",
+    "in": "query",
+    "required": false,
+    "values": " (default false)",
+    "kind": "free"
+   },
+   {
+    "name": "noCache",
+    "in": "query",
+    "required": false,
+    "values": " (default false)",
+    "kind": "free"
+   },
+   {
+    "name": "token",
+    "in": "query",
+    "required": false,
+    "values": "",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{members:[{dn, firstName, lastName}], nextIndex (0 = no more, else the next start), arraySize, token}",
+  "example": "GET \u2026/access/users?q=Alice&nextIndex=1&size=10",
+  "notes": "q matches first and last name (contains), not cn or title: a first name and a last name found people, a cn prefix and a title found nothing; an empty q lists everyone in the user search root. sortBy accepts only FirstName (anything else: 489 'Invalid sort-by column: LastName'); sortOrder asc/desc is checked, but the order did not follow it: three users came back in the same order for both asc and desc. Paging: size=2 gave nextIndex 3, the next page nextIndex 0. limit=2 did not cut the list of 3. The token names a server-side cache of the result; forceRefresh=true with the token drops it.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/users/role/assignments",
+  "status": "validated",
+  "purpose": "The administrator roles (security domains) a user holds, by name.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<user DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "a user DN",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{user, roleAssignments:[role name]}",
+  "example": "POST \u2026/access/users/role/assignments {dn:<user DN>}",
+  "notes": "With a role assigned: the role's display name (names only, no DNs). Correction: the earlier write-up said these were only the applications' administrator assignments; with data, an ordinary IDM role assigned to the user is listed too.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/containers/container",
+  "status": "validated",
+  "purpose": "List the subcontainers of a container, of a role level's container, or of the resource container.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "o=data"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": false,
+     "values": "container DN",
+     "kind": "free"
+    },
+    {
+     "name": "level",
+     "required": false,
+     "values": "a role level; lists that level's container",
+     "kind": "per-installation"
+    },
+    {
+     "name": "type",
+     "required": false,
+     "values": "'resource' lists the resource container",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{id,name,subContainers:[{id,name}]}",
+  "example": "",
+  "notes": "With none of the fields it lists the entity's search root. A field named dn is ignored. The server reads containers with a system context, not the caller's rights.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/groups",
+  "status": "validated",
+  "purpose": "Search groups.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": " (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": " (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "limit",
+    "in": "query",
+    "required": false,
+    "values": " (default -1)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": " (default Description)",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc|desc (default asc)",
+    "kind": "fixed"
+   },
+   {
+    "name": "forceRefresh",
+    "in": "query",
+    "required": false,
+    "values": " (default false)",
+    "kind": "free"
+   },
+   {
+    "name": "noCache",
+    "in": "query",
+    "required": false,
+    "values": " (default false)",
+    "kind": "free"
+   },
+   {
+    "name": "token",
+    "in": "query",
+    "required": false,
+    "values": "",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{groups:[{id, name, description}], arraySize, nextIndex (0 = no more), token}",
+  "example": "GET \u2026/catalog/groups?q=one&nextIndex=1&size=10&sortBy=Description&sortOrder=desc",
+  "notes": "q matches the description (contains); the group's cn found nothing. sortBy=Description with desc reversed the order. Paging: size=1 gave nextIndex 2, then 0. The id field is the DN (here it is called id, in /access/groups dn).",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/info/version",
+  "status": "validated",
+  "purpose": "The catalog REST service's own version string.",
+  "params": [],
+  "body": null,
+  "answer": "{version}",
+  "example": "",
+  "notes": "Answered 0.0.1 on 4.10.2: not the product version.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/supportedlocales",
+  "status": "validated",
+  "purpose": "The locales the applications support.",
+  "params": [],
+  "body": null,
+  "answer": "{supportedLocales:[{locale,localeDisplayName}]}",
+  "example": "",
+  "notes": "The set is per installation.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/supportedlocales/userlocale",
+  "status": "not-working",
+  "purpose": "The signed-in person's locale.",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Answered 200 with a serializer's settings ({escapeForwardSlashAlways, recursionDepthLimit}) instead of a locale on 4.10.2.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/supportedlocales/defaultlocale",
+  "status": "not-working",
+  "purpose": "The default locale.",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Same as userlocale: a serializer's settings, not a locale.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/category",
+  "status": "not-working",
+  "purpose": "Create a role category.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "<key>",
+    "name": "<display name>"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "the new category key",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "values": "display name",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "",
+  "example": "",
+  "notes": "489 'Unable to find abstract layer object definition for the specified definition key.': like POST \u2026/resources/category, the server looks up a directory abstraction layer entity this installation does not define. Nothing was created.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/role/assignments/v2",
+  "status": "validated",
+  "purpose": "A role's assignments, with paging, sorting and a filter by source.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": " (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": " (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": " (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sourceTypes",
+    "in": "query",
+    "required": false,
+    "values": "repeatable; the assignment sources to include",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc|desc (default asc)",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": " (default requestDate)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "<role DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "a role DN",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{assignmentStatusList:[{dn, recipientType:'USER', recipientTypeSubContainer, recipientDn, recipientFullName, statusCode:'50', statusDisplay:'Completed', effectiveDate (epoch ms as string), expiryDate, description, grant}], nextIndex, arraySize, total, hasmore}",
+  "example": "POST \u2026/catalog/roles/role/assignments/v2?nextIndex=1&size=20 {dn:<role DN>}",
+  "notes": "The body field is dn here, not id as in v1: {id: \u2026} gives 489 'Invalid input DN: '. statusCode 50 = Completed; description is the assign-time reason; grant true for an assignment. Limited to the user search root, like v1.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/sods/list",
+  "status": "validated",
+  "purpose": "Search separation-of-duties constraints.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "roles": [
+     {
+      "id": "cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     },
+     {
+      "id": "cn=<role 2>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roles",
+     "required": true,
+     "values": "[{id: role DN}]: the SoDs any of these roles is part of",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{sods:[\u2026as POST /sods/sod\u2026]}",
+  "example": "POST \u2026/catalog/sods/list {roles:[{id:\"cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
+  "notes": "Finds the SoDs that involve the given roles (one role gave both of its SoDs). {} or a body without roles answers {arraySize:0}, and q alone finds nothing: it is not a search of all SoDs (use GET \u2026/catalog/sods for that).",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/roa/v1/locale",
+  "status": "not-working",
+  "purpose": "Old ROA services (locales, password management, a UUID).",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/roa/v1/pwdmgt",
+  "status": "not-working",
+  "purpose": "Old ROA services (locales, password management, a UUID).",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/roa/v1/pwdmgt/user/{userDN}/{service}",
+  "status": "not-working",
+  "purpose": "Old ROA services (locales, password management, a UUID).",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/roa/v1/util",
+  "status": "not-working",
+  "purpose": "Old ROA services (locales, password management, a UUID).",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/roa/v1/util/uuid",
+  "status": "not-working",
+  "purpose": "Old ROA services (locales, password management, a UUID).",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/roa/v1/pwdmgt/user/{userDN}/{service}",
+  "status": "not-working",
+  "purpose": "Old ROA password management for a user.",
+  "params": [],
+  "body": null,
+  "answer": "",
+  "example": "",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed. Setting passwords is marked a future feature.",
+  "evidence": "inspection and observation, October 2026",
+  "in_reference": false
+ }
+]

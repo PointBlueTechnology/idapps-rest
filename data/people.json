@@ -1,0 +1,2007 @@
+[
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/codeMap/{id}/values",
+  "status": "validated",
+  "purpose": "Lists the values of one entitlement code map, paged and filtered.",
+  "params": [
+   {
+    "name": "id",
+    "in": "path",
+    "required": true,
+    "values": "code map id, Base64-encoded (the server decodes it before the lookup)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "'*' returns all values; a value starting or ending with '*' is used as given; anything else is searched as *value*. Default 'default' (so it searches *default*)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start, default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size, default 10",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, hasMore:bool, codeMapValues:[{id, value, displayLabel, description, nativeValue}]}",
+  "example": "GET \u2026/codeMap/<Base64 of the viewID>/values?q=*",
+  "notes": "id is the Base64 of the code map key, which is the entitlement view's viewID (the escaped GUID string from POST /catalog/drivers/driver, e.g. \\97\\64\\89\u2026). The entitlement DN or name, Base64-encoded, answered arraySize 0. An unknown id is not an error (200, arraySize 0); a blank id gives 489. value is the compact JSON a resource stores; nativeValue is the connected system's own key.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/codemaprefresh/driver",
+  "status": "validated",
+  "purpose": "Starts a code map refresh for every resource-mapped entitlement of the given drivers.",
+  "params": [],
+  "body": {
+   "example": {
+    "drivers": [
+     {
+      "id": "cn=Active Directory Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "drivers",
+     "required": true,
+     "values": "list of driver objects; required (an empty list fails with 'no drivers found')",
+     "kind": "free"
+    },
+    {
+     "name": "drivers[].id",
+     "required": true,
+     "values": "driver DN, or the literal 'ALL DRIVERS' in the first entry to refresh every available driver",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{succeeded:[{id, name}], failed:[{id, reason}]}",
+  "example": null,
+  "notes": "Refreshes the code maps of the driver's resource-mapping entitlements by querying the connected system through the driver (a running driver is needed). A query entitlement succeeded; a fixed-value one is listed under failed with 'Unable to complete codemap refresh' (it has no code map, which is expected). The driver key is 'id', not 'dn'. If a refresh is already in progress the call returns at once with that entity listed under succeeded and an in-progress reason. Also flushes the driver and entitlement-value caches.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/codemaprefresh/entitlement",
+  "status": "validated",
+  "purpose": "Starts a code map refresh for the listed entitlements.",
+  "params": [],
+  "body": {
+   "example": {
+    "entitlements": [
+     {
+      "id": "cn=Group,cn=Active Directory Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "entitlements",
+     "required": true,
+     "values": "list of entitlement objects; an empty or missing list does nothing and answers with no body",
+     "kind": "free"
+    },
+    {
+     "name": "entitlements[].id",
+     "required": true,
+     "values": "entitlement DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{succeeded:[{id, name}], failed:[\u2026]}",
+  "example": null,
+  "notes": "Entitlement key is 'id'. Refreshes that entitlement's code map through the driver. Stops at the first entitlement whose refresh is already in progress and answers with just that one. Flushes caches first.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/containers/container",
+  "status": "validated",
+  "purpose": "Lists the first-level sub-containers under a root (a read despite POST).",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": false,
+     "values": "container to list under; wins over everything else",
+     "kind": "per-installation"
+    },
+    {
+     "name": "level",
+     "required": false,
+     "values": "role level number; lists under that level's container; with level 20 the 'System' sub-container is left out",
+     "kind": "per-installation"
+    },
+    {
+     "name": "type",
+     "required": false,
+     "values": "only 'resource' (any case) is checked: lists resource-definition containers under the resource root",
+     "kind": "fixed"
+    },
+    {
+     "name": "searchScope",
+     "required": false,
+     "values": "'o'/'one' (one level, the default) or 's'/'subtree'; anything else is 489",
+     "kind": "fixed"
+    },
+    {
+     "name": "name",
+     "required": false,
+     "values": "ignored",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{dn:str, name:str, subContainers:[{dn,name}], arraySize:int}",
+  "example": "POST \u2026/containers/container {} \u2192 o=data with devices, groups, sa, users",
+  "notes": "An empty body lists under the user entity's search root (lab: o=data). The dashboard sends {} (users), {id:'',type:'resource'} (resources) and {dn:<role root>} (roles). type 'role' or 'prd' is not special and falls back to the user root. Values are XSS-checked (400).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/containers/prd",
+  "status": "validated",
+  "purpose": "Returns the root container that holds provisioning request definitions.",
+  "params": [],
+  "body": null,
+  "answer": "{dn:str, name:str}",
+  "example": "GET \u2026/containers/prd \u2192 cn=RequestDefs,cn=AppConfig,\u2026",
+  "notes": "No parameters. The dashboard's catalog pickers use it as the starting point for /containers/container.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/containers/resource",
+  "status": "validated",
+  "purpose": "Returns the root container that holds resource definitions.",
+  "params": [],
+  "body": null,
+  "answer": "{dn:str, name:str}",
+  "example": "GET \u2026/containers/resource \u2192 cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,\u2026",
+  "notes": "No parameters. The dashboard's catalog pickers use it as the starting point for /containers/container.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/containers/role",
+  "status": "validated",
+  "purpose": "Returns the root container that holds role definitions.",
+  "params": [],
+  "body": null,
+  "answer": "{dn:str, name:str}",
+  "example": "GET \u2026/containers/role \u2192 cn=RoleDefs,cn=RoleConfig,cn=AppConfig,\u2026",
+  "notes": "No parameters. The dashboard's catalog pickers use it as the starting point for /containers/container.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/counts",
+  "status": "validated",
+  "purpose": "Counts roles, resources or users (one kind per call).",
+  "params": [
+   {
+    "name": "roles",
+    "in": "query",
+    "required": false,
+    "values": "'true' to count roles",
+    "kind": "fixed"
+   },
+   {
+    "name": "resources",
+    "in": "query",
+    "required": false,
+    "values": "'true' to count resources",
+    "kind": "fixed"
+   },
+   {
+    "name": "users",
+    "in": "query",
+    "required": false,
+    "values": "'true' to count users",
+    "kind": "fixed"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{usersCount:int, rolesCount:int, resourcesCount:int, hasMore:bool} (uncounted kinds are -1)",
+  "example": "GET \u2026/counts?users=true&clientId=1",
+  "notes": "Only one kind is counted even when several flags are true: roles first, then resources, then users. With all flags false the server raises 'Please choose entities to get the count', which reaches the client as a 500 HTML error page. Users are counted in the client's users-list container and capped (hasMore true when the cap is hit) unless VLV counting is on. The lab answered 0 for roles and resources although system roles exist. Dashboard sends users=true&clientId=<client>.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/data/migration/workflow",
+  "status": "validated",
+  "purpose": "Exports the workflow database for migration as a zip file.",
+  "params": [],
+  "body": null,
+  "answer": "application/zip, Content-Disposition attachment; filename=\"wf_db_migration.zip\": one <TABLE>/<n>.json file per workflow table (AFACTIVITY, AFCOMMENT, AFDOCUMENT, AFENGINE, AFENGINESTATE, AFFORM, AFMODEL, AFPROCESS, AFPROVISIONINGSTATUS, AFWORKTASK, CONFIGURATION, LOCALIZATION), each {\"<TABLE>\": [rows]} with lower-case column names; large tables are split into 1.json, 2.json, \u2026",
+  "example": "POST \u2026/admin/workflowengines/status {engineStatus:1}; GET \u2026/access/data/migration/workflow (Accept: application/zip); POST \u2026/admin/workflowengines/status {engineStatus:0}",
+  "notes": "Exports the workflow engine's database tables for migration. Only while the workflow engine is stopped: on a running engine the answer is an HTML 500 (the server reports that migration is not possible while the engine is running). With the engine stopped the export took 0.4 s (425 KB, 14 files, on a small lab). Send Accept: application/zip; Accept: application/json gets 406. The CONFIGURATION table carries the workflow settings, including the email-based approval account's password setting (empty on the lab; whether a set value is exported in clear was not seen), so treat the file as sensitive. Requires a provisioning administrator. Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/data/migration/workflow",
+  "status": "validated",
+  "purpose": "Imports a workflow migration file.",
+  "params": [],
+  "body": {
+   "example": "multipart/form-data with part 'file' = the exported zip",
+   "fields": [
+    {
+     "name": "file",
+     "required": true,
+     "values": "multipart form part with the exported migration file",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "200, no body",
+  "example": null,
+  "notes": "Imports a workflow export (multipart/form-data, part 'file' = the zip from GET \u2026/data/migration/workflow). Only with the workflow engine stopped (as for the export). Importing a fresh export of the same system: 200 with no body in under a second; afterwards the processes kept their ids, but the open tasks got new task ids (same addressees), and GET \u2026/admin/workflowengines showed the new engine 'Starting' until the applications were restarted. Requires a provisioning administrator. Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/entities/definitions",
+  "status": "validated",
+  "purpose": "Lists the Directory Abstraction Layer entity definitions, or one by key.",
+  "params": [
+   {
+    "name": "key",
+    "in": "query",
+    "required": false,
+    "values": "entity key; returns that one definition instead of the list",
+    "kind": "per-installation"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "creatable",
+    "in": "query",
+    "required": false,
+    "values": "true to keep only creatable entities",
+    "kind": "fixed"
+   },
+   {
+    "name": "editable",
+    "in": "query",
+    "required": false,
+    "values": "true to keep only editable ones",
+    "kind": "fixed"
+   },
+   {
+    "name": "removable",
+    "in": "query",
+    "required": false,
+    "values": "true to keep only removable ones",
+    "kind": "fixed"
+   },
+   {
+    "name": "viewable",
+    "in": "query",
+    "required": false,
+    "values": "true to keep only viewable ones",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{entities:[{key, editKey, display, isCreatable, isEditable, isViewable, isRemovable, namingAttribute, attributes:[{key, displayLabel, dataType, isSearchable, isRequired, isEditable, isMultivalued, formatType, lookupEntity?, choiceList?\u2026}]}], totalCount:int}; with key: one entity object",
+  "example": "GET \u2026/entities/definitions?key=user&clientId=1",
+  "notes": "Lab has 54 definitions (user, group, container, quick-user-info, user-lookup, many sys-*). An unknown key gives 489 'Internal Error'. The dashboard uses creatable=true&viewable=true for its entity list (lab: group and user) and key=group&clientId=\u2026 for group attributes. Errors seen on the lab: an unknown key (key=nosuch) \u2192 489 'Internal Error. Please contact Administrator.' rather than a not-found message.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/entities/details/list",
+  "status": "validated",
+  "purpose": "Reads chosen attributes of a list of entities by DN (a read despite POST).",
+  "params": [
+   {
+    "name": "entityKey",
+    "in": "query",
+    "required": true,
+    "values": "entity definition key (e.g. user)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "filterAttr",
+    "in": "query",
+    "required": false,
+    "values": "comma-separated attribute keys to return; without it only the dn comes back",
+    "kind": "per-installation"
+   },
+   {
+    "name": "isDynamic",
+    "in": "query",
+    "required": false,
+    "values": "boolean, for form use",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "userList": [
+     {
+      "dn": "cn=uaadmin,ou=sa,o=data"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "userList",
+     "required": true,
+     "values": "list of {dn}; required",
+     "kind": "free"
+    },
+    {
+     "name": "userList[].dn",
+     "required": true,
+     "values": "entity DN; blank is 489",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{entityList:[{dn, attributes:[{key, displayLabel, attributeValues:[{@type,$}], dataType, \u2026}]}]}",
+  "example": "POST \u2026/entities/details/list?entityKey=user&filterAttr=FirstName,LastName {userList:[{dn:'cn=uaadmin,ou=sa,o=data'}]}",
+  "notes": "Missing entityKey: 'Entity key cannot be empty'. Missing userList: 'User dn is not found in the request payload'. A DN that is not of the given entity also gives that message. Not used by the dashboard. Errors seen on the lab: {} \u2192 489 'Entity key cannot be empty'; entityKey=user with filterAttr and a dns list \u2192 489 'Internal Error. Please contact Administrator.'; entityKey=group with userList \u2192 489 'User dn is not found in the request payload.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/entities/globalList",
+  "status": "validated",
+  "purpose": "Returns the key/value pairs of one global choice list (ChoiceDefs).",
+  "params": [
+   {
+    "name": "key",
+    "in": "query",
+    "required": true,
+    "values": "choice list key from the driver's DirectoryModel ChoiceDefs (lab: provisioning-category, request-scope, resources-category, roles-category, delegatee-relationship, application-notification)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "locale",
+    "in": "query",
+    "required": false,
+    "values": "preferred locale for the labels, e.g. en",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{mapList:[{key, value}]}",
+  "example": "GET \u2026/entities/globalList?key=request-scope&locale=en",
+  "notes": "Without key the server fails with a 500 HTML page; an unknown key gives 489 'Identifier [x] does not exist for this service operation.' Errors seen on the lab: no parameters \u2192 HTML 500; an unknown key \u2192 489 'Identifier [nosuch] does not exist for this service operation.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/entities/item",
+  "status": "validated",
+  "purpose": "Delete one or more directory objects.",
+  "params": [
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "client configuration id, default 1",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "key": "group",
+      "dn": "<object DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items",
+     "required": true,
+     "values": "list of {key, dn}",
+     "kind": "free"
+    },
+    {
+     "name": "items[].key",
+     "required": true,
+     "values": "entity key",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].dn",
+     "required": true,
+     "values": "object DN",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{dn}]} or {success:false, failed:[{dn, reason}]} with HTTP 200",
+  "example": "DELETE \u2026/access/entities/item?clientId=1 {items:[{key:'group', dn}]}",
+  "notes": "An object that is not there: 200 with success false and reason 'Entity/object not found: <dn>.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/entities/item",
+  "status": "validated",
+  "purpose": "Create a directory object of any creatable entity (user, group, \u2026) from its entity definition.",
+  "params": [
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "client configuration id, default 1",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "key": "group",
+    "attributes": [
+     {
+      "key": "cn",
+      "attributeValues": [
+       "<cn>"
+      ]
+     },
+     {
+      "key": "Description",
+      "attributeValues": [
+       "<text>"
+      ]
+     },
+     {
+      "key": "container",
+      "attributeValues": [
+       "ou=groups,o=data"
+      ]
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "key",
+     "required": true,
+     "values": "entity key from GET /access/entities/definitions with isCreatable true (lab: user, group, sys-\u2026)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes",
+     "required": true,
+     "values": "list of {key, attributeValues:[\u2026]}; every attribute the definition marks required needs a value, else 489 'Attribute: <name> is required'",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes[key=container]",
+     "required": false,
+     "values": "container of the new object; without it the client's configured container is used",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes[key=cn]",
+     "required": true,
+     "values": "naming value; with the container it makes the DN",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{dn}",
+  "example": "POST \u2026/access/entities/item?clientId=1 {key:'user', attributes:[cn, FirstName, LastName, container]}",
+  "notes": "Also creates a user WITHOUT a password (key user, FirstName and LastName required on the lab): the way to get a test user when POST /access/user is refused by the password policy. Same DN again: 489 EntityAlreadyExist. It only creates: a body {key, dn} meant as a read answered 489 'Attribute: Container is required'. Errors seen on the lab: a group without the required Description \u2192 489 'Attribute: Description is required'; the same cn again \u2192 489 'Entity ID already exists. Specify a different Entity ID.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/entities/item",
+  "status": "validated",
+  "purpose": "Change attributes of an existing directory object through its entity definition.",
+  "params": [
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "client configuration id, default 1",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "key": "group",
+    "dn": "<object DN>",
+    "attributes": [
+     {
+      "key": "Description",
+      "attributeValues": [
+       "<new text>"
+      ]
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "key",
+     "required": true,
+     "values": "entity key",
+     "kind": "per-installation"
+    },
+    {
+     "name": "dn",
+     "required": true,
+     "values": "object DN",
+     "kind": "free"
+    },
+    {
+     "name": "attributes",
+     "required": true,
+     "values": "list of {key, attributeValues}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{dn}",
+  "example": "PUT \u2026/access/entities/item?clientId=1 {key, dn, attributes}",
+  "notes": "Change visible at once in GET /catalog/groups.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/entities/list",
+  "status": "validated",
+  "purpose": "Searches objects of one DAL entity, paged, or reads one object by DN.",
+  "params": [
+   {
+    "name": "entityKey",
+    "in": "query",
+    "required": true,
+    "values": "entity definition key; required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search string, default empty (dashboard sends *)",
+    "kind": "free"
+   },
+   {
+    "name": "searchKeys",
+    "in": "query",
+    "required": false,
+    "values": "comma-separated attribute keys to search and show; needed when the client has no entity configuration for this key",
+    "kind": "per-installation"
+   },
+   {
+    "name": "filterAttr",
+    "in": "query",
+    "required": false,
+    "values": "comma-separated attribute keys to return",
+    "kind": "per-installation"
+   },
+   {
+    "name": "entityDN",
+    "in": "query",
+    "required": false,
+    "values": "returns just that object (with filterAttr attributes)",
+    "kind": "free"
+   },
+   {
+    "name": "isDynamic",
+    "in": "query",
+    "required": false,
+    "values": "'true' searches with the definition's searchable attributes when no configuration exists; default false",
+    "kind": "fixed"
+   },
+   {
+    "name": "isOrgChart",
+    "in": "query",
+    "required": false,
+    "values": "'true' uses the org-chart display attributes; default false",
+    "kind": "fixed"
+   },
+   {
+    "name": "lookupAttr",
+    "in": "query",
+    "required": false,
+    "values": "'true' also returns lookup attributes; default false",
+    "kind": "fixed"
+   },
+   {
+    "name": "advSearch",
+    "in": "query",
+    "required": false,
+    "values": "';'-separated key:value terms (e.g. FirstName:a*;LastName:b*); keys must be searchable, non-time attributes",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "attribute key; must be one of the entity's display attributes",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start, default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size, default 20",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{entityList:[{dn, attributes:[{key, displayLabel, attributeValues:[\u2026], dataType, \u2026}]}], nextIndex (-1 = no more), totalCount, hasMore}; with entityDN+filterAttr: {entityList:[{dn, attributes:[{key, attributeValues:[{@type:'entityInfoNode', dn, name, type}]}]}]}",
+  "example": "GET \u2026/access/entities/list?entityKey=user&q=*&searchKeys=FirstName&nextIndex=1&size=2",
+  "notes": "With searchKeys the rows carry only those attributes; with isDynamic=true all the entity's display attributes (Department, Email, FirstName, \u2026). Paging: size=2 gave nextIndex 3, totalCount 3. entityDN + filterAttr reads DN-valued attributes of one object, resolved to names: filterAttr=directReports on the manager listed both reports; filterAttr=manager,group on Alice gave her manager and her group (comma-separated keys work). entityKey=group with searchKeys=Description listed both groups; searchKeys=cn for groups gave 489 'Internal Error' (use an attribute the definition has; cn is not one for group). sortBy FirstName or LastName: 489 'Sort column is not specified as entity display attribute' (no per-client entity configuration on the lab, so no display attributes to sort by). With no per-client entity configuration (dashboard Configuration > Entities) and neither searchKeys nor isDynamic, the server answers 489 'Entity configuration is missing'. sys-nrf-role with searchKeys=cn also gave 'Internal Error'. Errors seen on the lab: no entityKey \u2192 489 'Entity key cannot be empty'; entityKey=group with searchKeys=cn \u2192 489 'Internal Error. Please contact Administrator.'; sortBy on a column that is not a display attribute \u2192 489 'Sort column is not specified as entity display attribute'; entityKey=group on the lab \u2192 489 'Entity configuration is missing'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/entities/quickInfo",
+  "status": "validated",
+  "purpose": "Returns the quick-info card (display name, primary and secondary attributes) for a user, role or resource.",
+  "params": [
+   {
+    "name": "entityType",
+    "in": "query",
+    "required": true,
+    "values": "ROLE, RESOURCE or USER \u2014 upper case exactly",
+    "kind": "fixed"
+   },
+   {
+    "name": "entityId",
+    "in": "query",
+    "required": true,
+    "values": "DN of the object",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{entityType, displayName, dn, primaryAttributes:[{key, displayLabel, value?:[\u2026], dataType}], secondaryAttributes:[\u2026]}",
+  "example": "GET \u2026/entities/quickInfo?entityType=ROLE&entityId=cn=provadmin,cn=system,cn=level20,\u2026",
+  "notes": "entityType is compared case-sensitively: 'user' gives 489 'Entity type (entityType:) not supported user'; GROUP is not supported. Missing entityType: 'Entity Type (entityType:) is required'. The dashboard calls it for ROLE and RESOURCE (no clientId) and USER (with clientId). USER attributes come from the client's quick-info settings.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/entities/resource/assignments/columns",
+  "status": "validated",
+  "purpose": "Lists the columns available for a resource's assignment table (a read despite POST).",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "cn=helpdesk-group,cn=system,cn=resourcedefs,cn=roleconfig,cn=appconfig,cn=user application driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "resource DN; the dashboard sends only this",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{attributesList:[{key, displayLabel, isSearchable, isSortable, isClickable}]}",
+  "example": "POST \u2026/entities/resource/assignments/columns {dn:<resource DN>}",
+  "notes": "Lab answer: recipientFullName, requestDate, description, statusDisplay, requesterDisplayName, param1 (labelled 'Client' \u2014 named after the resource's parameter).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/entities/schema",
+  "status": "validated",
+  "purpose": "Returns the attribute schema of an entity, or of the client's user-settings attributes.",
+  "params": [
+   {
+    "name": "entityName",
+    "in": "query",
+    "required": true,
+    "values": "entity key (user, group, \u2026) or the special value clientSettings",
+    "kind": "per-installation"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "minimalData",
+    "in": "query",
+    "required": false,
+    "values": "true: only key/label/type data",
+    "kind": "fixed"
+   },
+   {
+    "name": "searchable",
+    "in": "query",
+    "required": false,
+    "values": "true: only searchable attributes",
+    "kind": "fixed"
+   },
+   {
+    "name": "editable",
+    "in": "query",
+    "required": false,
+    "values": "true: only editable attributes",
+    "kind": "fixed"
+   },
+   {
+    "name": "binaryAttr",
+    "in": "query",
+    "required": false,
+    "values": "true: only binary attributes (photo)",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{attributesList:[{key, displayLabel, dataType, isSearchable, isRequired, isEditable, isMultivalued, formatType, controlType}], password?, container?, namingAttr?, displayPhoto?}",
+  "example": "GET \u2026/entities/schema?entityName=user  /  \u2026?minimalData=true&entityName=clientSettings&binaryAttr=true",
+  "notes": "Missing entityName: 489 'Internal Error'. The answer carries a field named password (an attribute-name setting, not a credential). clientSettings also returns the user create container (lab ou=users,o=data) and namingAttr cn. The dashboard puts entityName twice in some URLs (\u2026&entityName=clientSettings&editable=true appended to a URL that already has it). Errors seen on the lab: no parameters \u2192 489 'Internal Error. Please contact Administrator.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/entities/schema/rra",
+  "status": "validated",
+  "purpose": "Returns the attribute schema used for role, resource and assignment lists.",
+  "params": [
+   {
+    "name": "entityName",
+    "in": "query",
+    "required": true,
+    "values": "entity key, e.g. sys-nrf-role, sys-nrf-resource, user",
+    "kind": "per-installation"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "minimalData",
+    "in": "query",
+    "required": false,
+    "values": "true: only key/label",
+    "kind": "fixed"
+   },
+   {
+    "name": "searchable",
+    "in": "query",
+    "required": false,
+    "values": "true: only searchable",
+    "kind": "fixed"
+   },
+   {
+    "name": "editable",
+    "in": "query",
+    "required": false,
+    "values": "true: only editable",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{attributesList:[{key, displayLabel, dataType, isSearchable, isSortable, isRequired, isEditable, isMultivalued, formatType}]}",
+  "example": "GET \u2026/entities/schema/rra?entityName=sys-nrf-role",
+  "notes": "The dashboard's own constant puts a trailing space after the name ('sys-nrf-role '); sent literally that gives 489 'Internal Error', so the browser must be trimming or the space is URL-dropped. Without entityName: 'Internal Error'. Errors seen on the lab: no parameters \u2192 489 'Internal Error. Please contact Administrator.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/gcv/value",
+  "status": "validated",
+  "purpose": "Returns the type and value of one global configuration variable of the User Application driver.",
+  "params": [
+   {
+    "name": "key",
+    "in": "query",
+    "required": true,
+    "values": "GCV name as defined on the driver (lab: dirxml.engine.entitl-rs-purge-type, allow-fetch-named-passwords)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{type:str, values:[{@type, $}]}; structured GCVs: values are instances, each {type, values:[{type, values}]}",
+  "example": "GET \u2026/gcv/value?key=allow-fetch-named-passwords \u2192 {type:boolean, values:[{$:'false'}]}",
+  "notes": "Missing or blank key: 'Provide the global configuration variable key'. Unknown key: 'Global configuration variable with key x not found'. Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/groups",
+  "status": "validated",
+  "purpose": "Delete one group.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<group DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "group DN; blank is refused",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{dn}",
+  "example": "DELETE \u2026/access/groups {dn}",
+  "notes": "A second delete of the same DN gives 489 'Entity/object not found: <dn>.'. One group per call. Errors seen on the lab: a group already deleted \u2192 489 'Entity/object not found: <DN>.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/groups",
+  "status": "validated",
+  "purpose": "Searches groups (by description) or counts them.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search string, default empty (dashboard sends *)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start, default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size, default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "ASC (default) or DESC; other values are rejected",
+    "kind": "fixed"
+   },
+   {
+    "name": "searchCount",
+    "in": "query",
+    "required": false,
+    "values": "'true' adds totalCount",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{groups:[{dn, name, description}], arraySize, nextIndex (-1 = no more)}; searchCount=true gives {arraySize:0, nextIndex:-1, totalCount}",
+  "example": "GET \u2026/access/groups?q=two&nextIndex=1&size=10&sortOrder=ASC",
+  "notes": "Groups in ou=groups,o=data are found at once. q matches the description only, as a contains match ('two' and 'group one' found groups; 'group2', part of the cn, found nothing); q empty or * lists all. Paging: size=1 gave nextIndex 2, then -1. sortOrder ASC/DESC checked ('up': 489 'Invalid sort order: up'). searchCount=true returns the count (totalCount 2) and no list. Sorted by cn. The dashboard also appends sortColumn and filter key/value pairs, which the server does not read.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/groups",
+  "status": "validated",
+  "purpose": "Create a group in a container.",
+  "params": [],
+  "body": {
+   "example": {
+    "name": "<group cn>",
+    "description": "<text>",
+    "container": "ou=groups,o=data"
+   },
+   "fields": [
+    {
+     "name": "name",
+     "required": true,
+     "values": "the group's cn; missing gives 412 'Value for name is missing'",
+     "kind": "free"
+    },
+    {
+     "name": "container",
+     "required": true,
+     "values": "container DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "description",
+     "required": true,
+     "values": "missing gives 412 'Value for description is missing'",
+     "kind": "free"
+    },
+    {
+     "name": "members",
+     "required": false,
+     "values": "list of member DNs: accepted and echoed back, but NOT added (membership stayed empty)",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{dn, name, description, members?, container}: the request echoed with dn = cn=<name>,<container>",
+  "example": "POST \u2026/access/groups {name, description, container}",
+  "notes": "Members sent on create were echoed in the answer but the group had no members afterwards (membershipInfo and groupmembers both empty); add them with PUT \u2026 membersAction Add. Errors use HTTP 412, not 489. Read back with GET /catalog/groups?q=<text> (it matches the description) or POST /access/groups/groupmembers {dn}; GET /access/groups?q=<cn> answered nothing for the new group.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/groups",
+  "status": "validated",
+  "purpose": "Change a group's description and add or remove members.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<group DN>",
+    "description": "<new text>",
+    "members": [
+     "<user DN>"
+    ],
+    "membersAction": "Add"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "group DN",
+     "kind": "free"
+    },
+    {
+     "name": "description",
+     "required": false,
+     "values": "new description",
+     "kind": "free"
+    },
+    {
+     "name": "members",
+     "required": false,
+     "values": "member DNs",
+     "kind": "free"
+    },
+    {
+     "name": "membersAction",
+     "required": false,
+     "values": "Add, Delete or Update (any case); required whenever members is sent, else 412 'Specify the action Update, Add, Or Delete on attribute : membersAction'",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "the group after the change: {dn, name, description, members?}",
+  "example": "PUT \u2026/access/groups {dn, members:[<user DN>], membersAction:'Add'}",
+  "notes": "Add and Delete both took effect at once (GET /access/groups/membershipInfo?userDn= showed the group, then not). Description-only change works without members.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/groups/members",
+  "status": "validated",
+  "purpose": "Lists a group's members, filtered by full name and paged (a read despite POST).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "matched against each member's full name, default *",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start, default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size, default 10; below 1 returns all",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "cn=Test,ou=groups,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "group DN",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{recipients:[{name, dn, isGroupAssignment}], arraySize, nextIndex (0 = no more), currentIndex, endIndex, total}",
+  "example": "POST \u2026/access/groups/members?q=*&nextIndex=1&size=5 {dn:<group DN>}",
+  "notes": "Lists the group's members with full names. size=1 gave nextIndex 2 with total 2; sortOrder=desc reversed the order (by name); q=Bob filtered to Bob (q matches the name). A non-group DN or no dn gives 489 'Invalid Group Detected: [dn]'. Sorting is by member name, in memory. Errors seen on the lab: a group that does not exist \u2192 489 'Invalid Group Detected: [<DN>].'; {} \u2192 489 'Invalid Group Detected: [null].'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/groups/membershipInfo",
+  "status": "validated",
+  "purpose": "Lists the groups a user belongs to.",
+  "params": [
+   {
+    "name": "userDn",
+    "in": "query",
+    "required": true,
+    "values": "user DN",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{dn, groupMemberof:[group DN]}",
+  "example": "GET \u2026/access/groups/membershipInfo?userDn=<user DN>",
+  "notes": "With a member: groupMemberof lists the user's groups (one each here). Missing userDn: 'Invalid input DN: null'. A user in no groups gets only dn back. The dashboard puts userDn both in the URL and in params.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/helpdesk",
+  "status": "validated",
+  "purpose": "Lists, per helpdesk access resource, the helpdesk users for a user.",
+  "params": [
+   {
+    "name": "userDN",
+    "in": "query",
+    "required": true,
+    "values": "user DN (note the capital DN)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{accessRights:[{resourceDn, key, resourceName, users:[\u2026]}]}",
+  "example": "GET \u2026/helpdesk?userDN=cn=uaadmin,ou=sa,o=data",
+  "notes": "Lab returns six system helpdesk resources (Teams, User Catalog, Reassign, History, Organization Chart, Group) each with an empty users list. Missing userDN: 'Value for userDN is missing in payload'. After POST /access/config/helpdesk added a user to a helpdesk resource, that resource listed the user as {dn, fullName} (the save takes {userDn, action}).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/helpdesk/category",
+  "status": "validated",
+  "purpose": "Lists the helpdesk addressees for a user and one helpdesk resource.",
+  "params": [
+   {
+    "name": "userDn",
+    "in": "query",
+    "required": true,
+    "values": "user DN",
+    "kind": "free"
+   },
+   {
+    "name": "resDn",
+    "in": "query",
+    "required": true,
+    "values": "helpdesk resource DN",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{users:[user DN]}",
+  "example": "GET \u2026/access/helpdesk/category?userDn=<user DN>&resDn=<helpdesk resource DN>",
+  "notes": "Returns the helpdesk addressees for a ticket: the users who hold that helpdesk resource with the requester's client as its parameter. Assign them through POST /access/config/helpdesk (accessRights users {userDn, action:'add'}). Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk. Errors seen on the lab: no userDn \u2192 489 'Value for userDn is missing in payload\u2026'; no resDn \u2192 489 'Value for resDn is missing in payload\u2026'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/helpdesk/ticket",
+  "status": "validated",
+  "purpose": "Allocates a new helpdesk ticket number.",
+  "params": [],
+  "body": null,
+  "answer": "{ticketNumber: string}",
+  "example": null,
+  "notes": "No body and no parameters. Each call returns a new number; the lab's were not sequential-looking (UUAR078, then UXAO180). Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/orgChart",
+  "status": "validated",
+  "purpose": "Returns a user's quick info and number of direct reports for the classic org chart.",
+  "params": [
+   {
+    "name": "dn",
+    "in": "query",
+    "required": true,
+    "values": "user DN",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{userQuickInfo:{dn, fullName, primaryAttributes:[{key, displayLabel, value, dataType}], secondaryAttributes, totalNumberOfReportees}, reportees:[{dn, fullName, \u2026}], totalNumberOfReportees}",
+  "example": "GET \u2026/access/orgChart?dn=<manager DN>&clientId=1",
+  "notes": "With reports set: the manager's totalNumberOfReportees 2 and a reportees list with each report's quick info (only appears when the user has directReports). Here attributes carry a single value field, unlike the attributeValues lists of /users/list. Without dn: 'Internal Error'. A DN that does not exist: 'Id (id:) must be a valid DN \u2026'. The current dashboard uses /orgChart/v2 instead. Errors seen on the lab: no dn \u2192 489 'Internal Error. Please contact Administrator.'; a DN that does not exist \u2192 489 'Id (id:) must be a valid DN <DN>'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/orgChart/managers",
+  "status": "validated",
+  "purpose": "Returns a user's manager chain (hierarchy upward).",
+  "params": [
+   {
+    "name": "dn",
+    "in": "query",
+    "required": true,
+    "values": "user DN",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{totalNumberOfReportees:int, managers?:[{dn, directReportee, fullName, totalNumberOfReportees}]} \u2014 the chain upward, nearest manager first",
+  "example": "GET \u2026/access/orgChart/managers?dn=<user DN>&clientId=1",
+  "notes": "Reads the user's manager attribute (the DAL key manager) and walks up while each manager has one; each step names the person below it in directReportee and gives the manager's directReports count. For Alice: one manager with totalNumberOfReportees 2. For the manager himself (no manager): only totalNumberOfReportees 0 (the top-level count is not the user's own reports). The org chart uses two separate attributes: manager on each report, directReports on the manager; the server does not keep them in step, so set both. Without dn: 'Internal Error'. The dashboard defines it (task approval pages). Errors seen on the lab: no parameters \u2192 489 'Internal Error. Please contact Administrator.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/orgChart/target/list",
+  "status": "validated",
+  "purpose": "Lists the targets of one relationship from an entity (the org chart 'level up' options), paged.",
+  "params": [
+   {
+    "name": "dn",
+    "in": "query",
+    "required": true,
+    "values": "source DN",
+    "kind": "free"
+   },
+   {
+    "name": "relationshipkey",
+    "in": "query",
+    "required": true,
+    "values": "relationship key (lowercase k), e.g. user2users",
+    "kind": "per-installation"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{totalCount, nextIndex, hasMore, entityList?:[{dn, fullName, primaryAttributes, secondaryAttributes, relationshipKey, relationshipDisplayName}]}",
+  "example": "GET \u2026/access/orgChart/target/list?dn=<user DN>&relationshipkey=user2users&clientId=1",
+  "notes": "For user2users (source attribute @key, target attribute manager) it returns the values of the SOURCE's manager attribute: Alice gave her manager, the manager gave nothing. So this is the 'go up a level' list, not the reports. group2users from a group gave nothing (the group has no 'group' attribute). Only relationships whose source and target entity are the same are used; others are skipped silently. Paging with size=1 still gave nextIndex 0 for one result. Both dn and relationshipkey are required ('Value for \u2026 is missing in payload'). Errors seen on the lab: no dn \u2192 489 'Value for dn is missing in payload\u2026'; no relationshipkey \u2192 489 'Value for relationshipkey is missing in payload\u2026'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/orgChart/v2",
+  "status": "validated",
+  "purpose": "Returns an entity with its related targets per relationship for the org chart.",
+  "params": [
+   {
+    "name": "entityDefKey",
+    "in": "query",
+    "required": true,
+    "values": "entity definition key, e.g. user; required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "entityDN",
+    "in": "query",
+    "required": false,
+    "values": "entity DN; for entityDefKey user it defaults to the signed-in user",
+    "kind": "free"
+   },
+   {
+    "name": "relationshipKeys",
+    "in": "query",
+    "required": false,
+    "values": "relationship keys from /relationships/list (lab: user2users, group2users); repeat the parameter for several",
+    "kind": "per-installation"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{fullName, entityKey, primaryAttributes, secondaryAttributes, photoAttribute, emailAttributes, entityDefinitionKey, isHidden, isLoginDisabled, targets:[{relationshipKey, relationshipDisplayName, isRecursiveRelationship, orgChartEntityNodes:[{fullName, entityKey, primaryAttributes, \u2026}], nextIndex, total, hasMore}]}",
+  "example": "GET \u2026/access/orgChart/v2?entityDN=<manager DN>&entityDefKey=user&relationshipKeys=user2users&clientId=1",
+  "notes": "With data: for user2users the targets are the users whose manager is the entity (query on the target attribute), so the manager showed both reports; for entityDefKey=group with group2users the group showed its members. STALE CACHE: right after test users were created every v2 call (even the one that worked earlier for uaadmin) answered 489 'Internal Error'; after DELETE /admin/cache/holder/items {cacheHolderItems:[{cacheHolderID:'All Cache'}]} (204) all worked. For user2users total is the directReports count. Without relationshipKeys the server falls back to the client's default relationship; on the lab that default is stored as a JSON object and the call fails with 'Invalid entity relationship key : {\"key\":\"user2users\",\u2026}' (seen again with data), so always send relationshipKeys. Missing entityDefKey: 'Invalid input'. Hierarchy depth comes from the client setting hierarchyDepthForOrgChart. Errors seen on the lab: right after test users were created, every call \u2192 489 'Internal Error. Please contact Administrator.' until an All Cache flush; no relationshipKeys \u2192 489 'Invalid entity relationship key : {\u2026}' (the client's default relationship is stored as a JSON object); no entityDN \u2192 489 'Invalid input'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/query/global",
+  "status": "empty-on-lab",
+  "purpose": "Runs a predefined global query and returns matching entities (a read despite POST).",
+  "params": [],
+  "body": {
+   "example": {
+    "key": "<query key from /query/list>",
+    "entityKey": "user",
+    "parameters": [
+     {
+      "key": "\u2026",
+      "values": [
+       "\u2026"
+      ]
+     }
+    ],
+    "returnAttributes": [
+     "FirstName",
+     "LastName"
+    ]
+   },
+   "fields": [
+    {
+     "name": "key",
+     "required": true,
+     "values": "query key; required",
+     "kind": "per-installation"
+    },
+    {
+     "name": "parameters",
+     "required": false,
+     "values": "list of {key, values} for the query's parameters",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entityKey",
+     "required": false,
+     "values": "entity key of the result",
+     "kind": "per-installation"
+    },
+    {
+     "name": "returnAttributes",
+     "required": false,
+     "values": "attribute keys to return",
+     "kind": "per-installation"
+    },
+    {
+     "name": "displayLabel",
+     "required": false,
+     "values": "not needed",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "query result entities",
+  "example": null,
+  "notes": "Missing key: 'Provide the query key'. The lab defines no global queries (/query/list total 0); an unknown key gives 'Internal Error'. Not used by the dashboard. Errors seen on the lab: an unknown key \u2192 489 'Internal Error. Please contact Administrator.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/query/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists the predefined global queries.",
+  "params": [],
+  "body": null,
+  "answer": "{queries?:[\u2026], total:int}",
+  "example": "GET \u2026/query/list",
+  "notes": "Lab answers {total:0}. Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/relationships",
+  "status": "validated",
+  "purpose": "Lists the relationship definitions usable for teams.",
+  "params": [],
+  "body": null,
+  "answer": "{relationships:[{key(DN of the RelationshipDef), displayName}], arraySize:int}",
+  "example": "GET \u2026/relationships",
+  "notes": "Here key is the full DN of the definition (lab: cn=user2users,cn=RelationshipDefs,cn=DirectoryModel,\u2026), unlike /relationships/list. The dashboard's team pages send their own params.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/relationships/list",
+  "status": "validated",
+  "purpose": "Lists relationship definitions of a type, optionally from one source entity.",
+  "params": [
+   {
+    "name": "relationshipType",
+    "in": "query",
+    "required": false,
+    "values": "default orgchart",
+    "kind": "fixed"
+   },
+   {
+    "name": "sourceEntityKey",
+    "in": "query",
+    "required": false,
+    "values": "entity key to filter on, default empty (all)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{relationships:[{key, displayName, sourceEntityKey, sourceAttributeKey, targetEntityKey, targetAttributeKey}], arraySize, nextIndex, totalSize, total}",
+  "example": "GET \u2026/relationships/list?relationshipType=orgchart&sourceEntityKey=user&clientId=1",
+  "notes": "Lab: user2users (Manager-Employee, target attribute manager) and group2users (target attribute group). Here key is the short key.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/rob",
+  "status": "validated",
+  "purpose": "Tells what the signed-in user (or the user they act for) may do when requesting on behalf of others.",
+  "params": [
+   {
+    "name": "proxyUser",
+    "in": "query",
+    "required": false,
+    "values": "DN of the user being proxied for; default empty = self",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{authorized, readOnly, teamReadOnly, proxyFor, isAdmin, isRoleAdmin, domains:[PROVISIONING|ROLES|RESOURCES|\u2026], isDelegationTeamMgr, isAvailabilityTeamMgr}",
+  "example": "GET \u2026/rob",
+  "notes": "proxyUser must be someone the caller is a proxy for, otherwise 489 SecurityException 'User x is not a proxy for y' (even for yourself). Lab: uaadmin is admin in PROVISIONING, ROLES, RESOURCES. Errors seen on the lab: proxyUser = the caller \u2192 489 'Error getting proxy security context. User '<DN>' is not a proxy for '<DN>'.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/rob/ismproperties/oauth",
+  "status": "validated",
+  "purpose": "Returns the OAuth-related ISM configuration properties the landing page needs.",
+  "params": [],
+  "body": null,
+  "answer": "{properties:[{key, value}], arraySize:int}",
+  "example": "GET \u2026/rob/ismproperties/oauth",
+  "notes": "Lab keys: com.netiq.client.authserver.url.logout, com.netiq.idm.osp.oauth.issuer, com.netiq.ualanding.idmprov.context (URLs/paths, no secrets). The dashboard instead POSTs {keys:[\u2026]} to /rob/ismproperties for other properties (min search characters, VLV).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/uas",
+  "status": "validated",
+  "purpose": "Tells which kind of user administrator the signed-in user is.",
+  "params": [],
+  "body": null,
+  "answer": "{globalAdmin:bool, domainAdmin:bool, teamManager:bool}",
+  "example": "GET /IDMProv/rest/catalog/uas",
+  "notes": "Lab: uaadmin is globalAdmin true. Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/user",
+  "status": "validated",
+  "purpose": "Delete users.",
+  "params": [],
+  "body": {
+   "example": {
+    "members": [
+     {
+      "dn": "<user DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "members",
+     "required": true,
+     "values": "list of {dn}",
+     "kind": "free"
+    },
+    {
+     "name": "members[].dn",
+     "required": true,
+     "values": "user DN; a member without dn fails alone",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, name}]} or {success:false, failed:[\u2026]} with HTTP 200",
+  "example": "DELETE \u2026/access/user {members:[{dn}]}",
+  "notes": "A member without dn: 200 {success:false, failed:[{}]} (no reason given). After the delete users/details answers 489 with LDAP -601.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/user",
+  "status": "validated",
+  "purpose": "Creates a user and optionally sets the password.",
+  "params": [],
+  "body": {
+   "example": {
+    "container": "ou=users,o=data",
+    "password": "<initial password>",
+    "attributes": [
+     {
+      "key": "CN",
+      "values": [
+       "jdoe"
+      ],
+      "action": "add"
+     },
+     {
+      "key": "FirstName",
+      "dataType": "String",
+      "isRequired": true,
+      "values": [
+       "John"
+      ],
+      "action": "add"
+     },
+     {
+      "key": "LastName",
+      "dataType": "String",
+      "isRequired": true,
+      "values": [
+       "Doe"
+      ],
+      "action": "add"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "container",
+     "required": false,
+     "values": "container DN; default is the configured user root container",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes",
+     "required": true,
+     "values": "list of attributes; at least one required",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes[].key",
+     "required": true,
+     "values": "attribute key from the user entity; the naming attribute (cn) value plus container makes the DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes[].values",
+     "required": false,
+     "values": "list of strings; time values as epoch milliseconds, binary (UserPhoto) as Base64 of a valid image",
+     "kind": "free"
+    },
+    {
+     "name": "attributes[].isRequired",
+     "required": false,
+     "values": "if true the first value must be non-empty",
+     "kind": "fixed"
+    },
+    {
+     "name": "attributes[].dataType",
+     "required": false,
+     "values": "String, DN, Time, Binary\u2026",
+     "kind": "fixed"
+    },
+    {
+     "name": "attributes[].action",
+     "required": false,
+     "values": "defaults to Add when missing",
+     "kind": "fixed"
+    },
+    {
+     "name": "password",
+     "required": false,
+     "values": "initial password; set after creation",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{dn}",
+  "example": null,
+  "notes": "Creates a user with an initial password. Every attribute needs isRequired (true or false): without it the server fails with 489 'Internal Error'. The password must meet the password policy that applies to the new user, which is per installation: on the lab a 15-character password was refused with 489 'Cannot create the user. The password does not meet the password policy criteria.' (subcode errorResponseDuringNmasPasswordMgmt; the lab's policy allows at most 12) and a 12-character one with upper and lower case, digits and two special characters worked; no password at all gave the same refusal. The new user could then sign in with the OSP password grant. A user without a password can be created with POST /access/entities/item key=user. An existing DN gives 489 existing-user. Values are XSS-checked (400).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/user",
+  "status": "validated",
+  "purpose": "Change a user's attributes.",
+  "params": [
+   {
+    "name": "isProfile",
+    "in": "query",
+    "required": false,
+    "values": "true when editing one's own profile; default false",
+    "kind": "fixed"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "client configuration id, default 1",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "<user DN>",
+    "attributes": [
+     {
+      "key": "Title",
+      "values": [
+       "<title>"
+      ],
+      "action": "UPDATE"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "user DN",
+     "kind": "free"
+    },
+    {
+     "name": "attributes",
+     "required": true,
+     "values": "at least one",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes[].key",
+     "required": true,
+     "values": "attribute key",
+     "kind": "per-installation"
+    },
+    {
+     "name": "attributes[].values",
+     "required": false,
+     "values": "new values",
+     "kind": "free"
+    },
+    {
+     "name": "attributes[].action",
+     "required": true,
+     "values": "Add, Delete or Update (any case)",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{dn, attributes:[{name, key, values?, hidden, dataType}]}: every user attribute with the refreshed values",
+  "example": "PUT \u2026/access/user {dn, attributes:[{key:'Title', values:[\u2026], action:'UPDATE'}]}",
+  "notes": "GET /access/users/details showed the new Title at once.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/user/admin",
+  "status": "validated",
+  "purpose": "Says whether a user is a domain or delegated administrator of a domain.",
+  "params": [
+   {
+    "name": "userDn",
+    "in": "query",
+    "required": true,
+    "values": "user DN; required",
+    "kind": "free"
+   },
+   {
+    "name": "level",
+    "in": "query",
+    "required": false,
+    "values": "1 = domain administrator (default), 2 = delegated administrator; anything else is 489",
+    "kind": "fixed"
+   },
+   {
+    "name": "type",
+    "in": "query",
+    "required": true,
+    "values": "domain, any case: ROLES, COMPLIANCE, PROVISIONING, RBPM-APP, SECURITY (checked); RESOURCES is accepted but always false; PRD, CONFIGURATION, ATTESTATION, SOD, TEAMS, RBPM are rejected",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{value:bool}",
+  "example": "GET \u2026/user/admin?userDn=cn=uaadmin,ou=sa,o=data&level=1&type=ROLES",
+  "notes": "The reference lists PRD as a type, but the server only accepts PROVISIONING for that domain. Missing type: 'Value for type is either invalid or not supported'. Lab uaadmin, level 1: ROLES/COMPLIANCE/PROVISIONING/RBPM-APP true, SECURITY false. Not used by the dashboard. Errors seen on the lab: no userDN \u2192 489 'Value for userDN is missing in payload\u2026'; no type \u2192 489 'Value for type is either invalid or not supported\u2026'; level=3 \u2192 489 'Value for level is either invalid or not supported\u2026'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/user/dn",
+  "status": "validated",
+  "purpose": "Moves or renames a user's DN through the workflow engine.",
+  "params": [],
+  "body": {
+   "example": {
+    "oldUserDn": "cn=jdoe,ou=users,o=data",
+    "newUserDn": "cn=jdoe2,ou=users,o=data"
+   },
+   "fields": [
+    {
+     "name": "oldUserDn",
+     "required": true,
+     "values": "current DN; required",
+     "kind": "free"
+    },
+    {
+     "name": "newUserDn",
+     "required": true,
+     "values": "new DN; required",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{oldUserDn, newUserDn}",
+  "example": null,
+  "notes": "Despite the name, it changes the user's DN only in the workflow database (for after a user was renamed or moved in the directory); the directory entry is not touched. It answered 200 for an existing user (who kept the old DN in the directory) and also for a DN that does not exist. Only a provisioning administrator may call it; others get 400 (security error mapped to the XSS code). Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/users/clearEntitlementResult",
+  "status": "validated",
+  "purpose": "Clears the DirXML-EntitlementResult attribute on a user.",
+  "params": [
+   {
+    "name": "userDn",
+    "in": "query",
+    "required": true,
+    "values": "user DN; required",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{isSuccess:bool, message}",
+  "example": null,
+  "notes": "Clears the user's DirXML-EntitlementResult. A user without one: {isSuccess:false, message:'Attribute:DirXML-EntitlementResult  not found on the user dn:\u2026'}. Missing userDn: 489 'Invalid input DN: null'. Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/users/userDefaults",
+  "status": "validated",
+  "purpose": "Returns the signed-in user's basic details as configured for the client (header card, profile).",
+  "params": [
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "isProfile",
+    "in": "query",
+    "required": false,
+    "values": "true for the My Profile page attribute set; default false",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{dn, fullName, canHide, imageAttr, primaryAttributes, secondaryAttributes, otherAttributes, disabledLogin, disabledLoginSupported, helpdeskDetails, isHelpdeskUser, teamManger, hideProfilePhoto}",
+  "example": "GET \u2026/users/userDefaults?clientId=1&isProfile=true",
+  "notes": "Always about the caller; no DN parameter. Note the field spelled teamManger.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/users/usersForHistory",
+  "status": "validated",
+  "purpose": "Searches users whose request history the caller may view (helpdesk).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search string, default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 20",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "attribute key",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "searchAttr",
+    "in": "query",
+    "required": false,
+    "values": "attributes to search",
+    "kind": "per-installation"
+   },
+   {
+    "name": "advSearch",
+    "in": "query",
+    "required": false,
+    "values": "advanced search terms",
+    "kind": "per-installation"
+   },
+   {
+    "name": "columnCustomization",
+    "in": "query",
+    "required": false,
+    "values": "'true' applies the manage-users column customization; default false",
+    "kind": "fixed"
+   },
+   {
+    "name": "filter",
+    "in": "query",
+    "required": false,
+    "values": "filter for column customization",
+    "kind": "free"
+   },
+   {
+    "name": "searchCount",
+    "in": "query",
+    "required": false,
+    "values": "'true' adds totalCount",
+    "kind": "fixed"
+   },
+   {
+    "name": "isHistory",
+    "in": "query",
+    "required": false,
+    "values": "boolean, default false",
+    "kind": "fixed"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "dashboard client configuration id; defaults to 1 (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{usersList:[same rows as /users/list], nextIndex (-1 = no more)}; with searchCount=true {nextIndex, totalCount}",
+  "example": "GET \u2026/access/users/usersForHistory?q=*&clientId=1&nextIndex=1&size=2&sortBy=LastName&sortOrder=desc",
+  "notes": "Same rows as GET /access/users/list, but the answer has no totalSize. isHistory true or false made no difference here. Paging size=2 gave nextIndex 3. sortBy LastName/FirstName with desc sorted correctly. q=Alice found Alice. Callers who are neither domain administrators nor helpdesk users for a client get an unauthorized error. Not used by the dashboard.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/users/list",
+  "status": "validated",
+  "purpose": "Searches people in the user search root with the dashboard's display columns.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "text matched against names; * or empty for all",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start, default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size, default 20",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "a directory attribute key of the user entity, e.g. LastName, FirstName, Title",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "config client id, default 1",
+    "kind": "per-installation"
+   },
+   {
+    "name": "searchAttr",
+    "in": "query",
+    "required": false,
+    "values": "attribute key to search instead of names, e.g. Title",
+    "kind": "per-installation"
+   },
+   {
+    "name": "searchCount",
+    "in": "query",
+    "required": false,
+    "values": "true returns only the count",
+    "kind": "free"
+   },
+   {
+    "name": "columnCustomization",
+    "in": "query",
+    "required": false,
+    "values": "true leaves the attribute columns out",
+    "kind": "free"
+   },
+   {
+    "name": "advSearch",
+    "in": "query",
+    "required": false,
+    "values": "advanced search expression (not tried)",
+    "kind": "free"
+   },
+   {
+    "name": "filter",
+    "in": "query",
+    "required": false,
+    "values": "column filter (not tried)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{usersList:[{dn, fullName, canHide, imageAttr, primaryAttributes:[{key, displayLabel, attributeValues:[{@type, $}], \u2026}], secondaryAttributes, disabledLogin, disabledLoginSupported, isHelpdeskUser, teamManger, hideProfilePhoto}], nextIndex (-1 = no more), totalSize}; with searchCount=true only {nextIndex, totalCount, totalSize}",
+  "example": "GET \u2026/access/users/list?q=*&clientId=1&nextIndex=1&size=10&sortBy=LastName&sortOrder=desc",
+  "notes": "With users present: primaryAttributes carried Department and Title and secondaryAttributes Email and TelephoneNumber (the client's quick-info columns; per installation), with values only where the user has them. q matches names (a last name found the user; a cn prefix found nothing); searchAttr=Title with q='Test Analyst' found the one user with that title. sortBy works on directory attributes (LastName desc, FirstName asc, Title all sorted correctly); an unknown attribute gives 489 'Sort on Bogus does not work. Please check your Directory Abstraction Layer configuration'. Paging: size=2 gave nextIndex 3; totalSize is the whole count. searchCount=true returns the count alone (totalCount 3) and no list. columnCustomization=true dropped primaryAttributes and secondaryAttributes from each row.",
+  "evidence": "inspection and observation, October 2026"
+ }
+]

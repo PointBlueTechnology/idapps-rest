@@ -1,0 +1,3199 @@
+[
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/administration/cprsConfig",
+  "status": "validated",
+  "purpose": "Read the CPRS (connected-system permission reconciliation) service settings.",
+  "params": [],
+  "body": null,
+  "answer": "{enableCprs: bool, cleanupTimeInDays: int, pollingInterval: int}",
+  "example": "GET \u2026/access/administration/cprsConfig -> {enableCprs:true, cleanupTimeInDays:7, pollingInterval:10}",
+  "notes": "Caller must be a Resources domain administrator, otherwise unauthorized. Server defaults when unset: polling 60, cleanup 7.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/administration/cprsConfig",
+  "status": "validated",
+  "purpose": "Save the CPRS settings and start, stop or re-time the CPRS engine.",
+  "params": [],
+  "body": {
+   "example": {
+    "enableCprs": true,
+    "cleanupTimeInDays": 7,
+    "pollingInterval": 10
+   },
+   "fields": [
+    {
+     "name": "enableCprs",
+     "required": true,
+     "values": "true / false; a change starts or shuts down the CPRS engine",
+     "kind": "fixed"
+    },
+    {
+     "name": "cleanupTimeInDays",
+     "required": true,
+     "values": "days, integer",
+     "kind": "free"
+    },
+    {
+     "name": "pollingInterval",
+     "required": true,
+     "values": "integer interval",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the saved settings {enableCprs, cleanupTimeInDays, pollingInterval}",
+  "example": "",
+  "notes": "Send all three fields: enableCprs is compared with the stored value and a missing one fails. Changing enableCprs starts or stops the CPRS engine; changing interval/cleanup re-initialises it. Tested by posting the GET answer back unchanged; GET afterwards was identical. Unlike the GET, it does not require an administrator.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/administration/delegation",
+  "status": "validated",
+  "purpose": "Read the delegation settings (delegatee notification template, retention, all-requests flag).",
+  "params": [],
+  "body": null,
+  "answer": "{allRequests: bool, delegateNotfTemplate?: str, delegationRetentionTime?: long minutes}",
+  "example": "GET \u2026/access/administration/delegation -> {allRequests:true}",
+  "notes": "Lab answers only allRequests: no template set and retention 0, which the server leaves out. Allowed for provisioning admins, provisioning team managers and PRD delegated admins.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/administration/delegation",
+  "status": "validated",
+  "purpose": "Save the delegation settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "allRequests": true,
+    "delegateNotfTemplate": "cn=Delegate,cn=Default Notification Collection,cn=Security",
+    "delegationRetentionTime": 60
+   },
+   "fields": [
+    {
+     "name": "allRequests",
+     "required": false,
+     "values": "true / false",
+     "kind": "fixed"
+    },
+    {
+     "name": "delegateNotfTemplate",
+     "required": false,
+     "values": "email template DN from GET /access/info/email/templates",
+     "kind": "per-installation"
+    },
+    {
+     "name": "delegationRetentionTime",
+     "required": false,
+     "values": "minutes, must not be negative",
+     "kind": "free"
+    },
+    {
+     "name": "availabilityNotfTemplate",
+     "required": false,
+     "values": "accepted but ignored by the save",
+     "kind": "free"
+    },
+    {
+     "name": "availabilityRetentionTime",
+     "required": false,
+     "values": "accepted but ignored by the save",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the saved settings",
+  "example": "",
+  "notes": "Provisioning administrator only. Every field is optional: only fields present are changed. An empty body gives 'payload is empty'. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/administration/emailApproval",
+  "status": "validated",
+  "purpose": "Read the email-based approval settings (incoming mail server, phrases, templates, proxy, notification SMTP).",
+  "params": [],
+  "body": null,
+  "answer": "{emailApprovalTurnOn, serverType, host, email, password, folder, sslEnabled, requireAuthentication, useDefaultPort, port, pollingInterval, approvePhrase:[{locale,value}], denyPhrase:[{locale,value}], cleanupTimeInDays, successMailTemplate, failureMailTemplate, tokenExpirationTime, emailContentOption, replyEmail, isProxyEnabled, proxyHost, proxyPort, isProxyAuthRequired, proxyUser, proxyPassword, notifyPort, notifySecurePort, notifyAuthRequired, notifyAuthPassword, notifySmtpTls, notifySignature, fieldLabels:[{key,value}], modernAuthIncomingNode:{clientSecret}, modernAuthOutgoingNode:{clientSecret, grantType}}",
+  "example": "GET \u2026/access/administration/emailApproval",
+  "notes": "Lab: email approval off, imap/INBOX/993. Stored secrets (password, proxyPassword, notifyAuthPassword, the two clientSecret fields) come back as a fixed mask, not the value. Needs the 'emailapproval' page right. approvePhrase/denyPhrase have one entry per supported locale (17 on the lab).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/administration/emailApproval",
+  "status": "validated",
+  "purpose": "Save the email-based approval settings and push them to notification and workflow engine configuration.",
+  "params": [],
+  "body": {
+   "example": {
+    "emailApprovalTurnOn": false,
+    "serverType": "imap",
+    "host": "mail.example.com",
+    "email": "approvals@example.com",
+    "password": "<mask or new value>",
+    "folder": "INBOX",
+    "sslEnabled": true,
+    "requireAuthentication": true,
+    "useDefaultPort": true,
+    "port": 993,
+    "pollingInterval": 60,
+    "approvePhrase": [
+     {
+      "locale": "en",
+      "value": "Approve"
+     }
+    ],
+    "denyPhrase": [
+     {
+      "locale": "en",
+      "value": "Reject"
+     }
+    ],
+    "cleanupTimeInDays": 2,
+    "tokenExpirationTime": 48
+   },
+   "fields": [
+    {
+     "name": "emailApprovalTurnOn",
+     "required": false,
+     "values": "true / false",
+     "kind": "fixed"
+    },
+    {
+     "name": "serverType",
+     "required": false,
+     "values": "lab value imap",
+     "kind": "free"
+    },
+    {
+     "name": "host",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "email",
+     "required": false,
+     "values": "mailbox user id",
+     "kind": "free"
+    },
+    {
+     "name": "password",
+     "required": false,
+     "values": "send the mask back to keep the stored one",
+     "kind": "free"
+    },
+    {
+     "name": "folder",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "sslEnabled",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "requireAuthentication",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "useDefaultPort",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "port",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "pollingInterval",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "approvePhrase",
+     "required": false,
+     "values": "[{locale, value}] per supported locale",
+     "kind": "per-installation"
+    },
+    {
+     "name": "denyPhrase",
+     "required": false,
+     "values": "[{locale, value}] per supported locale",
+     "kind": "per-installation"
+    },
+    {
+     "name": "cleanupTimeInDays",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "successMailTemplate",
+     "required": false,
+     "values": "email template DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "failureMailTemplate",
+     "required": false,
+     "values": "email template DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "tokenExpirationTime",
+     "required": false,
+     "values": "hours",
+     "kind": "free"
+    },
+    {
+     "name": "emailContentOption",
+     "required": false,
+     "values": "integer option",
+     "kind": "free"
+    },
+    {
+     "name": "replyEmail",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "isProxyEnabled",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "proxyHost",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "proxyPort",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "isProxyAuthRequired",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "proxyUser",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "proxyPassword",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "authType",
+     "required": false,
+     "values": "BASIC (default) or a modern-auth type",
+     "kind": "fixed"
+    },
+    {
+     "name": "modernAuthIncomingNode",
+     "required": false,
+     "values": "{clientSecret,\u2026} used when authType is not BASIC",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the saved settings (password empty)",
+  "example": "",
+  "notes": "Needs the 'emailapproval' page right. Secrets: the GET returns a fixed mask in password, proxyPassword and modernAuthIncomingNode.clientSecret, and posting the mask back keeps the stored secret. Posting the GET answer back is accepted, but the save fills in defaults the GET left out: authType and notifyAuthType BASIC, modernAuthIncomingNode.grantType client_credentials, and approve/deny phrases for every supported locale (17 \u2192 19 on the lab). The answer is the saved object with password empty.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/administration/igConfig",
+  "status": "validated",
+  "purpose": "Read the Identity Governance integration settings.",
+  "params": [],
+  "body": null,
+  "answer": "{host?: str, adminUserName?: str, adminPassword?: mask, showIgApprovals: bool, showIgRequestCatalog: bool}",
+  "example": "GET \u2026/access/administration/igConfig -> {showIgApprovals:false, showIgRequestCatalog:false}",
+  "notes": "Lab has no IG host or admin, so only the two flags come back. When an admin user is set the password is returned as a mask. Needs the 'igConfiguration' page right.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/administration/igConfig",
+  "status": "validated",
+  "purpose": "Save the Identity Governance integration settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "host": "https://ig.example.com",
+    "adminUserName": "igadmin",
+    "adminPassword": "<mask keeps the stored one>",
+    "showIgApprovals": false,
+    "showIgRequestCatalog": false
+   },
+   "fields": [
+    {
+     "name": "host",
+     "required": false,
+     "values": "IG application URL",
+     "kind": "free"
+    },
+    {
+     "name": "adminUserName",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "adminPassword",
+     "required": false,
+     "values": "mask or unchanged value keeps the stored password",
+     "kind": "free"
+    },
+    {
+     "name": "showIgApprovals",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "showIgRequestCatalog",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "the saved settings",
+  "example": "",
+  "notes": "Needs the 'igConfiguration' page right. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/administration/roleResourceSettings",
+  "status": "validated",
+  "purpose": "Read the role, resource, entitlement-query and SoD settings of the role subsystem.",
+  "params": [],
+  "body": null,
+  "answer": "{roleContainer, roleRequestContainer, defaultRoleRequestDef (name), roleAssignmentGracePeriod, roleLevels:[{name, level, cn, localizedNames:[{locale,name}]}], resourceContainer, resourceRequestContainer, defaultResourceGrantRequestDef, defaultResourceRevokeRequestDef, queryTimeout, queryRefreshRate, concatDisplayElements, queryDisplayElements:[str], sodContainer, defaultSODRequestDef (DN), defaultSODRequestDefName, sodQuorum?, sodApprovers?, reportContainer, roleToRoleApproval, roleToGroupApproval, roleToContainerApproval}",
+  "example": "GET \u2026/catalog/administration/roleResourceSettings",
+  "notes": "Lab: three role levels 10/20/30, query timeout 10, refresh 1440, grace period 0. sodQuorum and sodApprovers are absent on the lab (not set). Default request definitions come back as display names, except the SoD one which is also a DN.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/administration/roleResourceSettings/entitlementQuery",
+  "status": "validated",
+  "purpose": "Save the entitlement query refresh rate and timeout.",
+  "params": [],
+  "body": {
+   "example": {
+    "queryRefreshRate": 1440,
+    "queryTimeout": 10
+   },
+   "fields": [
+    {
+     "name": "queryRefreshRate",
+     "required": false,
+     "values": "minutes, 0 or more",
+     "kind": "free"
+    },
+    {
+     "name": "queryTimeout",
+     "required": false,
+     "values": "seconds, 0 or more",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
+  "example": "",
+  "notes": "Only queryRefreshRate and queryTimeout are read; negative values are refused, an empty body 'settings data required'. Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/administration/roleResourceSettings/role",
+  "status": "validated",
+  "purpose": "Save role settings: removal grace period, role level display names and role approval switches.",
+  "params": [],
+  "body": {
+   "example": {
+    "roleAssignmentGracePeriod": 0,
+    "roleLevels": [
+     {
+      "level": 20,
+      "localizedNames": [
+       {
+        "locale": "en",
+        "name": "IT Role"
+       }
+      ]
+     }
+    ],
+    "roleToRoleApproval": false,
+    "roleToGroupApproval": true,
+    "roleToContainerApproval": true
+   },
+   "fields": [
+    {
+     "name": "roleAssignmentGracePeriod",
+     "required": false,
+     "values": "0 or more",
+     "kind": "free"
+    },
+    {
+     "name": "roleLevels",
+     "required": false,
+     "values": "[{level, localizedNames:[{locale,name}]}]; level must match an existing level (lab 10/20/30), only names change",
+     "kind": "per-installation"
+    },
+    {
+     "name": "roleToRoleApproval",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "roleToGroupApproval",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "roleToContainerApproval",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
+  "example": "",
+  "notes": "Only the grace period, role level names and the three approval switches are read; levels cannot be added or removed (unknown levels are skipped, invalid names refused). Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/administration/roleResourceSettings/sod",
+  "status": "validated",
+  "purpose": "Save SoD settings: default SoD approval PRD, quorum and approvers.",
+  "params": [],
+  "body": {
+   "example": {
+    "defaultSODRequestDef": "cn=SoD Conflict Approval,cn=RequestDefs,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+    "sodQuorum": "100",
+    "sodApprovers": [
+     {
+      "id": "cn=uaadmin,ou=sa,o=data",
+      "sequence": 1
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "defaultSODRequestDef",
+     "required": false,
+     "values": "PRD DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "sodQuorum",
+     "required": false,
+     "values": "string number 1-100 (percent sign added by the server)",
+     "kind": "free"
+    },
+    {
+     "name": "sodApprovers",
+     "required": false,
+     "values": "[{id: approver DN, sequence: int}] (also name, fullName, type ignored)",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
+  "example": "",
+  "notes": "Careful: the quorum is written even when absent, so a body without sodQuorum clears it; a quorum outside 1-100 or not a number is refused. Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/cache/configuration",
+  "status": "validated",
+  "purpose": "Read the cluster and cache settings: global value, node-local value and value in effect.",
+  "params": [],
+  "body": null,
+  "answer": "{permIndexClusterEnabled, permIndexClusterEnabledCurrentValue, clusterEnabled, clusterEnabledCurrentValue, groupID, currentGroupID, clusterProps, clusterCurrentProps, permIndexGroupID, currentPermIndexGroupID, permIndexClusterProps, clusterPermIndexCurrentProps, lockAcquTimeout, lockAcquCurrentTimeout, evictionPolicyClass, currentEvictionPolicyClass, wakeUpIntervalSeconds, currentWakeUpInterval, maxNodes, currentMaxNodes, timeToLiveSeconds, currentTimeToLive, local*?} all strings",
+  "example": "GET \u2026/admin/cache/configuration",
+  "notes": "All values are strings. Lab: clustering off, JGroups UDP stack, LRU eviction. Node-local fields (localClusterEnabled, localGroupID, \u2026) appear only when set; none on the lab. Needs the cacheConfig page right.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/cache/configuration",
+  "status": "validated",
+  "purpose": "Save the global and node-local cluster/cache settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "clusterEnabled": "false",
+    "groupID": "<group id>",
+    "clusterProps": "<JGroups stack>",
+    "lockAcquTimeout": "15000",
+    "evictionPolicyClass": "org.jboss.cache.eviction.LRUPolicy",
+    "wakeUpIntervalSeconds": "5",
+    "maxNodes": "10000",
+    "timeToLiveSeconds": "0",
+    "permIndexClusterEnabled": "false",
+    "permIndexGroupID": "com.netiq.idm.cis.perm.groupId",
+    "permIndexClusterProps": "<JGroups stack>"
+   },
+   "fields": [
+    {
+     "name": "clusterEnabled",
+     "required": false,
+     "values": "\"true\" / \"false\"",
+     "kind": "fixed"
+    },
+    {
+     "name": "groupID",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "clusterProps",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "lockAcquTimeout",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "evictionPolicyClass",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "wakeUpIntervalSeconds",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "maxNodes",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "timeToLiveSeconds",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "permIndexClusterEnabled",
+     "required": false,
+     "values": "\"true\" / \"false\"",
+     "kind": "fixed"
+    },
+    {
+     "name": "permIndexGroupID",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "permIndexClusterProps",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "localClusterEnabled",
+     "required": false,
+     "values": "node-local override",
+     "kind": "free"
+    },
+    {
+     "name": "localGroupID",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "localClusterProps",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "localLockAcquTimeout",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "localEvictionPolicyClass",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "localWakeUpIntervalSeconds",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "localMaxNodes",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "localTimeToLiveSeconds",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success:true, message:'Successfully updated the cache configuration'}",
+  "example": "",
+  "notes": "Global fields: empty or absent means keep. Node-local fields: empty or absent CLEARS the node-local override, so send the whole GET answer (the *Current* fields are read-only and ignored). Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/cache/customizedHolders",
+  "status": "validated",
+  "purpose": "List the cache holders with their current, global and local max-nodes, time-to-live and max-age settings.",
+  "params": [],
+  "body": null,
+  "answer": "{arraySize: int, customizeCacheHolders:[{cacheValue (holder id), maxnodesCurrent:int, globalMaxnodes:str, localMaxnodes?, enableLocalMaxnodes?, timetoliveCurrent:int, globalTimetolive:str, loacalTimetolive?, enableLocalTimetolive?, maxageCurrent:int, globalMaxage:str, localMaxage?, enableLocalMaxage?, cacheEnable:str, cacheReadonly:str}]}",
+  "example": "GET \u2026/admin/cache/customizedHolders -> 19 holders",
+  "notes": "Lab has 19 holders (Authorization.AdminLevelsCacheHolder, DirectoryService.UserCacheHolder, Workflow.Model.Process, RestAccess, \u2026). The local time-to-live field is spelled 'loacalTimetolive'. Needs the cacheConfig page right.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/cache/customizedHolders",
+  "status": "validated",
+  "purpose": "Save per-holder cache settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "customizeCacheHolders": [
+     {
+      "cacheValue": "DirectoryService.UserCacheHolder",
+      "globalMaxnodes": "2000",
+      "globalTimetolive": "0",
+      "globalMaxage": "600",
+      "cacheEnable": "true"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "customizeCacheHolders[].cacheValue",
+     "required": true,
+     "values": "existing holder id from the GET",
+     "kind": "per-installation"
+    },
+    {
+     "name": "customizeCacheHolders[].globalMaxnodes",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "customizeCacheHolders[].globalTimetolive",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "customizeCacheHolders[].globalMaxage",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "customizeCacheHolders[].cacheEnable",
+     "required": false,
+     "values": "\"true\" keeps the holder enabled; anything else disables it (except read-only holders)",
+     "kind": "fixed"
+    },
+    {
+     "name": "customizeCacheHolders[].enableLocalMaxnodes / localMaxnodes / enableLocalTimetolive / loacalTimetolive / enableLocalMaxage / localMaxage",
+     "required": false,
+     "values": "node-local overrides",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id: holder}], failed:[\u2026]}",
+  "example": "",
+  "notes": "DANGER: posting the GET answer back unchanged stopped the applications from starting after the next restart. The save writes a global property com.sssw.fw.cache.CacheHolderConfig:<holder> for every holder sent (in the User Application driver's cn=configuration,cn=AppDefs object), and for a read-only holder it always writes CacheHolder.active=true, whatever cacheEnable says. GlobalCacheHolder is read-only and had no such property; once written, the next start failed with 'ISPN000453: Attempt to define configuration for cache GlobalCacheHolder which already exists', the cache service did not start, and /IDMProv answered 404 everywhere. Restoring that object's XmlData from a copy taken before fixed it. So: send only the holders you change, never GlobalCacheHolder, and keep a copy of the configuration object. Per holder: unknown or blank cacheValue is reported as failed; omitting cacheEnable disables caching for that holder. The save also appends explicit zero values (MaxAgeSeconds=0, TimeToLiveSeconds=0) to holders that had none.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config",
+  "status": "validated",
+  "purpose": "Read one value of a client's settings by section.key.",
+  "params": [
+   {
+    "name": "key",
+    "in": "query",
+    "required": true,
+    "values": "section.key with section access, customization or branding, e.g. customization.maxLimitUserSearch, branding.title, access.settings",
+    "kind": "fixed"
+   },
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{<key>: value}, e.g. {maxLimitUserSearch: 500}",
+  "example": "GET \u2026/access/config?key=customization.maxLimitUserSearch&client=1 -> {maxLimitUserSearch:500}",
+  "notes": "Missing key: 'Invalid or missing JSON Key/value.'; missing client: 'Admin settings client not found'; a key without a dot, or another section (helpdesk.*, dashboardAccess.*): 'Admin settings key is not valid - <key>'. The key names are the 'key' fields inside the client config (see GET config/clients/{id}).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/access",
+  "status": "not-working",
+  "purpose": "Meant to read the navigation access rights per page section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
+  "example": "GET \u2026/access/config/access?client=1",
+  "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId=1 instead of client=1 \u2192 489 'Create User Payload is empty' (a misleading message: the parameter is client); a client id that does not exist (client=2 before one was made) \u2192 489 'Admin access settings not found'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/access",
+  "status": "validated",
+  "purpose": "Save the navigation access rights per page section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "access": [
+     {
+      "key": "<item key>",
+      "value": "<value>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "access",
+     "required": true,
+     "values": "the whole section as in config.access of GET config/clients/{id}: a list of {key, value, type, displayLable, \u2026}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{access: [the saved items]}",
+  "example": "",
+  "notes": "The body is {\"access\": [the section's items]}, as config.access of GET \u2026/config/clients/{id} (the GET config/access read is broken). Saving the section back unchanged on a test client left the client's config identical. Needs the 'settings' page right for that client.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/branding",
+  "status": "not-working",
+  "purpose": "Meant to read the header/footer branding section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
+  "example": "GET \u2026/access/config/branding?client=1",
+  "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId instead of client \u2192 489 'Create User Payload is empty'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/branding",
+  "status": "validated",
+  "purpose": "Save the header/footer branding section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "branding": [
+     {
+      "key": "<item key>",
+      "value": "<value>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "branding",
+     "required": true,
+     "values": "the whole section as in config.branding of GET config/clients/{id}: a list of {key, value, type, displayLable, \u2026}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{branding: [the saved items]}",
+  "example": "",
+  "notes": "The body is {\"branding\": [the section's items]}, as config.branding of GET \u2026/config/clients/{id} (the GET config/branding read is broken). Saving the section back unchanged on a test client left the client's config identical. A changed titleColor read back through GET /access/config?key=branding.titleColor&client=<id>. Needs the 'settings' page right for that client.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/config/clients",
+  "status": "validated",
+  "purpose": "Delete one or more clients (setting profiles).",
+  "params": [],
+  "body": {
+   "example": {
+    "values": [
+     "2"
+    ]
+   },
+   "fields": [
+    {
+     "name": "values",
+     "required": true,
+     "values": "list of client ids",
+     "kind": "per-installation"
+    },
+    {
+     "name": "key",
+     "required": false,
+     "values": "unused",
+     "kind": "free"
+    },
+    {
+     "name": "value",
+     "required": false,
+     "values": "unused",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "200, no body",
+  "example": "",
+  "notes": "Removed a test client; GET \u2026/config/clients no longer listed it. Empty or missing values: 'payload is empty'. Needs the 'manageclients' right. Also removes the client's helpdesk provisioning view value.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/clients",
+  "status": "validated",
+  "purpose": "List the clients (setting profiles) with their full settings.",
+  "params": [],
+  "body": null,
+  "answer": "{clients:[{name, id, matchCondition, config: JSON string with sections customization, access, branding, helpdesk, dashboardAccess, isDefault: bool}]}",
+  "example": "GET \u2026/access/config/clients -> one client 'client1', id 1, default",
+  "notes": "Answer is large (about 56 KB on the lab) because config carries every section as an escaped JSON string. 204 when no clients exist.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/clients",
+  "status": "validated",
+  "purpose": "Create a client (setting profile).",
+  "params": [],
+  "body": {
+   "example": {
+    "name": "Contractors",
+    "matchCondition": "<condition>"
+   },
+   "fields": [
+    {
+     "name": "name",
+     "required": true,
+     "values": "must not be in use",
+     "kind": "free"
+    },
+    {
+     "name": "matchCondition",
+     "required": false,
+     "values": "must not be used by another client",
+     "kind": "free"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "ignored, assigned by the server",
+     "kind": "free"
+    },
+    {
+     "name": "config",
+     "required": false,
+     "values": "ignored",
+     "kind": "free"
+    },
+    {
+     "name": "isDefault",
+     "required": false,
+     "values": "ignored, always false",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{name, id, matchCondition, isDefault:false}",
+  "example": "",
+  "notes": "matchCondition is an LDAP filter that picks the users of this client (the default client has an empty one); a filter matching no one, (cn=nobody), worked for a test client. The new client starts with the default sections. Name or match condition already in use: 489 with that message. Needs the 'manageclients' right (403).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/clients/{id}",
+  "status": "validated",
+  "purpose": "Read one client (setting profile) with its full settings.",
+  "params": [
+   {
+    "name": "id",
+    "in": "path",
+    "required": true,
+    "values": "client id (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{name, id, matchCondition, config: JSON string, isDefault}",
+  "example": "GET \u2026/access/config/clients/1",
+  "notes": "Unknown id answers 204 with no body (lab: id 2), not an error. The config string is where the section contents really are (see the broken GET config/<section>).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/clients/{id}",
+  "status": "validated",
+  "purpose": "Update a client's name or match condition.",
+  "params": [
+   {
+    "name": "id",
+    "in": "path",
+    "required": true,
+    "values": "client id",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "1",
+    "name": "<client name>",
+    "matchCondition": "<condition>",
+    "config": "<config JSON text from GET>"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "the client id (same as the path)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name / matchCondition / config",
+     "required": false,
+     "values": "as read from GET \u2026/config/clients/{id}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "200, no body",
+  "example": "",
+  "notes": "Saves a client's settings. Tested by posting the GET answer back unchanged: GET afterwards was identical. Blank body id: 'client not found'. Needs the 'settings' right for the path id. The dashboard has no call for it.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/custom",
+  "status": "not-working",
+  "purpose": "Meant to read the user/general customisation section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
+  "example": "GET \u2026/access/config/custom?client=1",
+  "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/custom",
+  "status": "validated",
+  "purpose": "Save the user/general customisation section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "customization": [
+     {
+      "key": "<item key>",
+      "value": "<value>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "customization",
+     "required": true,
+     "values": "the whole section as in config.customization of GET config/clients/{id}: a list of {key, value, type, displayLable, \u2026}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{customization: [the saved items]}",
+  "example": "",
+  "notes": "The body is {\"customization\": [the section's items]}, as config.customization of GET \u2026/config/clients/{id} (the GET config/custom read is broken). Saving the section back unchanged on a test client left the client's config identical. Needs the 'settings' page right for that client.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/dashboard",
+  "status": "not-working",
+  "purpose": "Meant to read the dashboard widget access section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
+  "example": "GET \u2026/access/config/dashboard?client=1",
+  "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId instead of client \u2192 489 'Create User Payload is empty'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/dashboard",
+  "status": "validated",
+  "purpose": "Save the dashboard widget access section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "dashboardAccess": [
+     {
+      "key": "<item key>",
+      "value": "<value>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "dashboardAccess",
+     "required": true,
+     "values": "the whole section as in config.dashboardAccess of GET config/clients/{id}: a list of {key, value, type, displayLable, \u2026}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{dashboardAccess: [the saved items]}",
+  "example": "",
+  "notes": "The body is {\"dashboardAccess\": [the section's items]}, as config.dashboardAccess of GET \u2026/config/clients/{id} (the GET config/dashboard read is broken). Saving the section back unchanged on a test client left the client's config identical. Needs the 'settings' page right for that client.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/helpdesk",
+  "status": "not-working",
+  "purpose": "Meant to read the helpdesk contact settings section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
+  "example": "GET \u2026/access/config/helpdesk?client=1",
+  "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/helpdesk",
+  "status": "validated",
+  "purpose": "Save the helpdesk contact settings section of a client's settings.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "helpdesk": [
+     {
+      "key": "<item key>",
+      "value": "<value>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "helpdesk",
+     "required": true,
+     "values": "the whole section as in config.helpdesk of GET config/clients/{id}: a list of {key, value, type, displayLable, \u2026}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{helpdesk: [the saved items]}",
+  "example": "",
+  "notes": "The body is {\"helpdesk\": [the section's items]}, as config.helpdesk of GET \u2026/config/clients/{id} (the GET config/helpdesk read is broken). Saving the section back unchanged on a test client left the client's config identical. accessRights users entries {userDn, action: add|remove} request or revoke that helpdesk resource for the user, with the client as its parameter (param1 \"client1(1)\" on the lab); GET /access/helpdesk/category then named that user. Reads list the users as {dn, fullName}. Needs the 'settings' page right for that client.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/config/restoreSettings/{key}",
+  "status": "validated",
+  "purpose": "Reset one section of a client's settings to the defaults.",
+  "params": [
+   {
+    "name": "key",
+    "in": "path",
+    "required": true,
+    "values": "access, customization, branding, helpdesk or dashboardAccess",
+    "kind": "fixed"
+   },
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{key, value: the section's default JSON text}",
+  "example": "",
+  "notes": "Resets one section of a client to the defaults: a changed branding titleColor read back as the default afterwards. No body. Blank client: 'client not found'; any other key: 'key is not valid'. Needs the 'settings' right.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/config/style/{fileName}",
+  "status": "validated",
+  "purpose": "Download a stored custom stylesheet as text.",
+  "params": [
+   {
+    "name": "fileName",
+    "in": "path",
+    "required": true,
+    "values": "a .css file name: idmdashcustom1.css (sample), customBrand<client>.css (generated by the branding save)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "text/plain CSS",
+  "example": "GET \u2026/access/config/style/idmdashcustom1.css",
+  "notes": "A name without .css: 400 'Error reading custom style'; a .css name that does not exist (custom.css, style.css): 404 with the same message. The dashboard links the sample as /custom/css/idmdashcustom1.css. Request it with Accept */* or text/plain: Accept: text/css answered 406 with an HTML error page.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/config/uploadStyle",
+  "status": "validated",
+  "purpose": "Upload a custom CSS file for a client's branding.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": true,
+    "values": "client id from GET /access/config/clients (lab: 1)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": ".navbar-global { background-color: #088CB2; }",
+   "fields": [
+    {
+     "name": "(body)",
+     "required": true,
+     "values": "CSS text, Content-Type text/plain",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "200, no body",
+  "example": "",
+  "notes": "Body is the CSS text (Content-Type text/plain). Valid CSS: 200 with no body; text the CSS parser rejects: 489 'CSS file to upload is invalid'. Blank client or body: 'payload is empty'; content failing the XSS check: 400. It does not check the page right that the other config saves check. Errors seen on the lab: text that is not CSS \u2192 489 'CSS file to upload is invalid'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/dashboard",
+  "status": "validated",
+  "purpose": "Counts for the signed-in user's dashboard: roles, resources, tasks, requests and helpdesk tickets.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "client id, default 1",
+    "kind": "per-installation"
+   },
+   {
+    "name": "isNewlyAssignedCount",
+    "in": "query",
+    "required": false,
+    "values": "true (default) also counts newly assigned items",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{rolesData:{expiryRoles, newRoles, rolesCount}, resourcesData:{newResources, resourcesCount}, tasksData:{expiryTasksCount, newTasks, cliamedTasks, reassignedTasks, delegatedTasks, tasksCount}, requestData:{requestPending, requestDenied, requestApproved, totalRequest, requestForOthersPending, requestForOthersDenied, requestForOthersApproved, totalRequestForOthers, requestHasMore, otherRequestHasMore}, helpdeskData:{openTickets}}",
+  "example": "GET \u2026/access/dashboard?client=1 -> rolesCount 9, totalRequest 17",
+  "notes": "The claimed-task count is spelled 'cliamedTasks'. client selects the notification expiry window. Same answer with isNewlyAssignedCount=false on the lab (no new items).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/dashboard/globalTiles",
+  "status": "validated",
+  "purpose": "Read the global dashboard tile layout.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "default 1; not used for the data, which is global",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{dashboardCustomizations: JSON string {title, desc, dashboardLastUpdated, icon, structure, rows:[{columns:[{styleClass, cid, widgets:[\u2026]}]}]}}",
+  "example": "GET \u2026/access/dashboard/globalTiles?client=1",
+  "notes": "Lab layout is the shipped default (structure 12/4-4-4).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/dashboard/globalTiles",
+  "status": "validated",
+  "purpose": "Save the global dashboard tile layout.",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "default 1; used only for the access check",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "dashboardCustomizations": "{\"title\":\"Dashboard\",\"structure\":\"12/4-4-4\",\"rows\":[]}"
+   },
+   "fields": [
+    {
+     "name": "dashboardCustomizations",
+     "required": true,
+     "values": "layout as a JSON string, same shape as the GET",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{dashboardCustomizations: string} (what was saved)",
+  "example": "",
+  "notes": "Saves the global dashboard layout. Tested by posting the GET answer's dashboardCustomizations back unchanged; GET afterwards was identical. Missing dashboardCustomizations: 'payload is empty'. Needs the global dashboard right (403). No dashboard call found.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/display/settings/general",
+  "status": "validated",
+  "purpose": "Read the general list display settings (rows per page).",
+  "params": [],
+  "body": null,
+  "answer": "{defaultRowsPerPage: int, optionsRowsPerPage: comma string, newRequestDefaultSortByOption?: str}",
+  "example": "GET \u2026/admin/display/settings/general -> {defaultRowsPerPage:25, optionsRowsPerPage:'5,10,25,50,100,500'}",
+  "notes": "No access check on the read. newRequestDefaultSortByOption is absent on the lab (dashboard falls back to closestMatch).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/admin/display/settings/general",
+  "status": "validated",
+  "purpose": "Save the general list display settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "defaultRowsPerPage": 25,
+    "optionsRowsPerPage": "5,10,25,50,100,500"
+   },
+   "fields": [
+    {
+     "name": "defaultRowsPerPage",
+     "required": true,
+     "values": "1-10000",
+     "kind": "free"
+    },
+    {
+     "name": "optionsRowsPerPage",
+     "required": true,
+     "values": "comma-separated numbers 1-10000; duplicates removed, default added, sorted",
+     "kind": "free"
+    },
+    {
+     "name": "newRequestDefaultSortByOption",
+     "required": false,
+     "values": "sort option for the new-request list",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the saved settings",
+  "example": "",
+  "notes": "Needs the provisioning UI display right. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/display/settings/request",
+  "status": "validated",
+  "purpose": "Read the request list display settings (sort, default and overridable columns).",
+  "params": [],
+  "body": null,
+  "answer": "{requestListSort, requestListSortDesc, defaultColumns:[{key,value}], columnsForUserOverride:[{key,value}], allColumns:[{key,value}], requestListColumnsOverride}",
+  "example": "GET \u2026/admin/display/settings/request",
+  "notes": "allColumns keys on the lab: name, requestState, requestDate, recipientName, entityType, processState, expirationDate, effectiveDate, action, requestOper, confirmationNumber.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/admin/display/settings/request",
+  "status": "validated",
+  "purpose": "Save the request list display settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "requestListSort": "requestDate",
+    "requestListSortDesc": true,
+    "defaultColumns": [
+     {
+      "key": "name",
+      "value": "Item Requested"
+     }
+    ],
+    "columnsForUserOverride": [],
+    "allColumns": [],
+    "requestListColumnsOverride": true
+   },
+   "fields": [
+    {
+     "name": "requestListSort",
+     "required": false,
+     "values": "a request column key (server-fixed list; the GET's allColumns keys)",
+     "kind": "fixed"
+    },
+    {
+     "name": "requestListSortDesc",
+     "required": false,
+     "values": "bool; required together with requestListSort",
+     "kind": "fixed"
+    },
+    {
+     "name": "defaultColumns",
+     "required": false,
+     "values": "[{key,value}]",
+     "kind": "free"
+    },
+    {
+     "name": "columnsForUserOverride",
+     "required": false,
+     "values": "[{key,value}]",
+     "kind": "free"
+    },
+    {
+     "name": "allColumns",
+     "required": false,
+     "values": "[{key,value}]",
+     "kind": "free"
+    },
+    {
+     "name": "requestListColumnsOverride",
+     "required": false,
+     "values": "bool",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "the saved settings",
+  "example": "",
+  "notes": "Sort column and sort order must come together. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, \u2026) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, \u2026), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/display/settings/task",
+  "status": "validated",
+  "purpose": "Read the task list display settings.",
+  "params": [],
+  "body": null,
+  "answer": "{taskListSort, taskListSortDesc, defaultColumns, columnsForUserOverride, columnsForSort, allColumns, taskListColumnsOverride, taskDetailOpenOverride, taskDetailClaim, taskDetailClaimOverride}",
+  "example": "GET \u2026/admin/display/settings/task",
+  "notes": "columnsForSort on the lab: activityName, assignedTo, recipientName, priority, claimedby, addresseetype, processName, createTime, expirationTime, confirmationNumber.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/admin/display/settings/task",
+  "status": "validated",
+  "purpose": "Save the task list display settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "taskListSort": "createTime",
+    "taskListSortDesc": true,
+    "defaultColumns": [
+     {
+      "key": "activityName",
+      "value": "Task"
+     }
+    ],
+    "taskListColumnsOverride": true,
+    "taskDetailOpenOverride": true,
+    "taskDetailClaim": false,
+    "taskDetailClaimOverride": true
+   },
+   "fields": [
+    {
+     "name": "taskListSort",
+     "required": true,
+     "values": "a task sort column (server-fixed list; the GET's columnsForSort keys)",
+     "kind": "fixed"
+    },
+    {
+     "name": "taskListSortDesc",
+     "required": true,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "defaultColumns",
+     "required": false,
+     "values": "[{key,value}]; the sort column is added if missing",
+     "kind": "free"
+    },
+    {
+     "name": "columnsForUserOverride",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "columnsForSort",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "allColumns",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "taskListColumnsOverride",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "taskDetailOpenOverride",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "taskDetailClaim",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "taskDetailClaimOverride",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the saved settings",
+  "example": "",
+  "notes": "The sort column is always checked, so taskListSort is in effect required. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, \u2026) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, \u2026), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/featuredItems",
+  "status": "validated",
+  "purpose": "Delete featured items.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "itemId": "<item id>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items[].itemId",
+     "required": true,
+     "values": "item id",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId}]}",
+  "example": "DELETE \u2026/access/featuredItems {items:[{itemId}]}",
+  "notes": "Deleting an id that is already gone still answers success.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/featuredItems",
+  "status": "validated",
+  "purpose": "List the featured items by category, as shown on the request catalog.",
+  "params": [],
+  "body": null,
+  "answer": "{itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder, subType, items:[{image, idmdashImage, itemId, name, desc, entityType, id, itemOrder, bulkRequestable, itemCategoryId}]}], editable: bool}",
+  "example": "GET \u2026/access/featuredItems -> category 18 'Featured Items' with the HelpDesk Ticket PRD",
+  "notes": "Images are inline base64 data URIs, so the answer is large (about 20 KB for one item). Items are landing-page entries: itemId is the item's numeric id, id is the permission DN, itemCategoryId the category. An item added with POST \u2026/ulp/featuredItems under the featured category was NOT listed here, though GET \u2026/ulp/landingItems/v2 showed it in that category.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/featuredItems",
+  "status": "validated",
+  "purpose": "Feature requestable permissions.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "id": "<permission DN>",
+      "itemOrder": 1,
+      "image": ""
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items[].id",
+     "required": true,
+     "values": "a requestable permission DN (role, resource, PRD)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].itemOrder",
+     "required": false,
+     "values": "int",
+     "kind": "free"
+    },
+    {
+     "name": "items[].image",
+     "required": false,
+     "values": "data URI or empty",
+     "kind": "free"
+    },
+    {
+     "name": "items[].itemCategoryId",
+     "required": false,
+     "values": "IGNORED on create",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, instanceId:<new item id>, name}]}",
+  "example": "POST \u2026/access/featuredItems {items:[{id:<role DN>, itemOrder, image:''}]}",
+  "notes": "The new item has NO category, and GET /access/featuredItems only lists items that have one, so it is invisible until PUT \u2026 gives it itemCategoryId. A just-created catalog role was accepted at once.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/featuredItems",
+  "status": "validated",
+  "purpose": "Move featured items to a category and reorder them.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "itemId": "<item id>",
+      "itemCategoryId": "<category id>",
+      "itemOrder": 2,
+      "image": ""
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items[].itemId",
+     "required": true,
+     "values": "item id from POST's instanceId or GET featuredItems",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].itemCategoryId",
+     "required": false,
+     "values": "an existing category id",
+     "kind": "per-installation"
+    },
+    {
+     "name": "itemOrder / image",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id:<permission DN>, instanceId}]}",
+  "example": "PUT \u2026/access/featuredItems {items:[{itemId, itemCategoryId, itemOrder, image:''}]}",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/featuredItems/categories",
+  "status": "validated",
+  "purpose": "Delete featured-item categories.",
+  "params": [],
+  "body": {
+   "example": {
+    "itemCategories": [
+     {
+      "itemCategoryId": "<category id>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "itemCategories[].itemCategoryId",
+     "required": true,
+     "values": "category id",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId}]}",
+  "example": "DELETE \u2026/access/featuredItems/categories {itemCategories:[{itemCategoryId}]}",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/featuredItems/categories",
+  "status": "validated",
+  "purpose": "Create featured-item categories.",
+  "params": [],
+  "body": {
+   "example": {
+    "itemCategories": [
+     {
+      "categoryName": "<name>",
+      "itemCategoryOrder": 9
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "itemCategories[].categoryName",
+     "required": true,
+     "values": "name",
+     "kind": "free"
+    },
+    {
+     "name": "itemCategories[].itemCategoryOrder",
+     "required": false,
+     "values": "int",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId:<new category id as string>, name}]}",
+  "example": "POST \u2026/access/featuredItems/categories {itemCategories:[{categoryName, itemCategoryOrder}]}",
+  "notes": "The new id is in succeeded[].instanceId; GET /access/featuredItems lists it (subType FEATURED).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/featuredItems/categories",
+  "status": "validated",
+  "purpose": "Rename or reorder featured-item categories.",
+  "params": [],
+  "body": {
+   "example": {
+    "itemCategories": [
+     {
+      "itemCategoryId": "<category id>",
+      "categoryName": "<new name>",
+      "itemCategoryOrder": 9
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "itemCategories[].itemCategoryId",
+     "required": true,
+     "values": "category id (number)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "categoryName / itemCategoryOrder",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId}]}",
+  "example": "PUT \u2026/access/featuredItems/categories {itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder}]}",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/info/email/templates",
+  "status": "validated",
+  "purpose": "List the email notification templates (DN and name).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "text matched against template names (substring, not prefix); empty or * for all",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start, default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size; default -1 returns all",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{emailTemplates:[{dn, fullName}], arraySize: int, nextIndex: int (0 when no more)}",
+  "example": "GET \u2026/access/info/email/templates?q=*&nextIndex=1&size=5 -> 5 templates, nextIndex 6",
+  "notes": "Lab has 30 standard templates under cn=Default Notification Collection,cn=Security. Locale-specific template copies are left out. q=Approval* also matched 'Email Based Approval Failure Notification'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/info/user/dashboard",
+  "status": "validated",
+  "purpose": "The signed-in user's dashboard layout and which dashboard widgets they may use.",
+  "params": [],
+  "body": null,
+  "answer": "{isDashboardCustomized: bool, dashboardCustomizations: JSON string, dashboardWidgetsAccess:[{key, value:'true'|'false'}]}",
+  "example": "GET \u2026/access/info/user/dashboard",
+  "notes": "Widget keys on the lab: tasks, access, selfrequests, requestsforothers, table, linklist, pieChart, lineChart, reviewtasks, sodviolation, manualfulfillmenttasks, helpdesk. Without a personal layout the global tiles are returned.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/info/user/equivalent",
+  "status": "validated",
+  "purpose": "Check whether the signed-in user is security-equivalent to any of the given principals (role, group, container, user DNs).",
+  "params": [],
+  "body": {
+   "example": {
+    "principals": [
+     "cn=provadmin,cn=system,cn=level20,cn=roledefs,cn=roleconfig,cn=appconfig,cn=user application driver,cn=driverset1,o=system"
+    ]
+   },
+   "fields": [
+    {
+     "name": "principals",
+     "required": true,
+     "values": "list of DNs",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{isEquivalent: bool}",
+  "example": "POST \u2026/access/info/user/equivalent {principals:[provadmin role DN]} -> {isEquivalent:true}",
+  "notes": "Read-only POST. The user's own DN gives false, as do unknown DNs and o=data; a held role gives true. Empty or missing principals answer 204 with no body.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/info/user/navigationmenu",
+  "status": "validated",
+  "purpose": "Build the signed-in user's navigation menu.",
+  "params": [],
+  "body": {
+   "example": {},
+   "fields": [
+    {
+     "name": "navPageRights",
+     "required": false,
+     "values": "accepted, not needed; the dashboard posts {}",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{menuItems:[{menuName, mapName, context, menuOrder, subMenuList?:[\u2026]}]}",
+  "example": "POST \u2026/access/info/user/navigationmenu {} -> dashboard, main, task, access, people, administration, configuration, profileMenu",
+  "notes": "Read-only POST.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/info/user/navigationrights",
+  "status": "validated",
+  "purpose": "Check the signed-in user's right to each named dashboard page.",
+  "params": [],
+  "body": {
+   "example": {
+    "navPageRights": [
+     {
+      "key": "dashboard"
+     },
+     {
+      "key": "users"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "navPageRights[].key",
+     "required": true,
+     "values": "page keys from the client's access section (dashboard, users, settings, \u2026)",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{navPageRights:[{key, value:'true'|'false'}], areaDefault, areaDefaultDisplayName}",
+  "example": "POST \u2026/access/info/user/navigationrights {navPageRights:[{key:'dashboard'},{key:'users'}]}",
+  "notes": "Read-only POST. An empty body gives 489 'Create User Payload is empty'. The answer adds related sub-page keys (users brings createuser, usersedit, \u2026) and the area default. An unknown key came back true for the administrator.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/info/user/passwordsyncstatus",
+  "status": "empty-on-lab",
+  "purpose": "Password synchronisation status of the signed-in user, per driver.",
+  "params": [],
+  "body": null,
+  "answer": "{messages?:[{message, driverName, driverImage, status}]}",
+  "example": "GET \u2026/access/info/user/passwordsyncstatus -> {}",
+  "notes": "uaadmin has no password sync messages, so the answer is {}. A test user with a password, signed in as themselves, also got {}: the messages come from drivers that synchronise passwords, and the lab has none.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/info/user/passwordsyncstatus",
+  "status": "empty-on-lab",
+  "purpose": "Password synchronisation status of a given user, per driver.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "cn=uaadmin,ou=sa,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "user DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "204 with no body when the user has no password sync messages",
+  "example": "POST \u2026/access/info/user/passwordsyncstatus {dn:<user DN>}",
+  "notes": "A real user without a password (and no driver password sync) also gives 204; messages would need a password change going through drivers, which the test did not do. Read-only POST. An invalid DN also answers 204. An empty body gives 489 'Internal Error'. Errors seen on the lab: {} \u2192 489 'Internal Error. Please contact Administrator.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/info/user/rights",
+  "status": "validated",
+  "purpose": "The signed-in user's rights summary: admin flags, domains, client.",
+  "params": [],
+  "body": null,
+  "answer": "{authorized, readOnly, teamReadOnly, proxyFor, clientId, clientName, isAdmin, isRoleAdmin, domains:[PROVISIONING|ROLES|RESOURCES], isDelegationTeamMgr, isAvailabilityTeamMgr}",
+  "example": "GET \u2026/access/info/user/rights -> isAdmin true, client 1",
+  "notes": "clientId/clientName name the client (setting profile) applied to this user.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/info/version",
+  "status": "validated",
+  "purpose": "Version string of the REST service.",
+  "params": [],
+  "body": null,
+  "answer": "{version: str}",
+  "example": "GET \u2026/access/info/version -> {version:'0.0.1'}",
+  "notes": "Returns 0.0.1 on a 4.10.2 lab, so it does not tell the product version.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/logging",
+  "status": "validated",
+  "purpose": "Add loggers for packages at a given level.",
+  "params": [],
+  "body": {
+   "example": {
+    "logConfigurations": [
+     {
+      "packageConfigured": {
+       "packageName": "com.netiq.idm.cis"
+      },
+      "logLevel": 5
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "logConfigurations[].packageConfigured.packageName",
+     "required": true,
+     "values": "package from GET logging/packages/list",
+     "kind": "per-installation"
+    },
+    {
+     "name": "logConfigurations[].logLevel",
+     "required": true,
+     "values": "1 FATAL, 2 ERROR, 3 WARN, 4 INFO, 5 DEBUG, 6 TRACE",
+     "kind": "fixed"
+    },
+    {
+     "name": "logConfigurations[].logAdditivity",
+     "required": false,
+     "values": "bool",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success:true, succeeded:[{name: package}]}",
+  "example": "",
+  "notes": "Missing name or level, or a level outside 1-6, is refused; the package must be one the server knows. Additivity is always set to true. Tested with one package at its current level: GET \u2026/logging/list unchanged.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/admin/logging",
+  "status": "validated",
+  "purpose": "Change the level of configured loggers, or all of them, and optionally persist to the log configuration file.",
+  "params": [],
+  "body": {
+   "example": {
+    "changeAllLogs": false,
+    "persist": true,
+    "logConfigurations": [
+     {
+      "packageConfigured": {
+       "packageName": "com.netiq"
+      },
+      "logLevel": 4,
+      "logAdditivity": true
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "changeAllLogs",
+     "required": true,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "persist",
+     "required": true,
+     "values": "bool; true writes the log configuration file",
+     "kind": "fixed"
+    },
+    {
+     "name": "globalLogLevel",
+     "required": false,
+     "values": "1-6; required when changeAllLogs is true",
+     "kind": "fixed"
+    },
+    {
+     "name": "logConfigurations[].packageConfigured.packageName",
+     "required": true,
+     "values": "package from GET logging/packages/list",
+     "kind": "per-installation"
+    },
+    {
+     "name": "logConfigurations[].logLevel",
+     "required": true,
+     "values": "1 FATAL, 2 ERROR, 3 WARN, 4 INFO, 5 DEBUG, 6 TRACE",
+     "kind": "fixed"
+    },
+    {
+     "name": "logConfigurations[].logAdditivity",
+     "required": false,
+     "values": "bool",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success:true, succeeded:[{name: package}]}",
+  "example": "",
+  "notes": "Needs the logging right. Tested with changeAllLogs false, persist true and one package at its current level: GET \u2026/logging/list unchanged.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/logging/auditConfig",
+  "status": "validated",
+  "purpose": "Save the CEF audit settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "enableCEF": true,
+    "cefConfigs": {
+     "destinationHost": "siem.example.com",
+     "destinationPort": 1468,
+     "protocol": "tcp",
+     "useTLS": false,
+     "intermediateStoragePath": "/opt/netiq/idm/apps/tomcat/cef"
+    }
+   },
+   "fields": [
+    {
+     "name": "enableCEF",
+     "required": true,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "cefConfigs.destinationHost",
+     "required": false,
+     "values": "required when enableCEF",
+     "kind": "free"
+    },
+    {
+     "name": "cefConfigs.destinationPort",
+     "required": false,
+     "values": "required when enableCEF",
+     "kind": "free"
+    },
+    {
+     "name": "cefConfigs.protocol",
+     "required": false,
+     "values": "tcp, tls or udp; required when enableCEF",
+     "kind": "fixed"
+    },
+    {
+     "name": "cefConfigs.useTLS",
+     "required": false,
+     "values": "bool; when true sets protocol tls",
+     "kind": "free"
+    },
+    {
+     "name": "cefConfigs.keyStorePath",
+     "required": false,
+     "values": "required when useTLS",
+     "kind": "free"
+    },
+    {
+     "name": "cefConfigs.keyStorePWD",
+     "required": false,
+     "values": "keystore password",
+     "kind": "free"
+    },
+    {
+     "name": "cefConfigs.intermediateStoragePath",
+     "required": false,
+     "values": "cache directory path; required when enableCEF",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success:true, message:'Successfully updated the audit configuration'}",
+  "example": "",
+  "notes": "Missing enableCEF (or {}): 489 'Data is required.'. {enableCEF:false} kept CEF off (GET \u2026/logging/list shows enableCEF and cefConfigs).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/admin/logging/buildPDXLF",
+  "status": "validated",
+  "purpose": "Developer helper: rewrites the package description XLF file on the server from the known packages.",
+  "params": [],
+  "body": null,
+  "answer": "{success:true, message:'Successfully built the package description xliff.'}",
+  "example": "",
+  "notes": "No body. Writes PackageDescriptionRsrc_en.xlf under the server's XLF_PATH directory; not used by the dashboard. Needs the logging right.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/logging/list",
+  "status": "validated",
+  "purpose": "List the configured loggers and the CEF audit settings.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "substring of package name or description; * (default) for all",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start; without it all rows come back and pageSize is ignored",
+    "kind": "free"
+   },
+   {
+    "name": "pageSize",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "logName (default) or logLevel",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "fetchLogConfigs",
+    "in": "query",
+    "required": false,
+    "values": "true (default) / false",
+    "kind": "fixed"
+   },
+   {
+    "name": "fetchAuditConfigs",
+    "in": "query",
+    "required": false,
+    "values": "true (default) / false",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{logConfigurations:[{packageConfigured:{packageName, packageDescription}, logAdditivity, logLevel:int}], nextIndex?, totalSize, total (rows in this page), enableCEF, cefConfigs:{destinationHost, destinationPort, protocol, useTLS, keyStorePath, keyStorePWD, intermediateStoragePath}}",
+  "example": "GET \u2026/admin/logging/list?q=*&nextIndex=1&pageSize=3&sortBy=logName&sortOrder=desc -> 3 of 43",
+  "notes": "Lab: 43 loggers, all level 4 (INFO), CEF off (cefConfigs {}). sortBy=bogus: 489 'Invalid sort column.'. sortBy=logLevel is accepted but does not sort. q='com.novell*' finds nothing (a * is only special alone). With fetchLogConfigs=false only total/enableCEF/cefConfigs come back. When TLS is on, cefConfigs can carry the keystore password field.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/logging/packages/list",
+  "status": "validated",
+  "purpose": "List the Java packages that can be given a logger.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "substring of package name or description; * (default)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start; without it all rows",
+    "kind": "free"
+   },
+   {
+    "name": "pageSize",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "packageName only",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc / desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{packages:[{packageName, packageDescription}], nextIndex?, totalSize, total}",
+  "example": "GET \u2026/admin/logging/packages/list?q=*&nextIndex=1&pageSize=3&sortOrder=desc",
+  "notes": "Lab: 292 packages. q=cache matches by description too (com.netiq.cis.permindex). sortBy=packageDescription: 489 'Invalid sort column.'.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/notifyService",
+  "status": "validated",
+  "purpose": "Notification badge counts for the signed-in user (new roles, resources, tasks, helpdesk tasks).",
+  "params": [
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "client id, default 1; picks the notification expiry window",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{totalCount, newResourcesCount, newRolesCount, newTasksCount, newHelpdeskTasksCount} (ints)",
+  "example": "GET \u2026/access/notifyService?client=1 -> all 0",
+  "notes": "Counts are relative to the user's last notified time; all zero for uaadmin on the lab. The dashboard sends clientId= in one place, which the server ignores (default 1 used).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/preference",
+  "status": "validated",
+  "purpose": "Remove one of the caller's preferences.",
+  "params": [
+   {
+    "name": "attribute",
+    "in": "query",
+    "required": true,
+    "values": "preference name; any name is stored (the dashboard uses names like com.novell.idm.admin.adminAssignmentsList-columns.preference)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "the removed preference {isPreferenceAvailable:true, columns} (not empty, as earlier notes said)",
+  "example": "DELETE \u2026/access/preference?attribute=<name>",
+  "notes": "GET afterwards: {isPreferenceAvailable:false}. The answer carries the preference that was deleted.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/preference",
+  "status": "validated",
+  "purpose": "Read one of the signed-in user's stored preferences.",
+  "params": [
+   {
+    "name": "attribute",
+    "in": "query",
+    "required": false,
+    "values": "preference name; default All. Dashboard names: rolesPageSize, resourcesPageSize, tasksPageSize, teamsPageSize, groupsPageSizeAttribute, groupMembersPageSizeAttribute, adminAssignmentsPageSize, adminPermissionsofAssignmentPageSize, historyPageSize, com.novell.idm.dashboard.userslist-columns.preference, com.netiq.en-dash.history.type-*.preference, com.netiq.en-dash.permissions.type-*.preference, com.novell.idm.admin.adminAssignmentsList-columns.preference, com.novell.idm.dashboard.task-detail-open",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{isPreferenceAvailable:bool, columns?:[\u2026]}",
+  "example": "GET \u2026/access/preference?attribute=<name>",
+  "notes": "Answers the caller's stored preference of that name: after POST \u2026/preference?attribute=<name> {columns:[\u2026]} it gave {isPreferenceAvailable:true, columns}. Without attribute (All) it answered {isPreferenceAvailable:false} even while a named one existed. Dashboard names: rolesPageSize, resourcesPageSize, tasksPageSize, \u2026 (page sizes are stored as columns[0]). Side effect: the first read moves preferences from the old store to the new one if only the old one has data.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/preference",
+  "status": "validated",
+  "purpose": "Store one of the caller's preferences (column list).",
+  "params": [
+   {
+    "name": "attribute",
+    "in": "query",
+    "required": true,
+    "values": "preference name; any name is stored (the dashboard uses names like com.novell.idm.admin.adminAssignmentsList-columns.preference)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "columns": [
+     "<column key>",
+     "<column key>"
+    ]
+   },
+   "fields": [
+    {
+     "name": "columns",
+     "required": false,
+     "values": "column keys (or [page size])",
+     "kind": "free"
+    },
+    {
+     "name": "settingFor",
+     "required": false,
+     "values": "TASK stores openFormInPopUp instead",
+     "kind": "fixed"
+    },
+    {
+     "name": "openFormInPopUp",
+     "required": false,
+     "values": "bool with settingFor TASK",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "empty 200",
+  "example": "POST \u2026/access/preference?attribute=<name> {columns:[\u2026]}",
+  "notes": "Tested with a new attribute name on uaadmin. GET \u2026/preference?attribute=<name> then answered {isPreferenceAvailable:true, columns}. uaadmin's preferences (attribute All) were empty before and after.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/preference/dashboard",
+  "status": "validated",
+  "purpose": "Remove a stored dashboard layout.",
+  "params": [
+   {
+    "name": "attribute",
+    "in": "query",
+    "required": true,
+    "values": "preference name; any name is stored (the dashboard uses names like com.novell.idm.admin.adminAssignmentsList-columns.preference)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{isDashboardCustomized:false, dashboardCustomizations:<the removed layout>}",
+  "example": "DELETE \u2026/access/preference/dashboard?attribute=<name>",
+  "notes": "GET afterwards: {isDashboardCustomized:false}. uaadmin's dashboard preferences (All) empty before and after. The answer carries the layout that was deleted.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/preference/dashboard",
+  "status": "validated",
+  "purpose": "Read the signed-in user's personal dashboard layout.",
+  "params": [
+   {
+    "name": "attribute",
+    "in": "query",
+    "required": false,
+    "values": "preference name; default All",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{isDashboardCustomized:bool, dashboardCustomizations?:string}",
+  "example": "GET \u2026/access/preference/dashboard?attribute=<name>",
+  "notes": "After POST \u2026/preference/dashboard?attribute=<name> {dashboardCustomizations:\"<JSON text>\"} it gave {isDashboardCustomized:true, dashboardCustomizations}. Without attribute (All): {isDashboardCustomized:false}.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/preference/dashboard",
+  "status": "validated",
+  "purpose": "Store a dashboard layout for the caller.",
+  "params": [
+   {
+    "name": "attribute",
+    "in": "query",
+    "required": true,
+    "values": "preference name; any name is stored (the dashboard uses names like com.novell.idm.admin.adminAssignmentsList-columns.preference)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dashboardCustomizations": "{\"title\":\"<title>\",\"rows\":[]}"
+   },
+   "fields": [
+    {
+     "name": "dashboardCustomizations",
+     "required": true,
+     "values": "the layout as a JSON string",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "empty 200",
+  "example": "POST \u2026/access/preference/dashboard?attribute=<name> {dashboardCustomizations:'\u2026'}",
+  "notes": "GET \u2026/preference/dashboard?attribute=<name> then answered {isDashboardCustomized:true, dashboardCustomizations}.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/supportedlocales",
+  "status": "validated",
+  "purpose": "List the locales the applications support.",
+  "params": [],
+  "body": null,
+  "answer": "{supportedLocales:[{locale, localeDisplayName}]}",
+  "example": "GET \u2026/access/supportedlocales -> 17 locales",
+  "notes": "Lab: 17 (zh_CN, pt, fr, ru, ja, zh_TW, it, da, \u2026).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/supportedlocales/defaultlocale",
+  "status": "validated",
+  "purpose": "The applications' default locale.",
+  "params": [],
+  "body": null,
+  "answer": "{locale: str}",
+  "example": "GET \u2026/access/supportedlocales/defaultlocale -> {locale:'en'}",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/supportedlocales/userlocale",
+  "status": "validated",
+  "purpose": "The signed-in user's effective locale.",
+  "params": [],
+  "body": null,
+  "answer": "{locale: str}",
+  "example": "GET \u2026/access/supportedlocales/userlocale -> {locale:'en'}",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/ulp/categories",
+  "status": "validated",
+  "purpose": "Delete landing-page categories.",
+  "params": [],
+  "body": {
+   "example": {
+    "itemCategories": [
+     {
+      "itemCategoryId": "<category id>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "itemCategories[].itemCategoryId",
+     "required": true,
+     "values": "category id",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId}]}",
+  "example": "DELETE \u2026/access/ulp/categories {itemCategories:[{itemCategoryId}]}",
+  "notes": "Deleted after its item was removed.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/ulp/categories",
+  "status": "validated",
+  "purpose": "Create landing-page categories.",
+  "params": [],
+  "body": {
+   "example": {
+    "itemCategories": [
+     {
+      "categoryName": "<name>",
+      "itemCategoryOrder": 50
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "itemCategories[].categoryName",
+     "required": true,
+     "values": "name",
+     "kind": "free"
+    },
+    {
+     "name": "itemCategoryOrder / desc / image",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId:<new id>, name}]}",
+  "example": "POST \u2026/access/ulp/categories {itemCategories:[{categoryName, itemCategoryOrder}]}",
+  "notes": "Shows in GET /access/ulp/landingItems/v2 with subType HOME. Featured and landing ids come from one counter (231\u2026234 here).",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/ulp/categories",
+  "status": "validated",
+  "purpose": "Rename or reorder landing-page categories.",
+  "params": [],
+  "body": {
+   "example": {
+    "itemCategories": [
+     {
+      "itemCategoryId": "<category id>",
+      "categoryName": "<new name>",
+      "itemCategoryOrder": 50
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "itemCategories[].itemCategoryId",
+     "required": true,
+     "values": "category id",
+     "kind": "per-installation"
+    },
+    {
+     "name": "categoryName / itemCategoryOrder",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId}]}",
+  "example": "PUT \u2026/access/ulp/categories {itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder}]}",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/ulp/featuredItems",
+  "status": "validated",
+  "purpose": "Add items to the landing page from permissions or existing entries.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "id": "cn=helpdeskticket,cn=requestdefs,cn=appconfig,cn=User Application Driver,cn=driverset1,o=system",
+      "name": "HelpDesk Ticket",
+      "itemCategoryId": 1,
+      "itemOrder": 10
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items[].name",
+     "required": true,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].id",
+     "required": false,
+     "values": "permission DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].itemCategoryId",
+     "required": false,
+     "values": "category id",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].itemOrder",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].image / idmdashImage",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].appUrl / idmdashAppUrl",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, instanceId, name}]}",
+  "example": "",
+  "notes": "Adds a featured item (answer instanceId is its itemId). Missing name: 'item name required'. With the featured category's itemCategoryId the item showed in GET \u2026/ulp/landingItems/v2 under that category but not in GET \u2026/access/featuredItems; DELETE \u2026/access/featuredItems {items:[{itemId}]} removed it.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/ulp/items",
+  "status": "validated",
+  "purpose": "Delete landing-page items.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "itemId": "<item id>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items[].itemId",
+     "required": true,
+     "values": "item id; missing gives 489 NotFoundInJSON 'Item id is required'",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{instanceId}]}",
+  "example": "DELETE \u2026/access/ulp/items {items:[{itemId}]}",
+  "notes": "GET /access/ulp/items no longer lists the navigation item afterwards.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/ulp/items",
+  "status": "validated",
+  "purpose": "Add custom links to the landing page.",
+  "params": [],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "name": "<name>",
+      "desc": "<text>",
+      "appUrl": "<url>",
+      "idmdashAppUrl": "<url>",
+      "itemCategoryId": "<category id>",
+      "itemOrder": 1
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items[].name",
+     "required": true,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].itemCategoryId",
+     "required": false,
+     "values": "existing category id (honoured, unlike featured items)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "desc / appUrl / idmdashAppUrl / itemOrder / image / parentMenuKey / menuKey / menuOrder",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id:<navigation item DN>, instanceId:<item id>, name}]}",
+  "example": "POST \u2026/access/ulp/items {items:[{name, desc, appUrl, idmdashAppUrl, itemCategoryId, itemOrder}]}",
+  "notes": "Also writes a directory object: cn=<name without dashes><32 hex>,cn=NavItems,cn=UIConfig,cn=AppConfig,\u2026, returned as id.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/ulp/l10n",
+  "status": "validated",
+  "purpose": "List the locales with a link to each landing page strings file.",
+  "params": [],
+  "body": null,
+  "answer": "{locales:[{name: locale code, link}]}",
+  "example": "GET \u2026/access/ulp/l10n -> 17 entries",
+  "notes": "",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/ulp/l10n/list",
+  "status": "validated",
+  "purpose": "List the locales with display names and links to the landing page strings files.",
+  "params": [],
+  "body": null,
+  "answer": "{locales:[{name: display name, link, localeKey}], localeSet:{}}",
+  "example": "GET \u2026/access/ulp/l10n/list -> 17 entries",
+  "notes": "localeSet is empty on the lab.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/ulp/l10n/listLocales",
+  "status": "validated",
+  "purpose": "Save a user's preferred locale.",
+  "params": [],
+  "body": {
+   "example": {
+    "userDN": "cn=uaadmin,ou=sa,o=data",
+    "modifiedLocale": "de"
+   },
+   "fields": [
+    {
+     "name": "userDN",
+     "required": true,
+     "values": "the signed-in user, or any user for a global admin",
+     "kind": "per-installation"
+    },
+    {
+     "name": "modifiedLocale",
+     "required": false,
+     "values": "locale code from GET supportedlocales",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name / link / localeKey / userPreferredLocales",
+     "required": false,
+     "values": "accepted, not used by the save",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{response:{message:'Locale Preferences Saved'}}",
+  "example": "",
+  "notes": "Missing userDN: 'user DN not present'; another user's DN without global admin: unauthorized. Saves the user's preferred locales.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/ulp/l10n/{locale}.properties",
+  "status": "validated",
+  "purpose": "Download the landing page strings for a locale as a properties file.",
+  "params": [
+   {
+    "name": "locale",
+    "in": "path",
+    "required": true,
+    "values": "locale code, e.g. en, de, zh_CN",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "text/plain properties: key = value lines (category-*-name, item-*-name, item-*-description); non-English files carry '# English value:' comments",
+  "example": "GET \u2026/access/ulp/l10n/de.properties",
+  "notes": "Any locale code works: xx.properties returned all keys with empty values. Only landing page administrators may read it.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/ulp/l10n/{locale}.properties",
+  "status": "validated",
+  "purpose": "Upload translated landing page strings for a locale.",
+  "params": [
+   {
+    "name": "locale",
+    "in": "path",
+    "required": true,
+    "values": "locale code",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": "category-home-1-name = Startseitenelemente",
+   "fields": [
+    {
+     "name": "(body)",
+     "required": true,
+     "values": "properties text, Content-Type text/plain",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, instanceId?}]}",
+  "example": "",
+  "notes": "Body is the properties text (Content-Type text/plain), as GET \u2026/ulp/l10n/{locale}.properties returns it. Putting a locale's file back unchanged left it identical (31 KB for de). The answer lists every setting and item whose translation was written.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/ulp/landingItems/v2",
+  "status": "validated",
+  "purpose": "List the landing page items by category plus uncategorised items.",
+  "params": [
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "client id, default 1",
+    "kind": "per-installation"
+   },
+   {
+    "name": "images",
+    "in": "query",
+    "required": false,
+    "values": "true (default) includes base64 images; false leaves them out",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder, subType, items:[{image?, idmdashImage?, itemId, name, desc, entityType, id, itemOrder, appUrl, idmdashAppUrl, bulkRequestable, itemCategoryId}]}], uncategorizedItems:[\u2026], editable: bool}",
+  "example": "GET \u2026/access/ulp/landingItems/v2?clientId=1&images=false",
+  "notes": "Use images=false: with images the lab answer is about 850 KB, without about 8 KB. Lab: categories Home items (9) and Administration (6), 5 uncategorised; entity types CUSTOM and PRD. The change-password link points at the lab's SSPR.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/ulp/landingItems/v2",
+  "status": "validated",
+  "purpose": "Change landing page items (name, order, category, links, images).",
+  "params": [
+   {
+    "name": "clientId",
+    "in": "query",
+    "required": false,
+    "values": "client id, default 1",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "items": [
+     {
+      "itemId": 10,
+      "id": "cn=HomeMyProfile,cn=NavItems,cn=UIConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+      "name": "My Profile",
+      "itemCategoryId": 1,
+      "itemOrder": 6
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "items[].itemId",
+     "required": true,
+     "values": "item id",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].id",
+     "required": true,
+     "values": "item's external id (DN)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].name",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].desc",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].itemCategoryId",
+     "required": false,
+     "values": "existing category",
+     "kind": "per-installation"
+    },
+    {
+     "name": "items[].itemOrder",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].image / idmdashImage",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    },
+    {
+     "name": "items[].appUrl / idmdashAppUrl",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, instanceId}]}",
+  "example": "",
+  "notes": "Missing itemId or id is refused. Send the items flattened from itemCategories[].items and uncategorizedItems, each with its itemCategoryId. Item names are stored once per item and locale and shared by PUT \u2026/ulp/items and PUT \u2026/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/workflowengines",
+  "status": "validated",
+  "purpose": "List the workflow engines in the cluster with their state.",
+  "params": [],
+  "body": null,
+  "answer": "{wfEngineInfoList:[{engineId, engineState}]}",
+  "example": "GET \u2026/admin/workflowengines -> engines 1, 3 Timedout; 6 Running",
+  "notes": "engineState is a localised word (Running, Timedout, \u2026). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right. Each start of the applications adds a new engine id; earlier ids stay listed as Timedout or Shutdown. On the lab the engine's own cleanup of old timed-out engine ids failed every 2 minutes (a cleanup error repeated every 2 minutes), so they are never removed. After a stop and start over POST \u2026/workflowengines/status, or a migration import, the running engine kept showing 'Starting' until the applications were restarted.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/workflowengines/configuration",
+  "status": "validated",
+  "purpose": "Read the workflow engine settings (thread pool, timeouts, intervals, process cache, heartbeat).",
+  "params": [],
+  "body": null,
+  "answer": "{minPoolSize, maxPoolSize, initialPoolSize, keepAliveTime (s), userActivityTimeout, completedProcessTimeout, webServiceActivityTimeout, pendingInterval (s), cleanupInterval (h), retryQueueInterval (min), maxShutdownTime (min), enableEmailNotification, processCacheInitialCapacity, processCacheMaxCapacity, processCacheLoadFactor, heartbeatInterval (s), heartbeatFactor}",
+  "example": "GET \u2026/admin/workflowengines/configuration",
+  "notes": "Lab: pool 10/20/5, heartbeat 60 s x2. Lab has processCacheInitialCapacity 700 above max 500, which the save does not cross-check.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/workflowengines/configuration",
+  "status": "validated",
+  "purpose": "Save the workflow engine settings.",
+  "params": [],
+  "body": {
+   "example": {
+    "minPoolSize": 10,
+    "maxPoolSize": 20,
+    "initialPoolSize": 5,
+    "keepAliveTime": 300,
+    "userActivityTimeout": 0,
+    "completedProcessTimeout": 120,
+    "webServiceActivityTimeout": 50,
+    "pendingInterval": 30,
+    "cleanupInterval": 12,
+    "retryQueueInterval": 15,
+    "maxShutdownTime": 1,
+    "enableEmailNotification": true,
+    "processCacheInitialCapacity": 700,
+    "processCacheMaxCapacity": 500,
+    "processCacheLoadFactor": 0.75,
+    "heartbeatInterval": 60,
+    "heartbeatFactor": 2
+   },
+   "fields": [
+    {
+     "name": "minPoolSize",
+     "required": true,
+     "values": "> 0 and <= maxPoolSize",
+     "kind": "free"
+    },
+    {
+     "name": "maxPoolSize",
+     "required": true,
+     "values": "> 0",
+     "kind": "free"
+    },
+    {
+     "name": "initialPoolSize",
+     "required": true,
+     "values": "> 0",
+     "kind": "free"
+    },
+    {
+     "name": "keepAliveTime",
+     "required": true,
+     "values": "seconds, > 0",
+     "kind": "free"
+    },
+    {
+     "name": "userActivityTimeout",
+     "required": true,
+     "values": "0-8760",
+     "kind": "free"
+    },
+    {
+     "name": "completedProcessTimeout",
+     "required": true,
+     "values": "0-365",
+     "kind": "free"
+    },
+    {
+     "name": "webServiceActivityTimeout",
+     "required": true,
+     "values": "1-10080",
+     "kind": "free"
+    },
+    {
+     "name": "pendingInterval",
+     "required": true,
+     "values": "seconds, > 0",
+     "kind": "free"
+    },
+    {
+     "name": "cleanupInterval",
+     "required": true,
+     "values": "hours, > 0",
+     "kind": "free"
+    },
+    {
+     "name": "retryQueueInterval",
+     "required": true,
+     "values": "minutes, > 0",
+     "kind": "free"
+    },
+    {
+     "name": "maxShutdownTime",
+     "required": true,
+     "values": "minutes, > 0",
+     "kind": "free"
+    },
+    {
+     "name": "enableEmailNotification",
+     "required": true,
+     "values": "bool",
+     "kind": "fixed"
+    },
+    {
+     "name": "processCacheInitialCapacity",
+     "required": true,
+     "values": "> 0",
+     "kind": "free"
+    },
+    {
+     "name": "processCacheMaxCapacity",
+     "required": true,
+     "values": "> 0",
+     "kind": "free"
+    },
+    {
+     "name": "processCacheLoadFactor",
+     "required": true,
+     "values": "0.0-1.0",
+     "kind": "free"
+    },
+    {
+     "name": "heartbeatInterval",
+     "required": true,
+     "values": "seconds, >= 60",
+     "kind": "free"
+    },
+    {
+     "name": "heartbeatFactor",
+     "required": true,
+     "values": ">= 2",
+     "kind": "free"
+    },
+    {
+     "name": "engineId",
+     "required": false,
+     "values": "ignored",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the saved configuration (as GET \u2026/workflowengines/configuration)",
+  "example": "",
+  "notes": "Every field is read and range-checked, so send the full GET object back. Posting the GET answer back unchanged left it identical, including the lab's processCacheInitialCapacity 700 above processCacheMaxCapacity 500, which the save does not cross-check. Needs the workflow-engine page right.",
+  "evidence": "inspection and observation, October 2026"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/workflowengines/status",
+  "status": "validated",
+  "purpose": "Start or stop the workflow engine.",
+  "params": [],
+  "body": {
+   "example": {
+    "engineStatus": 1
+   },
+   "fields": [
+    {
+     "name": "engineStatus",
+     "required": true,
+     "values": "0 start, 1 stop",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{engineStatus: int} (what was sent)",
+  "example": "POST \u2026/admin/workflowengines/status {engineStatus:1}",
+  "notes": "engineStatus is fixed: 1 stops this server's workflow engine, 0 starts it; any other value or a missing one: 489 'invalid workflow status'. Stopping halts workflow processing until it is started again. The engine log showed STOPPING \u2192 STOPPED at once and STARTING \u2192 RUNNING within a second of the start, but GET \u2026/workflowengines kept showing the engine as 'Starting' (the stored state was not updated after a start over REST; a restart of the applications brought a new engine id 'Running'). Open approval tasks survived. Provisioning administrator only (403). No dashboard call found.",
+  "evidence": "inspection and observation, October 2026"
+ }
+]
