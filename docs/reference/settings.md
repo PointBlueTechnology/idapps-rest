@@ -8,11 +8,9 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 56 |
-| not run: worked out from the server's and the dashboard's code | 29 |
+| validated on the lab | 86 |
 | did not work on the lab | 5 |
 | answered on the lab, which had no data to show | 2 |
-| not known yet | 1 |
 
 ## Contents
 
@@ -130,7 +128,7 @@ Read the CPRS (connected-system permission reconciliation) service settings.
 
 Save the CPRS settings and start, stop or re-time the CPRS engine.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -146,9 +144,9 @@ Save the CPRS settings and start, stop or re-time the CPRS engine.
 }
 ```
 
-**Answer:** echoes the saved body
+**Answer:** the saved settings {enableCprs, cleanupTimeInDays, pollingInterval}
 
-**Notes:** Not called (write). Unlike the GET, the server method checks no administrator right. Send all three fields: enableCprs is compared with the stored value and a missing one fails. Changing enableCprs starts or stops the engine; changing interval/cleanup re-initialises it.
+**Notes:** Send all three fields: enableCprs is compared with the stored value and a missing one fails. Changing enableCprs starts or stops the CPRS engine; changing interval/cleanup re-initialises it. Tested by posting the GET answer back unchanged; GET afterwards was identical. Unlike the GET, the server method checks no administrator right.
 
 <a id="get-idmprov-rest-access-administration-delegation"></a>
 ### GET `/IDMProv/rest/access/administration/delegation`
@@ -168,7 +166,7 @@ Read the delegation settings (delegatee notification template, retention, all-re
 
 Save the delegation settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -186,9 +184,9 @@ Save the delegation settings.
 }
 ```
 
-**Answer:** echoes the body
+**Answer:** the saved settings
 
-**Notes:** Not called (write). Provisioning administrator only. Every field is optional: only fields present are changed. An empty body gives 'payload is empty'.
+**Notes:** Provisioning administrator only. Every field is optional: only fields present are changed. An empty body gives 'payload is empty'. Tested by posting the GET answer back unchanged; GET afterwards was identical.
 
 <a id="get-idmprov-rest-access-administration-emailapproval"></a>
 ### GET `/IDMProv/rest/access/administration/emailApproval`
@@ -208,7 +206,7 @@ Read the email-based approval settings (incoming mail server, phrases, templates
 
 Save the email-based approval settings and push them to notification and workflow engine configuration.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -270,9 +268,9 @@ Save the email-based approval settings and push them to notification and workflo
 }
 ```
 
-**Answer:** echoes the saved body
+**Answer:** the saved settings (password empty)
 
-**Notes:** Not called (write). Needs the 'emailapproval' page right. Secrets: a value equal to the mask keeps the stored secret. Fields are bean properties, none checked as required; the dashboard posts the whole GET object back.
+**Notes:** Needs the 'emailapproval' page right. Secrets: the GET returns a fixed mask in password, proxyPassword and modernAuthIncomingNode.clientSecret, and posting the mask back keeps the stored secret. Posting the GET answer back is accepted, but the save fills in defaults the GET left out: authType and notifyAuthType BASIC, modernAuthIncomingNode.grantType client_credentials, and approve/deny phrases for every supported locale (17 → 19 on the lab). The answer is the saved object with password empty.
 
 <a id="get-idmprov-rest-access-administration-igconfig"></a>
 ### GET `/IDMProv/rest/access/administration/igConfig`
@@ -292,7 +290,7 @@ Read the Identity Governance integration settings.
 
 Save the Identity Governance integration settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -312,9 +310,9 @@ Save the Identity Governance integration settings.
 }
 ```
 
-**Answer:** echoes the body
+**Answer:** the saved settings
 
-**Notes:** Not called (write). Needs the 'igConfiguration' page right.
+**Notes:** Needs the 'igConfiguration' page right. Tested by posting the GET answer back unchanged; GET afterwards was identical.
 
 <a id="get-idmprov-rest-access-config"></a>
 ### GET `/IDMProv/rest/access/config`
@@ -356,7 +354,7 @@ Meant to read the navigation access rights per page section of a client's settin
 
 Save the navigation access rights per page section of a client's settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -377,9 +375,9 @@ Save the navigation access rights per page section of a client's settings.
 }
 ```
 
-**Answer:** the saved section as JSON
+**Answer:** {access: [the saved items]}
 
-**Notes:** Not called (write). The body must be a JSON object with the top-level key 'access', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error.
+**Notes:** The body is {"access": [the section's items]}, as config.access of GET …/config/clients/{id} (the GET config/access read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.
 
 <a id="get-idmprov-rest-access-config-branding"></a>
 ### GET `/IDMProv/rest/access/config/branding`
@@ -403,7 +401,7 @@ Meant to read the header/footer branding section of a client's settings.
 
 Save the header/footer branding section of a client's settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -424,16 +422,16 @@ Save the header/footer branding section of a client's settings.
 }
 ```
 
-**Answer:** the saved section as JSON
+**Answer:** {branding: [the saved items]}
 
-**Notes:** Not called (write). The body must be a JSON object with the top-level key 'branding', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error. The save also regenerates the client's stylesheet customBrand<client>.css (readable with GET config/style/customBrand1.css).
+**Notes:** The body is {"branding": [the section's items]}, as config.branding of GET …/config/clients/{id} (the GET config/branding read is broken). Saving the section back unchanged on a scratch client left the client's config identical. A changed titleColor read back through GET /access/config?key=branding.titleColor&client=<id>. Needs the 'settings' page right for that client.
 
 <a id="delete-idmprov-rest-access-config-clients"></a>
 ### DELETE `/IDMProv/rest/access/config/clients`
 
 Delete one or more clients (setting profiles).
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -449,9 +447,9 @@ Delete one or more clients (setting profiles).
 }
 ```
 
-**Answer:** empty 200
+**Answer:** 200, no body
 
-**Notes:** Not called (write). Empty or missing values: 'payload is empty'. Needs the 'manageclients' right. Also removes the client's helpdesk provisioning view value.
+**Notes:** Removed the scratch client; GET …/config/clients no longer listed it. Empty or missing values: 'payload is empty'. Needs the 'manageclients' right. Also removes the client's helpdesk provisioning view value.
 
 <a id="get-idmprov-rest-access-config-clients"></a>
 ### GET `/IDMProv/rest/access/config/clients`
@@ -471,7 +469,7 @@ List the clients (setting profiles) with their full settings.
 
 Create a client (setting profile).
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -488,9 +486,9 @@ Create a client (setting profile).
 }
 ```
 
-**Answer:** {name, id, matchCondition, config, isDefault}
+**Answer:** {name, id, matchCondition, isDefault:false}
 
-**Notes:** Not called (write). Name or match condition already in use: 489 with that message. Needs the 'manageclients' right (403).
+**Notes:** matchCondition is an LDAP filter that picks the users of this client (the default client has an empty one); a filter matching no one, (cn=nobody), worked for a scratch client. The new client starts with the default sections. Name or match condition already in use: 489 with that message. Needs the 'manageclients' right (403).
 
 <a id="get-idmprov-rest-access-config-clients-id"></a>
 ### GET `/IDMProv/rest/access/config/clients/{id}`
@@ -560,7 +558,7 @@ Meant to read the user/general customisation section of a client's settings.
 
 Save the user/general customisation section of a client's settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -581,9 +579,9 @@ Save the user/general customisation section of a client's settings.
 }
 ```
 
-**Answer:** the saved section as JSON
+**Answer:** {customization: [the saved items]}
 
-**Notes:** Not called (write). The body must be a JSON object with the top-level key 'customization', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error. Client existence is not checked here, only that client is not blank.
+**Notes:** The body is {"customization": [the section's items]}, as config.customization of GET …/config/clients/{id} (the GET config/custom read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.
 
 <a id="get-idmprov-rest-access-config-dashboard"></a>
 ### GET `/IDMProv/rest/access/config/dashboard`
@@ -607,7 +605,7 @@ Meant to read the dashboard widget access section of a client's settings.
 
 Save the dashboard widget access section of a client's settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -628,9 +626,9 @@ Save the dashboard widget access section of a client's settings.
 }
 ```
 
-**Answer:** the saved section as JSON
+**Answer:** {dashboardAccess: [the saved items]}
 
-**Notes:** Not called (write). The body must be a JSON object with the top-level key 'dashboardAccess', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error.
+**Notes:** The body is {"dashboardAccess": [the section's items]}, as config.dashboardAccess of GET …/config/clients/{id} (the GET config/dashboard read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.
 
 <a id="get-idmprov-rest-access-config-helpdesk"></a>
 ### GET `/IDMProv/rest/access/config/helpdesk`
@@ -654,7 +652,7 @@ Meant to read the helpdesk contact settings section of a client's settings.
 
 Save the helpdesk contact settings section of a client's settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -675,25 +673,25 @@ Save the helpdesk contact settings section of a client's settings.
 }
 ```
 
-**Answer:** the saved section as JSON
+**Answer:** {helpdesk: [the saved items]}
 
-**Notes:** Not called (write). The body must be a JSON object with the top-level key 'helpdesk', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error.
+**Notes:** The body is {"helpdesk": [the section's items]}, as config.helpdesk of GET …/config/clients/{id} (the GET config/helpdesk read is broken). Saving the section back unchanged on a scratch client left the client's config identical. accessRights users entries {userDn, action: add|remove} request or revoke that helpdesk resource for the user, with the client as its parameter (param1 "client1(1)" on the lab); GET /access/helpdesk/category then named that user. Reads list the users as {dn, fullName}. Needs the 'settings' page right for that client.
 
 <a id="post-idmprov-rest-access-config-restoresettings-key"></a>
 ### POST `/IDMProv/rest/access/config/restoreSettings/{key}`
 
 Reset one section of a client's settings to the defaults.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `key` | path | yes | access, customization, branding, helpdesk or dashboardAccess | fixed |
 | `client` | query | yes | client id from GET /access/config/clients (lab: 1) | per installation |
 
-**Answer:** {key, value: the restored section as a JSON string}
+**Answer:** {key, value: the section's default JSON text}
 
-**Notes:** Not called (write). No body (the dashboard posts null). Blank client: 'client not found'; any other key: 'key is not valid'. Needs the 'settings' right.
+**Notes:** Resets one section of a client to the defaults: a changed branding titleColor read back as the default afterwards. No body. Blank client: 'client not found'; any other key: 'key is not valid'. Needs the 'settings' right.
 
 <a id="get-idmprov-rest-access-config-style-filename"></a>
 ### GET `/IDMProv/rest/access/config/style/{fileName}`
@@ -717,7 +715,7 @@ Download a stored custom stylesheet as text.
 
 Upload a custom CSS file for a client's branding.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -731,9 +729,9 @@ Upload a custom CSS file for a client's branding.
 ".navbar-global { background-color: #088CB2; }"
 ```
 
-**Answer:** empty 200
+**Answer:** 200, no body
 
-**Notes:** Not called (write). Blank client or body: 'payload is empty'. Content failing the XSS check: 400; content the CSS parser rejects: 489 'invalid CSS content'. The server method makes no page-right check (other config saves do).
+**Notes:** Body is the CSS text (Content-Type text/plain). Valid CSS: 200 with no body; text the CSS parser rejects: 489 'CSS file to upload is invalid'. Blank client or body: 'payload is empty'; content failing the XSS check: 400. The server method makes no page-right check.
 
 <a id="get-idmprov-rest-access-dashboard"></a>
 ### GET `/IDMProv/rest/access/dashboard`
@@ -1413,7 +1411,7 @@ Rename or reorder landing-page categories.
 
 Add items to the landing page from permissions or existing entries.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1437,9 +1435,9 @@ Add items to the landing page from permissions or existing entries.
 }
 ```
 
-**Answer:** {succeeded, succeedNodes, failNodes}
+**Answer:** {success, succeeded:[{id, instanceId, name}]}
 
-**Notes:** Not called (write). Missing name: 'item name required'.
+**Notes:** Adds a featured item (answer instanceId is its itemId). Missing name: 'item name required'. With the featured category's itemCategoryId the item showed in GET …/ulp/landingItems/v2 under that category but not in GET …/access/featuredItems; DELETE …/access/featuredItems {items:[{itemId}]} removed it.
 
 <a id="delete-idmprov-rest-access-ulp-items"></a>
 ### DELETE `/IDMProv/rest/access/ulp/items`
@@ -1531,7 +1529,7 @@ List the locales with display names and links to the landing page strings files.
 
 Save a user's preferred locale.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1546,9 +1544,9 @@ Save a user's preferred locale.
 }
 ```
 
-**Answer:** the saved locale list
+**Answer:** {response:{message:'Locale Preferences Saved'}}
 
-**Notes:** Not called (write), despite the name. Missing userDN: 'user DN not present'; another user's DN without global admin: unauthorized.
+**Notes:** Missing userDN: 'user DN not present'; another user's DN without global admin: unauthorized. Saves the user's preferred locales.
 
 <a id="get-idmprov-rest-access-ulp-l10n-locale-properties"></a>
 ### GET `/IDMProv/rest/access/ulp/l10n/{locale}.properties`
@@ -1572,7 +1570,7 @@ Download the landing page strings for a locale as a properties file.
 
 Upload translated landing page strings for a locale.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1586,9 +1584,9 @@ Upload translated landing page strings for a locale.
 "category-home-1-name = Startseitenelemente"
 ```
 
-**Answer:** {succeeded, succeedNodes, failNodes}
+**Answer:** {success, succeeded:[{id, instanceId?}]}
 
-**Notes:** Not called (write). The dashboard PUTs to the link from GET ulp/l10n/list.
+**Notes:** Body is the properties text (Content-Type text/plain), as GET …/ulp/l10n/{locale}.properties returns it. Putting a locale's file back unchanged left it identical (31 KB for de). The answer lists every setting and item whose translation was written.
 
 <a id="get-idmprov-rest-access-ulp-landingitems-v2"></a>
 ### GET `/IDMProv/rest/access/ulp/landingItems/v2`
@@ -1613,7 +1611,7 @@ List the landing page items by category plus uncategorised items.
 
 Change landing page items (name, order, category, links, images).
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1644,9 +1642,9 @@ Change landing page items (name, order, category, links, images).
 }
 ```
 
-**Answer:** {succeeded, succeedNodes, failNodes}
+**Answer:** {success, succeeded:[{id, instanceId}]}
 
-**Notes:** Not called (write). Missing itemId or id is refused.
+**Notes:** Missing itemId or id is refused. Send the items flattened from itemCategories[].items and uncategorizedItems, each with its itemCategoryId. Item names are stored once per item and locale and shared by PUT …/ulp/items and PUT …/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.
 
 <a id="get-idmprov-rest-admin-cache-configuration"></a>
 ### GET `/IDMProv/rest/admin/cache/configuration`
@@ -1666,7 +1664,7 @@ Read the cluster and cache settings: global value, node-local value and value in
 
 Save the global and node-local cluster/cache settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1706,9 +1704,9 @@ Save the global and node-local cluster/cache settings.
 }
 ```
 
-**Answer:** {success message}
+**Answer:** {success:true, message:'Successfully updated the cache configuration'}
 
-**Notes:** Not called (write). Global fields: empty or absent means keep. Node-local fields: empty or absent CLEARS the node-local override, so a partial body removes local settings. The *Current* fields are read-only.
+**Notes:** Global fields: empty or absent means keep. Node-local fields: empty or absent CLEARS the node-local override, so send the whole GET answer (the *Current* fields are read-only and ignored). Tested by posting the GET answer back unchanged; GET afterwards was identical.
 
 <a id="get-idmprov-rest-admin-cache-customizedholders"></a>
 ### GET `/IDMProv/rest/admin/cache/customizedHolders`
@@ -1728,7 +1726,7 @@ List the cache holders with their current, global and local max-nodes, time-to-l
 
 Save per-holder cache settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1753,9 +1751,9 @@ Save per-holder cache settings.
 }
 ```
 
-**Answer:** {success: bool, succeeded:[{name}], failed?:[{name, reason}]}
+**Answer:** {success, succeeded:[{id: holder}], failed:[…]}
 
-**Notes:** Not called (write). Per holder: unknown or blank cacheValue is reported as failed. Omitting cacheEnable disables caching for that holder.
+**Notes:** DANGER: posting the GET answer back unchanged stopped the applications from starting after the next restart. The save writes a global property com.sssw.fw.cache.CacheHolderConfig:<holder> for every holder sent (in the User Application driver's cn=configuration,cn=AppDefs object), and for a read-only holder it always writes CacheHolder.active=true, whatever cacheEnable says. GlobalCacheHolder is read-only and had no such property; once written, the next start failed with 'ISPN000453: Attempt to define configuration for cache GlobalCacheHolder which already exists', the cache service did not start, and /IDMProv answered 404 everywhere. Restoring that object's XmlData from a copy taken before fixed it. So: send only the holders you change, never GlobalCacheHolder, and keep a copy of the configuration object. Per holder: unknown or blank cacheValue is reported as failed; omitting cacheEnable disables caching for that holder. The save also appends explicit zero values (MaxAgeSeconds=0, TimeToLiveSeconds=0) to holders that had none.
 
 <a id="get-idmprov-rest-admin-display-settings-general"></a>
 ### GET `/IDMProv/rest/admin/display/settings/general`
@@ -1775,7 +1773,7 @@ Read the general list display settings (rows per page).
 
 Save the general list display settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1790,9 +1788,9 @@ Save the general list display settings.
 }
 ```
 
-**Answer:** the saved settings (re-read)
+**Answer:** the saved settings
 
-**Notes:** Not called (write). Needs the provisioning UI display right.
+**Notes:** Needs the provisioning UI display right. Tested by posting the GET answer back unchanged; GET afterwards was identical.
 
 <a id="get-idmprov-rest-admin-display-settings-request"></a>
 ### GET `/IDMProv/rest/admin/display/settings/request`
@@ -1812,7 +1810,7 @@ Read the request list display settings (sort, default and overridable columns).
 
 Save the request list display settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1841,7 +1839,7 @@ Save the request list display settings.
 
 **Answer:** the saved settings
 
-**Notes:** Not called (write). Sort column and sort order must come together. Needs the request display right.
+**Notes:** Sort column and sort order must come together. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, …) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, …), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).
 
 <a id="get-idmprov-rest-admin-display-settings-task"></a>
 ### GET `/IDMProv/rest/admin/display/settings/task`
@@ -1861,7 +1859,7 @@ Read the task list display settings.
 
 Save the task list display settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1895,14 +1893,14 @@ Save the task list display settings.
 
 **Answer:** the saved settings
 
-**Notes:** Not called (write). The sort column is always checked, so taskListSort is in effect required. Needs the task display right.
+**Notes:** The sort column is always checked, so taskListSort is in effect required. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, …) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, …), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).
 
 <a id="post-idmprov-rest-admin-logging"></a>
 ### POST `/IDMProv/rest/admin/logging`
 
 Add loggers for packages at a given level.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1923,16 +1921,16 @@ Add loggers for packages at a given level.
 }
 ```
 
-**Answer:** {success: bool, succeeded:[{name}], failed?:[{name, reason}]}
+**Answer:** {success:true, succeeded:[{name: package}]}
 
-**Notes:** Not called (write). Missing name or level, or a level outside 1-6, is refused; the package must be one the server knows. Additivity is always set to true. An empty list does nothing.
+**Notes:** Missing name or level, or a level outside 1-6, is refused; the package must be one the server knows. Additivity is always set to true. Tested with one package at its current level: GET …/logging/list unchanged.
 
 <a id="put-idmprov-rest-admin-logging"></a>
 ### PUT `/IDMProv/rest/admin/logging`
 
 Change the level of configured loggers, or all of them, and optionally persist to the log configuration file.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1959,16 +1957,16 @@ Change the level of configured loggers, or all of them, and optionally persist t
 }
 ```
 
-**Answer:** {success, succeeded, failed?}
+**Answer:** {success:true, succeeded:[{name: package}]}
 
-**Notes:** Not called (write). Needs the logging right.
+**Notes:** Needs the logging right. Tested with changeAllLogs false, persist true and one package at its current level: GET …/logging/list unchanged.
 
 <a id="post-idmprov-rest-admin-logging-auditconfig"></a>
 ### POST `/IDMProv/rest/admin/logging/auditConfig`
 
 Save the CEF audit settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1994,20 +1992,20 @@ Save the CEF audit settings.
 }
 ```
 
-**Answer:** settings or {success…}
+**Answer:** {success:true, message:'Successfully updated the audit configuration'}
 
-**Notes:** Not called (write). Missing enableCEF: 'data required'.
+**Notes:** Missing enableCEF (or {}): 489 'Data is required.'. {enableCEF:false} kept CEF off (GET …/logging/list shows enableCEF and cefConfigs).
 
 <a id="put-idmprov-rest-admin-logging-buildpdxlf"></a>
 ### PUT `/IDMProv/rest/admin/logging/buildPDXLF`
 
 Developer helper: rewrites the package description XLF file on the server from the known packages.
 
-**Status:** not known yet. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
-**Answer:** unknown
+**Answer:** {success:true, message:'Successfully built the package description xliff.'}
 
-**Notes:** Not called (write, no body). Writes PackageDescriptionRsrc_en.xlf under the server's XLF_PATH directory; not used by the dashboard. Needs the logging right.
+**Notes:** No body. Writes PackageDescriptionRsrc_en.xlf under the server's XLF_PATH directory; not used by the dashboard. Needs the logging right.
 
 <a id="get-idmprov-rest-admin-logging-list"></a>
 ### GET `/IDMProv/rest/admin/logging/list`
@@ -2084,7 +2082,7 @@ Read the workflow engine settings (thread pool, timeouts, intervals, process cac
 
 Save the workflow engine settings.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -2129,9 +2127,9 @@ Save the workflow engine settings.
 }
 ```
 
-**Answer:** the settings re-read after the save
+**Answer:** the saved configuration (as GET …/workflowengines/configuration)
 
-**Notes:** Not called (write). Every field is read and range-checked, so send the full GET object back. Needs the workflow-engine page right.
+**Notes:** Every field is read and range-checked, so send the full GET object back. Posting the GET answer back unchanged left it identical, including the lab's processCacheInitialCapacity 700 above processCacheMaxCapacity 500, which the save does not cross-check. Needs the workflow-engine page right.
 
 <a id="post-idmprov-rest-admin-workflowengines-status"></a>
 ### POST `/IDMProv/rest/admin/workflowengines/status`
@@ -2174,7 +2172,7 @@ Read the role, resource, entitlement-query and SoD settings of the role subsyste
 
 Save the entitlement query refresh rate and timeout.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -2188,16 +2186,16 @@ Save the entitlement query refresh rate and timeout.
 }
 ```
 
-**Answer:** echoes the body
+**Answer:** the whole role/resource settings object, as GET …/roleResourceSettings
 
-**Notes:** Not called (write). Same body type as the GET answer; only the fields this section reads matter. Negative values are refused. An empty body is refused ('settings data required').
+**Notes:** Only queryRefreshRate and queryTimeout are read; negative values are refused, an empty body 'settings data required'. Posting the whole GET …/roleResourceSettings answer back unchanged left it identical.
 
 <a id="post-idmprov-rest-catalog-administration-roleresourcesettings-role"></a>
 ### POST `/IDMProv/rest/catalog/administration/roleResourceSettings/role`
 
 Save role settings: removal grace period, role level display names and role approval switches.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -2227,16 +2225,16 @@ Save role settings: removal grace period, role level display names and role appr
 }
 ```
 
-**Answer:** echoes the body
+**Answer:** the whole role/resource settings object, as GET …/roleResourceSettings
 
-**Notes:** Not called (write). Same body type as the GET answer; only the fields this section reads matter. Role levels cannot be added or removed here; unknown levels are skipped and invalid names are refused.
+**Notes:** Only the grace period, role level names and the three approval switches are read; levels cannot be added or removed (unknown levels are skipped, invalid names refused). Posting the whole GET …/roleResourceSettings answer back unchanged left it identical.
 
 <a id="post-idmprov-rest-catalog-administration-roleresourcesettings-sod"></a>
 ### POST `/IDMProv/rest/catalog/administration/roleResourceSettings/sod`
 
 Save SoD settings: default SoD approval PRD, quorum and approvers.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -2257,6 +2255,6 @@ Save SoD settings: default SoD approval PRD, quorum and approvers.
 }
 ```
 
-**Answer:** echoes the body
+**Answer:** the whole role/resource settings object, as GET …/roleResourceSettings
 
-**Notes:** Not called (write). Same body type as the GET answer; only the fields this section reads matter. Careful: the quorum is written even when absent, so a body without sodQuorum clears it. A quorum outside 1-100 or not a number is refused.
+**Notes:** Careful: the quorum is written even when absent, so a body without sodQuorum clears it; a quorum outside 1-100 or not a number is refused. Posting the whole GET …/roleResourceSettings answer back unchanged left it identical.

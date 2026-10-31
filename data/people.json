@@ -77,7 +77,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/codemaprefresh/entitlement",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Starts a code map refresh for the listed entitlements.",
   "params": [],
   "body": {
@@ -103,10 +103,10 @@
     }
    ]
   },
-  "answer": "{succeeded:[{id,name}], failed:[{id,reason}]}",
+  "answer": "{succeeded:[{id, name}], failed:[\u2026]}",
   "example": null,
-  "notes": "Not called (it refreshes). Entitlement key is 'id'. Stops at the first entitlement whose refresh is already in progress and answers with just that one. Flushes caches first.",
-  "evidence": "server code + dashboard code"
+  "notes": "Entitlement key is 'id'. Refreshes that entitlement's code map through the driver. Stops at the first entitlement whose refresh is already in progress and answers with just that one. Flushes caches first.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -248,7 +248,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/data/migration/workflow",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Imports a workflow migration file.",
   "params": [],
   "body": {
@@ -262,10 +262,10 @@
     }
    ]
   },
-  "answer": "200 with no body",
+  "answer": "200, no body",
   "example": null,
-  "notes": "Not called (it migrates data). The form part is named 'file' (the reference calls it importDataStream). Requires a provisioning administrator. Not used by the dashboard.",
-  "evidence": "server code"
+  "notes": "Imports a workflow export (multipart/form-data, part 'file' = the zip from GET \u2026/data/migration/workflow). Only with the workflow engine stopped (as for the export). Importing a fresh export of the same system: 200 with no body in under a second; afterwards the processes kept their ids, but the open tasks got new task ids (same addressees), and GET \u2026/admin/workflowengines showed the new engine 'Starting' until the applications were restarted. Requires a provisioning administrator. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1128,7 +1128,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/helpdesk/category",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the helpdesk addressees for a user and one helpdesk resource.",
   "params": [
    {
@@ -1147,22 +1147,22 @@
    }
   ],
   "body": null,
-  "answer": "{users?:[str]}",
+  "answer": "{users:[user DN]}",
   "example": "GET \u2026/access/helpdesk/category?userDn=<user DN>&resDn=<helpdesk resource DN>",
-  "notes": "Still {} with a real user: the addressees come from the per-client helpdesk configuration, which the lab does not have (GET /access/config/helpdesk is not-working there), not from users. GET /access/helpdesk?userDN=<user DN> for the same user listed the helpdesk resources with empty users lists. Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "notes": "Returns the helpdesk addressees for a ticket: the users who hold that helpdesk resource with the requester's client as its parameter. Assign them through POST /access/config/helpdesk (accessRights users {userDn, action:'add'}). Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/helpdesk/ticket",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Allocates a new helpdesk ticket number.",
   "params": [],
   "body": null,
-  "answer": "{ticketNumber:str}",
+  "answer": "{ticketNumber: string}",
   "example": null,
-  "notes": "Not called: it takes the next number from the server's ticket counter, so it changes state. No body and no parameters. Not used by the dashboard.",
-  "evidence": "server code"
+  "notes": "No body and no parameters. Each call returns a new number; the lab's were not sequential-looking (UUAR078, then UXAO180). Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1630,8 +1630,8 @@
   },
   "answer": "password-update result for the new user",
   "example": null,
-  "notes": "Not called (creates). An existing DN gives 489 existing-user. Values are XSS-checked (400). The dashboard builds the body from the create-user form (action 'add', DN values as dn strings).",
-  "evidence": "server code + dashboard code"
+  "notes": "Every attribute needs isRequired (true or false): without it the server fails with 489 'Internal Error' (seen in the server log). On the lab the create then stopped at the password policy: 489 'Cannot create the user. The password does not meet the password policy criteria.' (subcode errorResponseDuringNmasPasswordMgmt), because no initial password was sent; a user without a password can be created with POST /access/entities/item key=user. An existing DN gives 489 existing-user. Values are XSS-checked (400).",
+  "evidence": "server code + server log + live 2026-10-31"
  },
  {
   "method": "PUT",
@@ -1742,7 +1742,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/user/dn",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Moves or renames a user's DN through the workflow engine.",
   "params": [],
   "body": {
@@ -1765,15 +1765,15 @@
     }
    ]
   },
-  "answer": "the body echoed back",
+  "answer": "{oldUserDn, newUserDn}",
   "example": null,
-  "notes": "Not called (changes data). Only a provisioning administrator may call it; others get 400 (security error mapped to the XSS code). Failure to move: 489. Not used by the dashboard.",
-  "evidence": "server code"
+  "notes": "Despite the name, it changes the user's DN only in the workflow database (for after a user was renamed or moved in the directory); the directory entry is not touched. It answered 200 for an existing user (who kept the old DN in the directory) and also for a DN that does not exist. Only a provisioning administrator may call it; others get 400 (security error mapped to the XSS code). Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/users/clearEntitlementResult",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Clears the DirXML-EntitlementResult attribute on a user.",
   "params": [
    {
@@ -1785,10 +1785,10 @@
    }
   ],
   "body": null,
-  "answer": "{updated:bool, message:str} (attribute removed, or not found)",
+  "answer": "{isSuccess:bool, message}",
   "example": null,
-  "notes": "Not called (it clears data despite being a GET). Missing userDn: 489 'Invalid input DN: null' (the first pass hit this without a DN, which changed nothing). Not used by the dashboard.",
-  "evidence": "server code"
+  "notes": "Clears the user's DirXML-EntitlementResult. A user without one: {isSuccess:false, message:'Attribute:DirXML-EntitlementResult  not found on the user dn:\u2026'}. Missing userDn: 489 'Invalid input DN: null'. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",

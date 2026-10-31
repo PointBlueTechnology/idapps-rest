@@ -14,7 +14,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/administration/cprsConfig",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the CPRS settings and start, stop or re-time the CPRS engine.",
   "params": [],
   "body": {
@@ -44,10 +44,10 @@
     }
    ]
   },
-  "answer": "echoes the saved body",
+  "answer": "the saved settings {enableCprs, cleanupTimeInDays, pollingInterval}",
   "example": "",
-  "notes": "Not called (write). Unlike the GET, the server method checks no administrator right. Send all three fields: enableCprs is compared with the stored value and a missing one fails. Changing enableCprs starts or stops the engine; changing interval/cleanup re-initialises it.",
-  "evidence": "server code + dashboard code"
+  "notes": "Send all three fields: enableCprs is compared with the stored value and a missing one fails. Changing enableCprs starts or stops the CPRS engine; changing interval/cleanup re-initialises it. Tested by posting the GET answer back unchanged; GET afterwards was identical. Unlike the GET, the server method checks no administrator right.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -64,7 +64,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/administration/delegation",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the delegation settings.",
   "params": [],
   "body": {
@@ -106,10 +106,10 @@
     }
    ]
   },
-  "answer": "echoes the body",
+  "answer": "the saved settings",
   "example": "",
-  "notes": "Not called (write). Provisioning administrator only. Every field is optional: only fields present are changed. An empty body gives 'payload is empty'.",
-  "evidence": "server code + dashboard code"
+  "notes": "Provisioning administrator only. Every field is optional: only fields present are changed. An empty body gives 'payload is empty'. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -126,7 +126,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/administration/emailApproval",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the email-based approval settings and push them to notification and workflow engine configuration.",
   "params": [],
   "body": {
@@ -322,10 +322,10 @@
     }
    ]
   },
-  "answer": "echoes the saved body",
+  "answer": "the saved settings (password empty)",
   "example": "",
-  "notes": "Not called (write). Needs the 'emailapproval' page right. Secrets: a value equal to the mask keeps the stored secret. Fields are bean properties, none checked as required; the dashboard posts the whole GET object back.",
-  "evidence": "server code + dashboard code"
+  "notes": "Needs the 'emailapproval' page right. Secrets: the GET returns a fixed mask in password, proxyPassword and modernAuthIncomingNode.clientSecret, and posting the mask back keeps the stored secret. Posting the GET answer back is accepted, but the save fills in defaults the GET left out: authType and notifyAuthType BASIC, modernAuthIncomingNode.grantType client_credentials, and approve/deny phrases for every supported locale (17 \u2192 19 on the lab). The answer is the saved object with password empty.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -342,7 +342,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/administration/igConfig",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the Identity Governance integration settings.",
   "params": [],
   "body": {
@@ -386,10 +386,10 @@
     }
    ]
   },
-  "answer": "echoes the body",
+  "answer": "the saved settings",
   "example": "",
-  "notes": "Not called (write). Needs the 'igConfiguration' page right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Needs the 'igConfiguration' page right. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -406,7 +406,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/administration/roleResourceSettings/entitlementQuery",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the entitlement query refresh rate and timeout.",
   "params": [],
   "body": {
@@ -429,15 +429,15 @@
     }
    ]
   },
-  "answer": "echoes the body",
+  "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
   "example": "",
-  "notes": "Not called (write). Same body type as the GET answer; only the fields this section reads matter. Negative values are refused. An empty body is refused ('settings data required').",
-  "evidence": "server code + dashboard code"
+  "notes": "Only queryRefreshRate and queryTimeout are read; negative values are refused, an empty body 'settings data required'. Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/administration/roleResourceSettings/role",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save role settings: removal grace period, role level display names and role approval switches.",
   "params": [],
   "body": {
@@ -491,15 +491,15 @@
     }
    ]
   },
-  "answer": "echoes the body",
+  "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
   "example": "",
-  "notes": "Not called (write). Same body type as the GET answer; only the fields this section reads matter. Role levels cannot be added or removed here; unknown levels are skipped and invalid names are refused.",
-  "evidence": "server code + dashboard code"
+  "notes": "Only the grace period, role level names and the three approval switches are read; levels cannot be added or removed (unknown levels are skipped, invalid names refused). Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/administration/roleResourceSettings/sod",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save SoD settings: default SoD approval PRD, quorum and approvers.",
   "params": [],
   "body": {
@@ -534,10 +534,10 @@
     }
    ]
   },
-  "answer": "echoes the body",
+  "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
   "example": "",
-  "notes": "Not called (write). Same body type as the GET answer; only the fields this section reads matter. Careful: the quorum is written even when absent, so a body without sodQuorum clears it. A quorum outside 1-100 or not a number is refused.",
-  "evidence": "server code + dashboard code"
+  "notes": "Careful: the quorum is written even when absent, so a body without sodQuorum clears it; a quorum outside 1-100 or not a number is refused. Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -554,7 +554,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/cache/configuration",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the global and node-local cluster/cache settings.",
   "params": [],
   "body": {
@@ -688,10 +688,10 @@
     }
    ]
   },
-  "answer": "{success message}",
+  "answer": "{success:true, message:'Successfully updated the cache configuration'}",
   "example": "",
-  "notes": "Not called (write). Global fields: empty or absent means keep. Node-local fields: empty or absent CLEARS the node-local override, so a partial body removes local settings. The *Current* fields are read-only.",
-  "evidence": "server code + dashboard code"
+  "notes": "Global fields: empty or absent means keep. Node-local fields: empty or absent CLEARS the node-local override, so send the whole GET answer (the *Current* fields are read-only and ignored). Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -708,7 +708,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/cache/customizedHolders",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save per-holder cache settings.",
   "params": [],
   "body": {
@@ -762,10 +762,10 @@
     }
    ]
   },
-  "answer": "{success: bool, succeeded:[{name}], failed?:[{name, reason}]}",
+  "answer": "{success, succeeded:[{id: holder}], failed:[\u2026]}",
   "example": "",
-  "notes": "Not called (write). Per holder: unknown or blank cacheValue is reported as failed. Omitting cacheEnable disables caching for that holder.",
-  "evidence": "server code + dashboard code"
+  "notes": "DANGER: posting the GET answer back unchanged stopped the applications from starting after the next restart. The save writes a global property com.sssw.fw.cache.CacheHolderConfig:<holder> for every holder sent (in the User Application driver's cn=configuration,cn=AppDefs object), and for a read-only holder it always writes CacheHolder.active=true, whatever cacheEnable says. GlobalCacheHolder is read-only and had no such property; once written, the next start failed with 'ISPN000453: Attempt to define configuration for cache GlobalCacheHolder which already exists', the cache service did not start, and /IDMProv answered 404 everywhere. Restoring that object's XmlData from a copy taken before fixed it. So: send only the holders you change, never GlobalCacheHolder, and keep a copy of the configuration object. Per holder: unknown or blank cacheValue is reported as failed; omitting cacheEnable disables caching for that holder. The save also appends explicit zero values (MaxAgeSeconds=0, TimeToLiveSeconds=0) to holders that had none.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -817,7 +817,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/access",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the navigation access rights per page section of a client's settings.",
   "params": [
    {
@@ -846,10 +846,10 @@
     }
    ]
   },
-  "answer": "the saved section as JSON",
+  "answer": "{access: [the saved items]}",
   "example": "",
-  "notes": "Not called (write). The body must be a JSON object with the top-level key 'access', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error.",
-  "evidence": "server code + dashboard code"
+  "notes": "The body is {\"access\": [the section's items]}, as config.access of GET \u2026/config/clients/{id} (the GET config/access read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -874,7 +874,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/branding",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the header/footer branding section of a client's settings.",
   "params": [
    {
@@ -903,15 +903,15 @@
     }
    ]
   },
-  "answer": "the saved section as JSON",
+  "answer": "{branding: [the saved items]}",
   "example": "",
-  "notes": "Not called (write). The body must be a JSON object with the top-level key 'branding', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error. The save also regenerates the client's stylesheet customBrand<client>.css (readable with GET config/style/customBrand1.css).",
-  "evidence": "server code + dashboard code"
+  "notes": "The body is {\"branding\": [the section's items]}, as config.branding of GET \u2026/config/clients/{id} (the GET config/branding read is broken). Saving the section back unchanged on a scratch client left the client's config identical. A changed titleColor read back through GET /access/config?key=branding.titleColor&client=<id>. Needs the 'settings' page right for that client.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
   "path": "/IDMProv/rest/access/config/clients",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Delete one or more clients (setting profiles).",
   "params": [],
   "body": {
@@ -941,10 +941,10 @@
     }
    ]
   },
-  "answer": "empty 200",
+  "answer": "200, no body",
   "example": "",
-  "notes": "Not called (write). Empty or missing values: 'payload is empty'. Needs the 'manageclients' right. Also removes the client's helpdesk provisioning view value.",
-  "evidence": "server code + dashboard code"
+  "notes": "Removed the scratch client; GET \u2026/config/clients no longer listed it. Empty or missing values: 'payload is empty'. Needs the 'manageclients' right. Also removes the client's helpdesk provisioning view value.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -961,7 +961,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/clients",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Create a client (setting profile).",
   "params": [],
   "body": {
@@ -1002,10 +1002,10 @@
     }
    ]
   },
-  "answer": "{name, id, matchCondition, config, isDefault}",
+  "answer": "{name, id, matchCondition, isDefault:false}",
   "example": "",
-  "notes": "Not called (write). Name or match condition already in use: 489 with that message. Needs the 'manageclients' right (403).",
-  "evidence": "server code + dashboard code"
+  "notes": "matchCondition is an LDAP filter that picks the users of this client (the default client has an empty one); a filter matching no one, (cn=nobody), worked for a scratch client. The new client starts with the default sections. Name or match condition already in use: 489 with that message. Needs the 'manageclients' right (403).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1091,7 +1091,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/custom",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the user/general customisation section of a client's settings.",
   "params": [
    {
@@ -1120,10 +1120,10 @@
     }
    ]
   },
-  "answer": "the saved section as JSON",
+  "answer": "{customization: [the saved items]}",
   "example": "",
-  "notes": "Not called (write). The body must be a JSON object with the top-level key 'customization', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error. Client existence is not checked here, only that client is not blank.",
-  "evidence": "server code + dashboard code"
+  "notes": "The body is {\"customization\": [the section's items]}, as config.customization of GET \u2026/config/clients/{id} (the GET config/custom read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1148,7 +1148,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/dashboard",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the dashboard widget access section of a client's settings.",
   "params": [
    {
@@ -1177,10 +1177,10 @@
     }
    ]
   },
-  "answer": "the saved section as JSON",
+  "answer": "{dashboardAccess: [the saved items]}",
   "example": "",
-  "notes": "Not called (write). The body must be a JSON object with the top-level key 'dashboardAccess', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error.",
-  "evidence": "server code + dashboard code"
+  "notes": "The body is {\"dashboardAccess\": [the section's items]}, as config.dashboardAccess of GET \u2026/config/clients/{id} (the GET config/dashboard read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1205,7 +1205,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/helpdesk",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the helpdesk contact settings section of a client's settings.",
   "params": [
    {
@@ -1234,15 +1234,15 @@
     }
    ]
   },
-  "answer": "the saved section as JSON",
+  "answer": "{helpdesk: [the saved items]}",
   "example": "",
-  "notes": "Not called (write). The body must be a JSON object with the top-level key 'helpdesk', otherwise 'payload is empty'. Unknown client: 'client not found'. Needs the 'settings' page right for that client (403 otherwise). Invalid section content: parse error.",
-  "evidence": "server code + dashboard code"
+  "notes": "The body is {\"helpdesk\": [the section's items]}, as config.helpdesk of GET \u2026/config/clients/{id} (the GET config/helpdesk read is broken). Saving the section back unchanged on a scratch client left the client's config identical. accessRights users entries {userDn, action: add|remove} request or revoke that helpdesk resource for the user, with the client as its parameter (param1 \"client1(1)\" on the lab); GET /access/helpdesk/category then named that user. Reads list the users as {dn, fullName}. Needs the 'settings' page right for that client.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/restoreSettings/{key}",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Reset one section of a client's settings to the defaults.",
   "params": [
    {
@@ -1261,10 +1261,10 @@
    }
   ],
   "body": null,
-  "answer": "{key, value: the restored section as a JSON string}",
+  "answer": "{key, value: the section's default JSON text}",
   "example": "",
-  "notes": "Not called (write). No body (the dashboard posts null). Blank client: 'client not found'; any other key: 'key is not valid'. Needs the 'settings' right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Resets one section of a client to the defaults: a changed branding titleColor read back as the default afterwards. No body. Blank client: 'client not found'; any other key: 'key is not valid'. Needs the 'settings' right.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1289,7 +1289,7 @@
  {
   "method": "PUT",
   "path": "/IDMProv/rest/access/config/uploadStyle",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Upload a custom CSS file for a client's branding.",
   "params": [
    {
@@ -1311,10 +1311,10 @@
     }
    ]
   },
-  "answer": "empty 200",
+  "answer": "200, no body",
   "example": "",
-  "notes": "Not called (write). Blank client or body: 'payload is empty'. Content failing the XSS check: 400; content the CSS parser rejects: 489 'invalid CSS content'. The server method makes no page-right check (other config saves do).",
-  "evidence": "server code + dashboard code"
+  "notes": "Body is the CSS text (Content-Type text/plain). Valid CSS: 200 with no body; text the CSS parser rejects: 489 'CSS file to upload is invalid'. Blank client or body: 'payload is empty'; content failing the XSS check: 400. The server method makes no page-right check.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1410,7 +1410,7 @@
  {
   "method": "PUT",
   "path": "/IDMProv/rest/admin/display/settings/general",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the general list display settings.",
   "params": [],
   "body": {
@@ -1439,10 +1439,10 @@
     }
    ]
   },
-  "answer": "the saved settings (re-read)",
+  "answer": "the saved settings",
   "example": "",
-  "notes": "Not called (write). Needs the provisioning UI display right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Needs the provisioning UI display right. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1459,7 +1459,7 @@
  {
   "method": "PUT",
   "path": "/IDMProv/rest/admin/display/settings/request",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the request list display settings.",
   "params": [],
   "body": {
@@ -1517,8 +1517,8 @@
   },
   "answer": "the saved settings",
   "example": "",
-  "notes": "Not called (write). Sort column and sort order must come together. Needs the request display right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Sort column and sort order must come together. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, \u2026) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, \u2026), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1535,7 +1535,7 @@
  {
   "method": "PUT",
   "path": "/IDMProv/rest/admin/display/settings/task",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the task list display settings.",
   "params": [],
   "body": {
@@ -1618,8 +1618,8 @@
   },
   "answer": "the saved settings",
   "example": "",
-  "notes": "Not called (write). The sort column is always checked, so taskListSort is in effect required. Needs the task display right.",
-  "evidence": "server code + dashboard code"
+  "notes": "The sort column is always checked, so taskListSort is in effect required. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, \u2026) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, \u2026), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
@@ -2039,7 +2039,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/logging",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Add loggers for packages at a given level.",
   "params": [],
   "body": {
@@ -2074,15 +2074,15 @@
     }
    ]
   },
-  "answer": "{success: bool, succeeded:[{name}], failed?:[{name, reason}]}",
+  "answer": "{success:true, succeeded:[{name: package}]}",
   "example": "",
-  "notes": "Not called (write). Missing name or level, or a level outside 1-6, is refused; the package must be one the server knows. Additivity is always set to true. An empty list does nothing.",
-  "evidence": "server code + dashboard code"
+  "notes": "Missing name or level, or a level outside 1-6, is refused; the package must be one the server knows. Additivity is always set to true. Tested with one package at its current level: GET \u2026/logging/list unchanged.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "PUT",
   "path": "/IDMProv/rest/admin/logging",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Change the level of configured loggers, or all of them, and optionally persist to the log configuration file.",
   "params": [],
   "body": {
@@ -2138,15 +2138,15 @@
     }
    ]
   },
-  "answer": "{success, succeeded, failed?}",
+  "answer": "{success:true, succeeded:[{name: package}]}",
   "example": "",
-  "notes": "Not called (write). Needs the logging right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Needs the logging right. Tested with changeAllLogs false, persist true and one package at its current level: GET \u2026/logging/list unchanged.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/logging/auditConfig",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the CEF audit settings.",
   "params": [],
   "body": {
@@ -2211,22 +2211,22 @@
     }
    ]
   },
-  "answer": "settings or {success\u2026}",
+  "answer": "{success:true, message:'Successfully updated the audit configuration'}",
   "example": "",
-  "notes": "Not called (write). Missing enableCEF: 'data required'.",
-  "evidence": "server code + dashboard code"
+  "notes": "Missing enableCEF (or {}): 489 'Data is required.'. {enableCEF:false} kept CEF off (GET \u2026/logging/list shows enableCEF and cefConfigs).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "PUT",
   "path": "/IDMProv/rest/admin/logging/buildPDXLF",
-  "status": "unknown",
+  "status": "validated",
   "purpose": "Developer helper: rewrites the package description XLF file on the server from the known packages.",
   "params": [],
   "body": null,
-  "answer": "unknown",
+  "answer": "{success:true, message:'Successfully built the package description xliff.'}",
   "example": "",
-  "notes": "Not called (write, no body). Writes PackageDescriptionRsrc_en.xlf under the server's XLF_PATH directory; not used by the dashboard. Needs the logging right.",
-  "evidence": "server code"
+  "notes": "No body. Writes PackageDescriptionRsrc_en.xlf under the server's XLF_PATH directory; not used by the dashboard. Needs the logging right.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -2655,7 +2655,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/ulp/featuredItems",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Add items to the landing page from permissions or existing entries.",
   "params": [],
   "body": {
@@ -2708,10 +2708,10 @@
     }
    ]
   },
-  "answer": "{succeeded, succeedNodes, failNodes}",
+  "answer": "{success, succeeded:[{id, instanceId, name}]}",
   "example": "",
-  "notes": "Not called (write). Missing name: 'item name required'.",
-  "evidence": "server code + dashboard code"
+  "notes": "Adds a featured item (answer instanceId is its itemId). Missing name: 'item name required'. With the featured category's itemCategoryId the item showed in GET \u2026/ulp/landingItems/v2 under that category but not in GET \u2026/access/featuredItems; DELETE \u2026/access/featuredItems {items:[{itemId}]} removed it.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
@@ -2813,7 +2813,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/ulp/l10n/listLocales",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save a user's preferred locale.",
   "params": [],
   "body": {
@@ -2842,10 +2842,10 @@
     }
    ]
   },
-  "answer": "the saved locale list",
+  "answer": "{response:{message:'Locale Preferences Saved'}}",
   "example": "",
-  "notes": "Not called (write), despite the name. Missing userDN: 'user DN not present'; another user's DN without global admin: unauthorized.",
-  "evidence": "server code + dashboard code"
+  "notes": "Missing userDN: 'user DN not present'; another user's DN without global admin: unauthorized. Saves the user's preferred locales.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -2870,7 +2870,7 @@
  {
   "method": "PUT",
   "path": "/IDMProv/rest/access/ulp/l10n/{locale}.properties",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Upload translated landing page strings for a locale.",
   "params": [
    {
@@ -2892,10 +2892,10 @@
     }
    ]
   },
-  "answer": "{succeeded, succeedNodes, failNodes}",
+  "answer": "{success, succeeded:[{id, instanceId?}]}",
   "example": "",
-  "notes": "Not called (write). The dashboard PUTs to the link from GET ulp/l10n/list.",
-  "evidence": "server code + dashboard code"
+  "notes": "Body is the properties text (Content-Type text/plain), as GET \u2026/ulp/l10n/{locale}.properties returns it. Putting a locale's file back unchanged left it identical (31 KB for de). The answer lists every setting and item whose translation was written.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -2927,7 +2927,7 @@
  {
   "method": "PUT",
   "path": "/IDMProv/rest/access/ulp/landingItems/v2",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Change landing page items (name, order, category, links, images).",
   "params": [
    {
@@ -3001,10 +3001,10 @@
     }
    ]
   },
-  "answer": "{succeeded, succeedNodes, failNodes}",
+  "answer": "{success, succeeded:[{id, instanceId}]}",
   "example": "",
-  "notes": "Not called (write). Missing itemId or id is refused.",
-  "evidence": "server code + dashboard code"
+  "notes": "Missing itemId or id is refused. Send the items flattened from itemCategories[].items and uncategorizedItems, each with its itemCategoryId. Item names are stored once per item and locale and shared by PUT \u2026/ulp/items and PUT \u2026/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -3033,7 +3033,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/workflowengines/configuration",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the workflow engine settings.",
   "params": [],
   "body": {
@@ -3167,10 +3167,10 @@
     }
    ]
   },
-  "answer": "the settings re-read after the save",
+  "answer": "the saved configuration (as GET \u2026/workflowengines/configuration)",
   "example": "",
-  "notes": "Not called (write). Every field is read and range-checked, so send the full GET object back. Needs the workflow-engine page right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Every field is read and range-checked, so send the full GET object back. Posting the GET answer back unchanged left it identical, including the lab's processCacheInitialCapacity 700 above processCacheMaxCapacity 500, which the save does not cross-check. Needs the workflow-engine page right.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",

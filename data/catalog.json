@@ -2,7 +2,7 @@
  {
   "method": "DELETE",
   "path": "/IDMProv/rest/admin/administrator/assignments",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Revokes domain or delegated administrator assignments from identities.",
   "params": [],
   "body": {
@@ -42,10 +42,10 @@
     }
    ]
   },
-  "answer": "{succeeded: bool, succeedNodes: [{id}], failNodes: [{id}]}",
+  "answer": "{success, succeeded:[{id: assignee DN}]}",
   "example": "DELETE \u2026/admin/administrator/assignments {revokeAssignments:[{assignmentDomain, identity, isAllPermissions}]}",
-  "notes": "Not called (write). Dashboard sends the selected rows as-is. Gated by the ADMIN_ASSIGNMENT client setting. The reference body adds arraySize, which the server ignores.",
-  "evidence": "server code + dashboard code"
+  "notes": "Revoked the delegated administrator; the list was empty afterwards. The reference body adds arraySize, which the server ignores.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -129,7 +129,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/administrator/assignments/create",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Makes an identity a domain administrator or delegated administrator of a domain.",
   "params": [],
   "body": {
@@ -194,10 +194,10 @@
     }
    ]
   },
-  "answer": "the posted node echoed back with status set to a localized success/failed text",
+  "answer": "{assignee, assigneeDn, assignmentType, adminType, comment, domain, status:'Successfully created assignment'}",
   "example": "POST \u2026/admin/administrator/assignments/create {assigneeDn, adminType, assignmentType, domain, comment}",
-  "notes": "Not called (write). Missing assigneeDn/adminType/assignmentType/domain each raise their own validation error. Dashboard turns its picked assignee [{name, dn}] into assignee + assigneeDn. Gated by ADMIN_ASSIGNMENT client setting. The vendor reference shows an XML example.",
-  "evidence": "server code + dashboard code"
+  "notes": "Made a user a delegated role administrator: listed by GET \u2026/administrator/assignments with status COMPLETED. It also shows in the user's role request history as a 'Role Manager' assignment. Missing assigneeDn/adminType/assignmentType/domain each raise their own validation error. Gated by the ADMIN_ASSIGNMENT client setting.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -214,7 +214,7 @@
  {
   "method": "DELETE",
   "path": "/IDMProv/rest/admin/assignment/permissions",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Removes granular permissions from a delegated administrator.",
   "params": [],
   "body": {
@@ -261,15 +261,15 @@
     }
    ]
   },
-  "answer": "list of per-permission success/failed nodes (id = permission dn)",
+  "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}",
-  "notes": "Not called (write). Same body as the PUT. The reference example shows the catalog permission node (id, name, permParams\u2026); the server only uses dn, objClass and permission.",
-  "evidence": "server code + dashboard code"
+  "notes": "Same body as the PUT; the permission list was empty afterwards.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "PUT",
   "path": "/IDMProv/rest/admin/assignment/permissions",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Grants granular permissions on objects to a delegated administrator.",
   "params": [],
   "body": {
@@ -316,15 +316,15 @@
     }
    ]
   },
-  "answer": "list of per-permission success/failed nodes",
+  "answer": "{success, succeeded:[{id, name}]}",
   "example": "PUT \u2026/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}",
-  "notes": "Not called (write). nrfRole permissions are handled specially (role-level DNs). An empty body returns no response at all.",
-  "evidence": "server code + dashboard code"
+  "notes": "Granted View Role on one role: GET \u2026/permission/assignment?assigneeDn=\u2026&domain=ROLES listed it. nrfRole permissions are handled specially (role-level DNs). An empty body returns no response at all.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
   "path": "/IDMProv/rest/access/assignments",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Removes the signed-in user's own role/resource/PRD permission assignments (self-revoke).",
   "params": [],
   "body": {
@@ -377,10 +377,10 @@
     }
    ]
   },
-  "answer": "per-assignment response list",
+  "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/access/assignments {reason, assignments:[{id, entityType, instanceId}]}",
-  "notes": "Not called (write). Acts on the caller's own assignments only. Inherited assignments (not directly assigned) and non-removable ones are refused with their own messages.",
-  "evidence": "server code + dashboard code"
+  "notes": "Removed a role the caller held directly (entityType role, no instanceId needed); GET /access/assignments no longer listed it 20 s later. Acts on the caller's own assignments only. Inherited assignments and non-removable ones are refused with their own messages.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -906,7 +906,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/identityResync",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Sends a resync event for one identity to the Role and Resource Service driver.",
   "params": [],
   "body": {
@@ -922,10 +922,10 @@
     }
    ]
   },
-  "answer": "{success-flag, message} (message node)",
+  "answer": "{success:true, message:'Successfully triggered the resync event.'}",
   "example": "POST \u2026/admin/identityResync {dn}",
-  "notes": "Not called (write; brief forbids it). Only provisioning administrators may call it. Not in the dashboard bundles. Needs a Role and Resource driver in the driver set.",
-  "evidence": "server code"
+  "notes": "Only provisioning administrators may call it. Needs a Role and Resource driver in the driver set. Not in the dashboard bundles.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -2577,7 +2577,7 @@
  {
   "method": "DELETE",
   "path": "/IDMProv/rest/catalog/sods/sod",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Deletes SoDs.",
   "params": [],
   "body": {
@@ -2597,10 +2597,10 @@
     }
    ]
   },
-  "answer": "response list",
+  "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/catalog/sods/sod {sods:[{id}]}",
-  "notes": "Not called (write). Each SoD needs the caller's DELETE right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Deleted an SoD; POST \u2026/sods/sod of its DN answered arraySize 0 afterwards. Each SoD needs the caller's DELETE right.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",

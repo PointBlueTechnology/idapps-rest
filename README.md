@@ -570,10 +570,21 @@ administrators) takes the permission's DN in the `item` **query** parameter, not
 - `DELETE /access/queue/entry` (empty a cart) hung because of an uncommitted transaction left by an earlier call. It
   worked at once after the applications were restarted **[live]**.
 
-**Not called on the lab:** the writes that change the system's configuration or can't be undone on a shared lab,
-such as configuration saves, logging, caches, resynchronization and the migration import. Each one's page under
-[docs/reference/](docs/reference/) gives its body as worked out from the server's and the dashboard's code, marked
+**Not run to the end on the lab:** `POST /access/cprs/assignments/publish` (it needs a finished CPRS delta, which
+the lab's test driver can't produce) and `POST /access/user` (the lab's password policy needs an initial password).
+Their pages under [docs/reference/](docs/reference/) give the body as worked out from the server's code, marked
 "not run". [Every endpoint](docs/endpoints.md) has the counts.
+
+**Saves that change more than they say** **[live]**:
+
+- `POST /admin/cache/customizedHolders` with the read posted back unchanged stopped the applications from starting
+  after the next restart: it marks the read-only `GlobalCacheHolder` active, and the cache service then fails. Send
+  only the holders you change, and keep a copy of the User Application driver's `cn=configuration,cn=AppDefs`
+  object, where these settings live.
+- `PUT /admin/display/settings/request` and `/task` rewrite older stored column and sort keys in the new names.
+- `PUT /access/ulp/items` and `PUT /access/ulp/landingItems/v2` share one name per item and locale, so saving one
+  list can change the other's names.
+- `POST /access/administration/emailApproval` fills in defaults the read left out.
 
 **The workflow data export** (`GET /access/data/migration/workflow`) works only while the workflow engine is stopped:
 stop it (`POST /admin/workflowengines/status {"engineStatus": 1}`), export, and start it again (`{"engineStatus": 0}`)

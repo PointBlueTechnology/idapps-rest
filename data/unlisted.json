@@ -2,7 +2,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save one administration setting by key.",
   "params": [],
   "body": {
@@ -31,10 +31,10 @@
     }
    ]
   },
-  "answer": "",
+  "answer": "200, no body",
   "example": "",
-  "notes": "Not called: it changes the configuration.",
-  "evidence": "server code",
+  "notes": "Saves one setting. key is '<section>.<item>' (only access, customization and branding sections), value its value; the server saves it with no client (the default client). GET /access/config?key=<section>.<item>&client=<id> reads one setting as {<item>: value} (both parameters required: 'Invalid or missing JSON Key/value.' otherwise). Tested by saving branding.titleColor with its current value.",
+  "evidence": "server code + live 2026-10-31",
   "in_reference": false
  },
  {
@@ -144,7 +144,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/ulp/items/images",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Images for a given set of landing-page items.",
   "params": [],
   "body": {
@@ -164,16 +164,16 @@
     }
    ]
   },
-  "answer": "",
+  "answer": "{items:[{image: data URI, \u2026}]}",
   "example": "",
-  "notes": "Reads only, but not called yet.",
-  "evidence": "server code",
+  "notes": "Read-only despite POST: returns the images of the given items.",
+  "evidence": "server code + live 2026-10-31",
   "in_reference": false
  },
  {
   "method": "PUT",
   "path": "/IDMProv/rest/access/ulp/items",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the landing page's items.",
   "params": [],
   "body": {
@@ -191,10 +191,10 @@
     }
    ]
   },
-  "answer": "",
+  "answer": "{success, succeeded:[{id, instanceId}]}",
   "example": "",
-  "notes": "Not called: it changes the landing page for everyone.",
-  "evidence": "server code",
+  "notes": "Updates existing items by itemId (id = the item's external id, both required). Send the items flattened from the GET. Item names are stored once per item and locale and shared by PUT \u2026/ulp/items and PUT \u2026/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.",
+  "evidence": "server code + live 2026-10-31",
   "in_reference": false
  },
  {
@@ -854,7 +854,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/roles/category",
-  "status": "from-ui",
+  "status": "not-working",
   "purpose": "Create a role category.",
   "params": [],
   "body": {
@@ -879,8 +879,8 @@
   },
   "answer": "",
   "example": "",
-  "notes": "Not called yet: it adds a category to the installation.",
-  "evidence": "server code",
+  "notes": "489 'Unable to find abstract layer object definition for the specified definition key.': like POST \u2026/resources/category, the server looks up a directory abstraction layer entity this installation does not define. Nothing was created.",
+  "evidence": "server code + live 2026-10-31",
   "in_reference": false
  },
  {

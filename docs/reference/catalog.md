@@ -8,8 +8,7 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 66 |
-| not run: worked out from the server's and the dashboard's code | 7 |
+| validated on the lab | 73 |
 | did not work on the lab | 2 |
 | answered on the lab, which had no data to show | 1 |
 
@@ -99,7 +98,7 @@ signing in and errors.
 
 Removes the signed-in user's own role/resource/PRD permission assignments (self-revoke).
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -123,11 +122,11 @@ Removes the signed-in user's own role/resource/PRD permission assignments (self-
 }
 ```
 
-**Answer:** per-assignment response list
+**Answer:** {success, succeeded:[{id}]}
 
 **Example:** DELETE …/access/assignments {reason, assignments:[{id, entityType, instanceId}]}
 
-**Notes:** Not called (write). Acts on the caller's own assignments only. Inherited assignments (not directly assigned) and non-removable ones are refused with their own messages.
+**Notes:** Removed a role the caller held directly (entityType role, no instanceId needed); GET /access/assignments no longer listed it 20 s later. Acts on the caller's own assignments only. Inherited assignments and non-removable ones are refused with their own messages.
 
 <a id="get-idmprov-rest-access-assignments-identities"></a>
 ### GET `/IDMProv/rest/access/assignments/identities`
@@ -157,7 +156,7 @@ Lists who holds a role or a resource.
 
 Revokes domain or delegated administrator assignments from identities.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -178,11 +177,11 @@ Revokes domain or delegated administrator assignments from identities.
 }
 ```
 
-**Answer:** {succeeded: bool, succeedNodes: [{id}], failNodes: [{id}]}
+**Answer:** {success, succeeded:[{id: assignee DN}]}
 
 **Example:** DELETE …/admin/administrator/assignments {revokeAssignments:[{assignmentDomain, identity, isAllPermissions}]}
 
-**Notes:** Not called (write). Dashboard sends the selected rows as-is. Gated by the ADMIN_ASSIGNMENT client setting. The reference body adds arraySize, which the server ignores.
+**Notes:** Revoked the delegated administrator; the list was empty afterwards. The reference body adds arraySize, which the server ignores.
 
 <a id="get-idmprov-rest-admin-administrator-assignments"></a>
 ### GET `/IDMProv/rest/admin/administrator/assignments`
@@ -237,7 +236,7 @@ Lists the columns (with localized labels) of the administrator assignment list.
 
 Makes an identity a domain administrator or delegated administrator of a domain.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -263,11 +262,11 @@ Makes an identity a domain administrator or delegated administrator of a domain.
 }
 ```
 
-**Answer:** the posted node echoed back with status set to a localized success/failed text
+**Answer:** {assignee, assigneeDn, assignmentType, adminType, comment, domain, status:'Successfully created assignment'}
 
 **Example:** POST …/admin/administrator/assignments/create {assigneeDn, adminType, assignmentType, domain, comment}
 
-**Notes:** Not called (write). Missing assigneeDn/adminType/assignmentType/domain each raise their own validation error. Dashboard turns its picked assignee [{name, dn}] into assignee + assigneeDn. Gated by ADMIN_ASSIGNMENT client setting. The vendor reference shows an XML example.
+**Notes:** Made a user a delegated role administrator: listed by GET …/administrator/assignments with status COMPLETED. It also shows in the user's role request history as a 'Role Manager' assignment. Missing assigneeDn/adminType/assignmentType/domain each raise their own validation error. Gated by the ADMIN_ASSIGNMENT client setting.
 
 <a id="get-idmprov-rest-admin-administrator-assignments-domains"></a>
 ### GET `/IDMProv/rest/admin/administrator/assignments/domains`
@@ -287,7 +286,7 @@ Lists all administration domains.
 
 Removes granular permissions from a delegated administrator.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -310,18 +309,18 @@ Removes granular permissions from a delegated administrator.
 }
 ```
 
-**Answer:** list of per-permission success/failed nodes (id = permission dn)
+**Answer:** {success, succeeded:[{id}]}
 
 **Example:** DELETE …/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}
 
-**Notes:** Not called (write). Same body as the PUT. The reference example shows the catalog permission node (id, name, permParams…); the server only uses dn, objClass and permission.
+**Notes:** Same body as the PUT; the permission list was empty afterwards.
 
 <a id="put-idmprov-rest-admin-assignment-permissions"></a>
 ### PUT `/IDMProv/rest/admin/assignment/permissions`
 
 Grants granular permissions on objects to a delegated administrator.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -344,11 +343,11 @@ Grants granular permissions on objects to a delegated administrator.
 }
 ```
 
-**Answer:** list of per-permission success/failed nodes
+**Answer:** {success, succeeded:[{id, name}]}
 
 **Example:** PUT …/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}
 
-**Notes:** Not called (write). nrfRole permissions are handled specially (role-level DNs). An empty body returns no response at all.
+**Notes:** Granted View Role on one role: GET …/permission/assignment?assigneeDn=…&domain=ROLES listed it. nrfRole permissions are handled specially (role-level DNs). An empty body returns no response at all.
 
 <a id="get-idmprov-rest-admin-driver"></a>
 ### GET `/IDMProv/rest/admin/driver`
@@ -381,7 +380,7 @@ Shows the User Application driver's state, versions and licence expiry.
 
 Sends a resync event for one identity to the Role and Resource Service driver.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -393,11 +392,11 @@ Sends a resync event for one identity to the Role and Resource Service driver.
 }
 ```
 
-**Answer:** {success-flag, message} (message node)
+**Answer:** {success:true, message:'Successfully triggered the resync event.'}
 
 **Example:** POST …/admin/identityResync {dn}
 
-**Notes:** Not called (write; brief forbids it). Only provisioning administrators may call it. Not in the dashboard bundles. Needs a Role and Resource driver in the driver set.
+**Notes:** Only provisioning administrators may call it. Needs a Role and Resource driver in the driver set. Not in the dashboard bundles.
 
 <a id="get-idmprov-rest-admin-permission"></a>
 ### GET `/IDMProv/rest/admin/permission`
@@ -1806,7 +1805,7 @@ Returns the default approval settings for new SoDs.
 
 Deletes SoDs.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1822,11 +1821,11 @@ Deletes SoDs.
 }
 ```
 
-**Answer:** response list
+**Answer:** {success, succeeded:[{id}]}
 
 **Example:** DELETE …/catalog/sods/sod {sods:[{id}]}
 
-**Notes:** Not called (write). Each SoD needs the caller's DELETE right.
+**Notes:** Deleted an SoD; POST …/sods/sod of its DN answered arraySize 0 afterwards. Each SoD needs the caller's DELETE right.
 
 <a id="post-idmprov-rest-catalog-sods-sod"></a>
 ### POST `/IDMProv/rest/catalog/sods/sod`

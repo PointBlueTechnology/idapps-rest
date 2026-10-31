@@ -8,10 +8,10 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 61 |
-| not run: worked out from the server's and the dashboard's code | 7 |
-| answered on the lab, which had no data to show | 4 |
-| did not work on the lab | 2 |
+| validated on the lab | 67 |
+| answered on the lab, which had no data to show | 3 |
+| did not work on the lab | 3 |
+| not run: worked out from the server's and the dashboard's code | 1 |
 
 ## Contents
 
@@ -358,7 +358,7 @@ Start a CPRS run (delta computation or migration) for a driver or one entitlemen
 
 **Answer:** {success:bool, succeeded:[{id: entitlement DN, requestId: DN under cn=CprsRequests}], failed:[{id, reason}]}
 
-**Example:** POST …/cprs/assignments/reconcile {driverDn, opType:'delta'} (not called)
+**Example:** POST …/cprs/assignments/reconcile {driverDn, opType:'delta'}
 
 **Notes:** Starts one CPRS request per mapped entitlement. Without a managedBy-1 resource for the entitlement: success false, 'Resource is not configured for permission reconciliation for entitlement …'. A second call while one runs: 'Delta Computation is already in progress for driver […]'. The run then waits for the driver to report the entitlement's current assignments; a driver without that support (a Loopback driver here) leaves it running (opStatus 1) and blocks further reconciles for that driver. CPRS must be enabled and the caller must be a Resources domain administrator.
 
@@ -727,14 +727,14 @@ List workflow processes (requests) for monitoring, with filters.
 
 **Example:** GET …/monitoring/process/list?startIndex=1&size=5&processStatus=Completed
 
-**Notes:** No parameter is required. totalSize was 20 for the unfiltered list and 17 with processStatus=Completed; creationTime=…&operator=GT narrowed it to 2. A wrong sortField gives 489 'An error occurred while obtaining the process or comment details from the database'. The call goes to the workflow engine client, whose code is not in the REST jars.
+**Notes:** No parameter is required. totalSize was 20 for the unfiltered list and 17 with processStatus=Completed; creationTime=…&operator=GT narrowed it to 2. A wrong sortField gives 489 'An error occurred while obtaining the process or comment details from the database'. The call goes to the workflow engine client, whose code is not in the REST jars. 2026-10-31: the list returned one row fewer than totalSize (21 of 22; running: 1 of 2), and the missing one was a just-created process, so a new process may not be listed.
 
 <a id="post-idmprov-rest-access-monitoring-process-terminate"></a>
 ### POST `/IDMProv/rest/access/monitoring/process/terminate`
 
 Terminate running workflow processes.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -751,53 +751,51 @@ Terminate running workflow processes.
 }
 ```
 
-**Answer:** terminate result per process
+**Answer:** {success:true, message:'Process terminated successfully!'}
 
-**Example:** POST …/monitoring/process/terminate {processes:[…], comment} (not called)
+**Example:** POST …/monitoring/process/terminate {processes:[…], comment}
 
-**Notes:** Only processes is checked (missing → 489 'Invalid request'). The reference shows an XML body; the method declares no media type. Not used by the dashboard.
+**Notes:** Terminated a role approval process (requestId from GET …/monitoring/process/list): its processStatus became 2 and the comment was recorded, but its approval task stayed in GET /access/tasks/list and the role request stayed 'Approval Pending' (as after a retraction). Only processes is checked (missing → 489 'Invalid request'). Not used by the dashboard.
 
 <a id="post-idmprov-rest-access-monitoring-reassign"></a>
 ### POST `/IDMProv/rest/access/monitoring/reassign`
 
 Reassign workflow tasks to another user.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
-| `afTaskNode` | yes | task action: tasks (list of task nodes with taskId …), approver, action, comment, proxyUser, dataItems |  |
-| `comment` | no | text |  |
-| `primaryPrincipal` | no | string |  |
+| `afTaskNode.tasks[].taskId` | yes | task id from GET …/tasks/list | per installation |
+| `afTaskNode.tasks[].addressee` | yes | the new addressee's DN | per installation |
+| `afTaskNode.comment` | no | text recorded on the task |  |
 
 ```json
 {
   "afTaskNode": {
     "tasks": [
       {
-        "taskId": "<task id>"
+        "taskId": "<task id>",
+        "addressee": "<new addressee DN>"
       }
     ],
-    "approver": "<new addressee DN>",
-    "action": "reassign",
     "comment": "<text>"
-  },
-  "comment": "<text>"
+  }
 }
 ```
 
-**Answer:** operation result {succeeded, failed …}
+**Answer:** {success, succeedNodes:[{id: taskId}], failNodes?}
 
-**Example:** POST …/monitoring/reassign (not called)
+**Example:** POST …/monitoring/reassign {afTaskNode:{tasks:[{taskId:"<task id>", addressee:"<new addressee DN>"}], comment:"<text>"}}
 
-**Notes:** The REST layer does no validation; it passes the node to the workflow engine client (not in the decompiled jars), so the meaning of approver/action is inferred from field names only. Not used by the dashboard.
+**Notes:** The new addressee goes in afTaskNode.tasks[].addressee: {afTaskNode:{tasks:[{taskId, addressee: new addressee DN}], comment}}. That moved the task (assignStatus REASSIGNED, comment 'User task reassigned to reviewer …'). Careful: other shapes also answer {success:true} and do nothing (afTaskNode as a single task, a primaryPrincipal, an approver field), one of them claimed the task for the caller, and afTaskNode.tasks with an approver field and no addressee failed with an HTML 500. Not used by the dashboard.
 
 <a id="get-idmprov-rest-access-monitoring-workentries"></a>
 ### GET `/IDMProv/rest/access/monitoring/workentries`
 
 List the work entries (tasks/activities) of one request.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30, live 2026-10-31.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -805,11 +803,11 @@ List the work entries (tasks/activities) of one request.
 | `size` | query | no | default 10 |  |
 | `startIndex` | query | no | default 0 |  |
 
-**Answer:** {totalSize:int, entries when present}
+**Answer:** {workentries:[{activityId, activityName, addressee, assignmentType, availableActions:[…], creationTime, id: task id, owner, priority, processId, …}], totalSize}
 
 **Example:** GET …/monitoring/workentries?requestId=34f1826bc4594d29b8b62d2171fc2cb8
 
-**Notes:** No requestId → 489 'Invalid requestId'. All tried requests (completed, retracted, failed) answered {totalSize:0}; entries probably exist only for requests with open work. 2026-10-31: a role request waiting for approval (its request DN under cn=Requests and its task id) also answered {totalSize:0}.
+**Notes:** requestId is the workflow request id (requestId from GET …/monitoring/process/list), not the role request's DN or a task id (those answered {totalSize:0}). For an open approval: the task with addressee, owner (Unclaimed), availableActions and priority.
 
 <a id="get-idmprov-rest-access-proxy-all"></a>
 ### GET `/IDMProv/rest/access/proxy/all`
@@ -1212,7 +1210,7 @@ For administrators: every request made for one role, resource or PRD.
 
 Submit requests for roles, resources or PRDs, for oneself or for recipients.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1242,11 +1240,11 @@ Submit requests for roles, resources or PRDs, for oneself or for recipients.
 }
 ```
 
-**Answer:** {succeeded:bool, operationNodes:[per recipient result]} or a single result when no recipients
+**Answer:** {success, OperationNodes:[{success, succeeded:[{id, instanceId: request DN}], userDn}]}
 
-**Example:** POST …/requests/permissions (not called)
+**Example:** POST …/requests/permissions {reason, reqPermissions:[{id:"<role DN>", entityType:"role"}], recipients:[{dn:"<user DN>", type:"user"}]}
 
-**Notes:** Group recipients are expanded; groups are kept as group assignments only for Roles or Security domain administrators. The reference shows an XML body; the dashboard defines this path (submitRequestsForSelf/Others) but the bundles on hand never call it.
+**Notes:** Requested a role with an approval for another user: success, and the approver got a task. Group recipients are expanded; groups are kept as group assignments only for Roles or Security domain administrators.
 
 <a id="get-idmprov-rest-access-requests-resourcecategories"></a>
 ### GET `/IDMProv/rest/access/requests/resourceCategories`
@@ -1931,7 +1929,7 @@ List the users in one team the caller can see.
 
 Create a PRD (workflow) from a built-in approval template for a role or resource.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** did not work on the lab. **Evidence:** server code + server log + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1974,14 +1972,14 @@ Create a PRD (workflow) from a built-in approval template for a role or resource
 
 **Example:** POST …/workflow (not called)
 
-**Notes:** Provisioning administrator only; an existing PRD with the same cn → error. For non-Normal process types the new PRD is also linked as the role's/resource's approval process. Values compared case-insensitively. The reference shows an XML body; JSON field names are the same.
+**Notes:** approveInfo (a list of approval steps {approvalFormDN, approvalOrder, approvers:[DN], approversType}) is needed even for the No Approval template: without it the workflow engine fails ('approvalNodeList' is null). With it, the engine builds the PRD and then calls back into the applications to store it; on the lab that call never reached the applications (not in the access log) and the answer was 489 'Failed to create the PRD.'. That matches the lab's known problem with the workflow engine's own sign-in to the applications, so this is likely a lab configuration issue. Provisioning administrator only; an existing PRD with the same cn → error. Use POST …/access/workflow/prd to store a PRD from its XML.
 
 <a id="post-idmprov-rest-access-workflow-prd"></a>
 ### POST `/IDMProv/rest/access/workflow/prd`
 
 Create a PRD from raw process-flow and request XML.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -2016,9 +2014,9 @@ Create a PRD from raw process-flow and request XML.
 
 **Answer:** {prdDN}
 
-**Example:** POST …/workflow/prd (not called)
+**Example:** POST …/workflow/prd {prdCN, prdName:[{key:"en", value}], prdDescription:[{key:"en", value}], prdCategory:"<category>", prdStatus:"Active", xmlData:"<prov-req-defn …>", requestXML:"<provision-request …>"}
 
-**Notes:** Only an empty body is rejected explicitly; the PRD is created through the PRD manager and added to the permission index.
+**Notes:** Stores a PRD from its XML: xmlData = the PRD definition (<prov-req-defn …>, as in a Designer or vault PRD) and requestXML = its request form XML. Tested with a copy of a template's definition (new prov-id, status Active, category accounts): GET …/catalog/prds listed the new PRD at once. Only an empty body is rejected explicitly; prdName and prdDescription are iterated without a null check, so send both.
 
 <a id="get-idmprov-rest-admin-proxy-configuration"></a>
 ### GET `/IDMProv/rest/admin/proxy/configuration`
@@ -2054,7 +2052,7 @@ Save the proxy notification template and retention time.
 
 **Answer:** {success:true, message:'Successfully updated the Proxy Configuration.'}
 
-**Example:** POST /IDMProv/rest/admin/proxy/configuration (not called)
+**Example:** POST …/admin/proxy/configuration {proxyRetentionTime:60}
 
 **Notes:** Both fields optional; only those present are saved (proxyRetentionTime alone worked). Empty body → error. Needs the delegation/proxy configuration right.
 
@@ -2076,7 +2074,7 @@ Read the proxy/delegation background service schedule.
 
 Save the proxy/delegation service schedule.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -2096,6 +2094,6 @@ Save the proxy/delegation service schedule.
 
 **Answer:** {success:true, message}
 
-**Example:** POST /IDMProv/rest/admin/proxy/service/settings (not called)
+**Example:** POST …/admin/proxy/service/settings {cleanupChoice:"useInterval", cleanUpSeviceActivationInteval:0, syncServiceActivationInterval:0}
 
-**Notes:** The server multiplies the minute values by 60000 when saving; GET returns the stored values without converting back, so units may not round-trip (lab values are 0, so this could not be checked).
+**Notes:** cleanupChoice is required (read without a null check). Posting the GET answer back (all zeros on the lab) left it identical. The server multiplies the minute values by 60000 when saving and the GET does not convert back, so with non-zero values a save of the GET answer would multiply them; convert first (not checked with non-zero values).

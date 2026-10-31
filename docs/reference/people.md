@@ -8,9 +8,9 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 42 |
-| not run: worked out from the server's and the dashboard's code | 6 |
-| answered on the lab, which had no data to show | 3 |
+| validated on the lab | 48 |
+| answered on the lab, which had no data to show | 2 |
+| not run: worked out from the server's and the dashboard's code | 1 |
 
 ## Contents
 
@@ -192,7 +192,7 @@ Exports the workflow database for migration as a zip file.
 
 Imports a workflow migration file.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -202,9 +202,9 @@ Imports a workflow migration file.
 "multipart/form-data with part 'file' = the exported zip"
 ```
 
-**Answer:** 200 with no body
+**Answer:** 200, no body
 
-**Notes:** Not called (it migrates data). The form part is named 'file' (the reference calls it importDataStream). Requires a provisioning administrator. Not used by the dashboard.
+**Notes:** Imports a workflow export (multipart/form-data, part 'file' = the zip from GET …/data/migration/workflow). Only with the workflow engine stopped (as for the export). Importing a fresh export of the same system: 200 with no body in under a second; afterwards the processes kept their ids, but the open tasks got new task ids (same addressees), and GET …/admin/workflowengines showed the new engine 'Starting' until the applications were restarted. Requires a provisioning administrator. Not used by the dashboard.
 
 <a id="get-idmprov-rest-access-entities-definitions"></a>
 ### GET `/IDMProv/rest/access/entities/definitions`
@@ -706,29 +706,29 @@ Lists, per helpdesk access resource, the helpdesk users for a user.
 
 Lists the helpdesk addressees for a user and one helpdesk resource.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 (test users, groups and a team).
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `userDn` | query | yes | user DN |  |
 | `resDn` | query | yes | helpdesk resource DN | per installation |
 
-**Answer:** {users?:[str]}
+**Answer:** {users:[user DN]}
 
 **Example:** GET …/access/helpdesk/category?userDn=<user DN>&resDn=<helpdesk resource DN>
 
-**Notes:** Still {} with a real user: the addressees come from the per-client helpdesk configuration, which the lab does not have (GET /access/config/helpdesk is not-working there), not from users. GET /access/helpdesk?userDN=<user DN> for the same user listed the helpdesk resources with empty users lists. Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.
+**Notes:** Returns the helpdesk addressees for a ticket: the users who hold that helpdesk resource with the requester's client as its parameter. Assign them through POST /access/config/helpdesk (accessRights users {userDn, action:'add'}). Both parameters are required ('Value for userDn/resDn is missing in payload'). Note userDn here vs userDN on /helpdesk.
 
 <a id="post-idmprov-rest-access-helpdesk-ticket"></a>
 ### POST `/IDMProv/rest/access/helpdesk/ticket`
 
 Allocates a new helpdesk ticket number.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
-**Answer:** {ticketNumber:str}
+**Answer:** {ticketNumber: string}
 
-**Notes:** Not called: it takes the next number from the server's ticket counter, so it changes state. No body and no parameters. Not used by the dashboard.
+**Notes:** No body and no parameters. Each call returns a new number; the lab's were not sequential-looking (UUAR078, then UXAO180). Not used by the dashboard.
 
 <a id="get-idmprov-rest-access-orgchart"></a>
 ### GET `/IDMProv/rest/access/orgChart`
@@ -958,7 +958,7 @@ Delete users.
 
 Creates a user and optionally sets the password.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + server log + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1007,7 +1007,7 @@ Creates a user and optionally sets the password.
 
 **Answer:** password-update result for the new user
 
-**Notes:** Not called (creates). An existing DN gives 489 existing-user. Values are XSS-checked (400). The dashboard builds the body from the create-user form (action 'add', DN values as dn strings).
+**Notes:** Every attribute needs isRequired (true or false): without it the server fails with 489 'Internal Error' (seen in the server log). On the lab the create then stopped at the password policy: 489 'Cannot create the user. The password does not meet the password policy criteria.' (subcode errorResponseDuringNmasPasswordMgmt), because no initial password was sent; a user without a password can be created with POST /access/entities/item key=user. An existing DN gives 489 existing-user. Values are XSS-checked (400).
 
 <a id="put-idmprov-rest-access-user"></a>
 ### PUT `/IDMProv/rest/access/user`
@@ -1074,7 +1074,7 @@ Says whether a user is a domain or delegated administrator of a domain.
 
 Moves or renames a user's DN through the workflow engine.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1088,24 +1088,24 @@ Moves or renames a user's DN through the workflow engine.
 }
 ```
 
-**Answer:** the body echoed back
+**Answer:** {oldUserDn, newUserDn}
 
-**Notes:** Not called (changes data). Only a provisioning administrator may call it; others get 400 (security error mapped to the XSS code). Failure to move: 489. Not used by the dashboard.
+**Notes:** Despite the name, it changes the user's DN only in the workflow database (for after a user was renamed or moved in the directory); the directory entry is not touched. It answered 200 for an existing user (who kept the old DN in the directory) and also for a DN that does not exist. Only a provisioning administrator may call it; others get 400 (security error mapped to the XSS code). Not used by the dashboard.
 
 <a id="get-idmprov-rest-access-users-clearentitlementresult"></a>
 ### GET `/IDMProv/rest/access/users/clearEntitlementResult`
 
 Clears the DirXML-EntitlementResult attribute on a user.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `userDn` | query | yes | user DN; required |  |
 
-**Answer:** {updated:bool, message:str} (attribute removed, or not found)
+**Answer:** {isSuccess:bool, message}
 
-**Notes:** Not called (it clears data despite being a GET). Missing userDn: 489 'Invalid input DN: null' (the first pass hit this without a DN, which changed nothing). Not used by the dashboard.
+**Notes:** Clears the user's DirXML-EntitlementResult. A user without one: {isSuccess:false, message:'Attribute:DirXML-EntitlementResult  not found on the user dn:…'}. Missing userDn: 489 'Invalid input DN: null'. Not used by the dashboard.
 
 <a id="get-idmprov-rest-access-users-list"></a>
 ### GET `/IDMProv/rest/access/users/list`
@@ -1211,7 +1211,7 @@ Starts a code map refresh for every resource-mapped entitlement of the given dri
 
 Starts a code map refresh for the listed entitlements.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1228,9 +1228,9 @@ Starts a code map refresh for the listed entitlements.
 }
 ```
 
-**Answer:** {succeeded:[{id,name}], failed:[{id,reason}]}
+**Answer:** {succeeded:[{id, name}], failed:[…]}
 
-**Notes:** Not called (it refreshes). Entitlement key is 'id'. Stops at the first entitlement whose refresh is already in progress and answers with just that one. Flushes caches first.
+**Notes:** Entitlement key is 'id'. Refreshes that entitlement's code map through the driver. Stops at the first entitlement whose refresh is already in progress and answers with just that one. Flushes caches first.
 
 <a id="get-idmprov-rest-catalog-uas"></a>
 ### GET `/IDMProv/rest/catalog/uas`

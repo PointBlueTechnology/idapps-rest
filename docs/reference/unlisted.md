@@ -8,9 +8,8 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 20 |
-| did not work on the lab | 10 |
-| not run: worked out from the server's and the dashboard's code | 4 |
+| validated on the lab | 23 |
+| did not work on the lab | 11 |
 | answered on the lab, which had no data to show | 1 |
 
 ## Contents
@@ -58,7 +57,7 @@ signing in and errors.
 
 Save one administration setting by key.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -73,7 +72,9 @@ Save one administration setting by key.
 }
 ```
 
-**Notes:** Not called: it changes the configuration.
+**Answer:** 200, no body
+
+**Notes:** Saves one setting. key is '<section>.<item>' (only access, customization and branding sections), value its value; the server saves it with no client (the default client). GET /access/config?key=<section>.<item>&client=<id> reads one setting as {<item>: value} (both parameters required: 'Invalid or missing JSON Key/value.' otherwise). Tested by saving branding.titleColor with its current value.
 
 <a id="post-idmprov-rest-access-entities-resolvednames"></a>
 ### POST `/IDMProv/rest/access/entities/resolvedNames`
@@ -302,7 +303,7 @@ The landing page's categories and items (the tiles), with or without their image
 
 Save the landing page's items.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -316,14 +317,16 @@ Save the landing page's items.
 }
 ```
 
-**Notes:** Not called: it changes the landing page for everyone.
+**Answer:** {success, succeeded:[{id, instanceId}]}
+
+**Notes:** Updates existing items by itemId (id = the item's external id, both required). Send the items flattened from the GET. Item names are stored once per item and locale and shared by PUT …/ulp/items and PUT …/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.
 
 <a id="post-idmprov-rest-access-ulp-items-images"></a>
 ### POST `/IDMProv/rest/access/ulp/items/images`
 
 Images for a given set of landing-page items.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -339,7 +342,9 @@ Images for a given set of landing-page items.
 }
 ```
 
-**Notes:** Reads only, but not called yet.
+**Answer:** {items:[{image: data URI, …}]}
+
+**Notes:** Read-only despite POST: returns the images of the given items.
 
 <a id="get-idmprov-rest-access-users"></a>
 ### GET `/IDMProv/rest/access/users`
@@ -556,7 +561,7 @@ The catalog REST service's own version string.
 
 Create a role category.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code.
+**Status:** did not work on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -570,7 +575,7 @@ Create a role category.
 }
 ```
 
-**Notes:** Not called yet: it adds a category to the installation.
+**Notes:** 489 'Unable to find abstract layer object definition for the specified definition key.': like POST …/resources/category, the server looks up a directory abstraction layer entity this installation does not define. Nothing was created.
 
 <a id="post-idmprov-rest-catalog-roles-role-assignments-v2"></a>
 ### POST `/IDMProv/rest/catalog/roles/role/assignments/v2`
