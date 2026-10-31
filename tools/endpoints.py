@@ -18,41 +18,41 @@ BASES = {"Access": "/IDMProv/rest/access", "Catalog": "/IDMProv/rest/catalog", "
 VALIDATED = {
     ("POST", "/IDMProv/rest/access/tasks"): "23-approve-deny-and-more",
     ("POST", "/IDMProv/rest/access/tasks/v2"): "23-approve-deny-and-more",
-    ("GET", "/IDMProv/rest/access/tasks/list"): "21-list-my-tasks-get-accesstaskslist-live",
-    ("POST", "/IDMProv/rest/access/tasks/item"): "22-one-task-post-accesstasksitem-live",
-    ("GET", "/IDMProv/rest/access/tasks/badge"): "24-around-tasks-live",
-    ("GET", "/IDMProv/rest/access/tasks/list/others"): "24-around-tasks-live",
-    ("GET", "/IDMProv/rest/access/tasks/workEntries"): "24-around-tasks-live",
-    ("POST", "/IDMProv/rest/access/requests/permissions/v2"): "31-start-a-prd-with-a-json-request-form-post-accessrequestspermissionsv2-live",
-    ("POST", "/IDMProv/rest/access/requests/permissions/item"): "32-request-a-role-or-a-resource-post-accessrequestspermissionsitem-live",
-    ("GET", "/IDMProv/rest/access/requests/historylist"): "34-history-live",
-    ("POST", "/IDMProv/rest/access/requests/history/item"): "34-history-live",
-    ("GET", "/IDMProv/rest/access/requests/processes"): "34-history-live",
-    ("DELETE", "/IDMProv/rest/access/requests/history"): "35-retract-a-request-delete-accessrequestshistory-live",
-    ("POST", "/IDMProv/rest/access/assignments/list"): "41-a-persons-roles-and-resources-live",
-    ("POST", "/IDMProv/rest/access/assignments/role/list"): "41-a-persons-roles-and-resources-live",
-    ("POST", "/IDMProv/rest/access/assignments/resource/list"): "41-a-persons-roles-and-resources-live",
-    ("POST", "/IDMProv/rest/access/assignments/list/v2"): "41-a-persons-roles-and-resources-live",
-    ("GET", "/IDMProv/rest/access/assignments"): "41-a-persons-roles-and-resources-live",
-    ("GET", "/IDMProv/rest/access/assignments/advanced"): "41-a-persons-roles-and-resources-live",
-    ("POST", "/IDMProv/rest/access/assignments/item"): "41-a-persons-roles-and-resources-live",
-    ("GET", "/IDMProv/rest/access/assignments/identities"): "42-who-has-a-role-or-a-resource-live",
-    ("POST", "/IDMProv/rest/catalog/roles/role/assignments"): "42-who-has-a-role-or-a-resource-live",
-    ("POST", "/IDMProv/rest/catalog/resources/resource/assignments"): "42-who-has-a-role-or-a-resource-live",
-    ("DELETE", "/IDMProv/rest/access/assignments/list"): "43-revoke-delete-accessassignmentslist-live",
-    ("GET", "/IDMProv/rest/catalog/roles/listV2"): "51-search-live",
-    ("GET", "/IDMProv/rest/catalog/resources/listV2"): "51-search-live",
-    ("GET", "/IDMProv/rest/catalog/roles"): "51-search-live",
-    ("GET", "/IDMProv/rest/catalog/resources"): "51-search-live",
-    ("GET", "/IDMProv/rest/catalog/prds"): "51-search-live",
-    ("GET", "/IDMProv/rest/catalog/roles/levels"): "51-search-live",
-    ("POST", "/IDMProv/rest/catalog/roles"): "52-roles-create-read-change-delete-live",
-    ("POST", "/IDMProv/rest/catalog/roles/role"): "52-roles-create-read-change-delete-live",
-    ("PUT", "/IDMProv/rest/catalog/roles/role"): "52-roles-create-read-change-delete-live",
-    ("DELETE", "/IDMProv/rest/catalog/roles/role"): "52-roles-create-read-change-delete-live",
-    ("GET", "/IDMProv/rest/catalog/users"): "53-users-live",
-    ("GET", "/IDMProv/rest/access/users/list"): "53-users-live",
-    ("GET", "/IDMProv/rest/access/users/details"): "53-users-live",
+    ("GET", "/IDMProv/rest/access/tasks/list"): "21-list-my-tasks-get-accesstaskslist",
+    ("POST", "/IDMProv/rest/access/tasks/item"): "22-one-task-post-accesstasksitem",
+    ("GET", "/IDMProv/rest/access/tasks/badge"): "24-around-tasks",
+    ("GET", "/IDMProv/rest/access/tasks/list/others"): "24-around-tasks",
+    ("GET", "/IDMProv/rest/access/tasks/workEntries"): "24-around-tasks",
+    ("POST", "/IDMProv/rest/access/requests/permissions/v2"): "31-start-a-prd-with-a-json-request-form-post-accessrequestspermissionsv2",
+    ("POST", "/IDMProv/rest/access/requests/permissions/item"): "32-request-a-role-or-a-resource-post-accessrequestspermissionsitem",
+    ("GET", "/IDMProv/rest/access/requests/historylist"): "34-history",
+    ("POST", "/IDMProv/rest/access/requests/history/item"): "34-history",
+    ("GET", "/IDMProv/rest/access/requests/processes"): "34-history",
+    ("DELETE", "/IDMProv/rest/access/requests/history"): "35-retract-a-request-delete-accessrequestshistory",
+    ("POST", "/IDMProv/rest/access/assignments/list"): "41-a-persons-roles-and-resources",
+    ("POST", "/IDMProv/rest/access/assignments/role/list"): "41-a-persons-roles-and-resources",
+    ("POST", "/IDMProv/rest/access/assignments/resource/list"): "41-a-persons-roles-and-resources",
+    ("POST", "/IDMProv/rest/access/assignments/list/v2"): "41-a-persons-roles-and-resources",
+    ("GET", "/IDMProv/rest/access/assignments"): "41-a-persons-roles-and-resources",
+    ("GET", "/IDMProv/rest/access/assignments/advanced"): "41-a-persons-roles-and-resources",
+    ("POST", "/IDMProv/rest/access/assignments/item"): "41-a-persons-roles-and-resources",
+    ("GET", "/IDMProv/rest/access/assignments/identities"): "42-who-has-a-role-or-a-resource",
+    ("POST", "/IDMProv/rest/catalog/roles/role/assignments"): "42-who-has-a-role-or-a-resource",
+    ("POST", "/IDMProv/rest/catalog/resources/resource/assignments"): "42-who-has-a-role-or-a-resource",
+    ("DELETE", "/IDMProv/rest/access/assignments/list"): "43-revoke-delete-accessassignmentslist",
+    ("GET", "/IDMProv/rest/catalog/roles/listV2"): "51-search",
+    ("GET", "/IDMProv/rest/catalog/resources/listV2"): "51-search",
+    ("GET", "/IDMProv/rest/catalog/roles"): "51-search",
+    ("GET", "/IDMProv/rest/catalog/resources"): "51-search",
+    ("GET", "/IDMProv/rest/catalog/prds"): "51-search",
+    ("GET", "/IDMProv/rest/catalog/roles/levels"): "51-search",
+    ("POST", "/IDMProv/rest/catalog/roles"): "52-roles-create-read-change-delete",
+    ("POST", "/IDMProv/rest/catalog/roles/role"): "52-roles-create-read-change-delete",
+    ("PUT", "/IDMProv/rest/catalog/roles/role"): "52-roles-create-read-change-delete",
+    ("DELETE", "/IDMProv/rest/catalog/roles/role"): "52-roles-create-read-change-delete",
+    ("GET", "/IDMProv/rest/catalog/users"): "53-users",
+    ("GET", "/IDMProv/rest/access/users/list"): "53-users",
+    ("GET", "/IDMProv/rest/access/users/details"): "53-users",
     ("GET", "/IDMProv/rest/catalog/sods"): "6-other-reads",
     ("GET", "/IDMProv/rest/access/sods/violations"): "6-other-reads",
     ("GET", "/IDMProv/rest/access/sods/violations/user"): "6-other-reads",
@@ -86,8 +86,8 @@ def anchor(m, path):
     return re.sub(r"[^a-z0-9]+", "-", f"{m} {path}".lower()).strip("-")
 
 
-LABEL = {"validated": "validated", "empty-on-lab": "answered (no data on the lab)",
-         "from-ui": "not run: from the code", "not-working": "did not work on the lab", "unknown": "not known yet"}
+LABEL = {"validated": "tested, works", "empty-on-lab": "tested (no data on the test system)",
+         "from-ui": "not tested: from inspection", "not-working": "tested, does not work", "unknown": "not known yet"}
 
 
 def main(path):
@@ -104,9 +104,9 @@ def main(path):
     version = d.get("info", {}).get("version", "?")
     def status(key):
         if key in VALIDATED:
-            return "validated", f"validated: [README](../README.md#{VALIDATED[key]})"
+            return "validated", f"tested, works: [README](../README.md#{VALIDATED[key]})"
         if key in NOT_WORKING:
-            return "not-working", f"did not work on the lab ({NOT_WORKING[key]})"
+            return "not-working", f"tested, does not work ({NOT_WORKING[key]})"
         if key in F:
             g, x = F[key]
             return x["status"], f"{LABEL.get(x['status'], x['status'])}: [{g}](reference/{g}.md#{anchor(*key)})"
@@ -118,13 +118,13 @@ def main(path):
     code = st.count("from-ui") + st.count("unknown")
     out = ["# Every endpoint", "",
            f"All {len(rows)} operations of the Identity Applications REST API reference (version {version}), with the base each one",
-           "lives under and how far these notes have got with it. Generated by `tools/endpoints.py` from a system's",
+           "lives under and whether it was tested. Generated by `tools/endpoints.py` from a system's",
            "`/idmappsdoc/openapi.json`; only methods and paths are taken from it.", "",
-           f"- **Validated on the lab:** {ok}.",
-           f"- **Answered, but the lab had no data to show:** {seen}.",
-           f"- **Not run, worked out from the server's and the dashboard's code:** {code}: calls whose preconditions the lab",
-           "  could not meet (see each one's notes).",
-           f"- **Did not work on the lab:** {bad}.",
+           f"- **Tested, works:** {ok}.",
+           f"- **Tested, but the test system had no data to show:** {seen}.",
+           f"- **Not tested, described from inspection:** {code}: calls whose preconditions the test system",
+           "  could not meet (see its notes).",
+           f"- **Tested, does not work:** {bad}.",
            f"- **Not checked yet:** {len(rows) - ok - bad - seen - code}.", "",
            "Each status links to the operation's section: the README for the first calls written up, and the pages under",
            "[reference/](reference/) for the rest. The server also answers routes the reference leaves out; they are in",

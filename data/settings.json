@@ -9,7 +9,7 @@
   "answer": "{enableCprs: bool, cleanupTimeInDays: int, pollingInterval: int}",
   "example": "GET \u2026/access/administration/cprsConfig -> {enableCprs:true, cleanupTimeInDays:7, pollingInterval:10}",
   "notes": "Caller must be a Resources domain administrator, otherwise unauthorized. Server defaults when unset: polling 60, cleanup 7.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -46,8 +46,8 @@
   },
   "answer": "the saved settings {enableCprs, cleanupTimeInDays, pollingInterval}",
   "example": "",
-  "notes": "Send all three fields: enableCprs is compared with the stored value and a missing one fails. Changing enableCprs starts or stops the CPRS engine; changing interval/cleanup re-initialises it. Tested by posting the GET answer back unchanged; GET afterwards was identical. Unlike the GET, the server method checks no administrator right.",
-  "evidence": "server code + live 2026-10-31"
+  "notes": "Send all three fields: enableCprs is compared with the stored value and a missing one fails. Changing enableCprs starts or stops the CPRS engine; changing interval/cleanup re-initialises it. Tested by posting the GET answer back unchanged; GET afterwards was identical. Unlike the GET, it does not require an administrator.",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -59,7 +59,7 @@
   "answer": "{allRequests: bool, delegateNotfTemplate?: str, delegationRetentionTime?: long minutes}",
   "example": "GET \u2026/access/administration/delegation -> {allRequests:true}",
   "notes": "Lab answers only allRequests: no template set and retention 0, which the server leaves out. Allowed for provisioning admins, provisioning team managers and PRD delegated admins.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -109,7 +109,7 @@
   "answer": "the saved settings",
   "example": "",
   "notes": "Provisioning administrator only. Every field is optional: only fields present are changed. An empty body gives 'payload is empty'. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -121,7 +121,7 @@
   "answer": "{emailApprovalTurnOn, serverType, host, email, password, folder, sslEnabled, requireAuthentication, useDefaultPort, port, pollingInterval, approvePhrase:[{locale,value}], denyPhrase:[{locale,value}], cleanupTimeInDays, successMailTemplate, failureMailTemplate, tokenExpirationTime, emailContentOption, replyEmail, isProxyEnabled, proxyHost, proxyPort, isProxyAuthRequired, proxyUser, proxyPassword, notifyPort, notifySecurePort, notifyAuthRequired, notifyAuthPassword, notifySmtpTls, notifySignature, fieldLabels:[{key,value}], modernAuthIncomingNode:{clientSecret}, modernAuthOutgoingNode:{clientSecret, grantType}}",
   "example": "GET \u2026/access/administration/emailApproval",
   "notes": "Lab: email approval off, imap/INBOX/993. Stored secrets (password, proxyPassword, notifyAuthPassword, the two clientSecret fields) come back as a fixed mask, not the value. Needs the 'emailapproval' page right. approvePhrase/denyPhrase have one entry per supported locale (17 on the lab).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -325,7 +325,7 @@
   "answer": "the saved settings (password empty)",
   "example": "",
   "notes": "Needs the 'emailapproval' page right. Secrets: the GET returns a fixed mask in password, proxyPassword and modernAuthIncomingNode.clientSecret, and posting the mask back keeps the stored secret. Posting the GET answer back is accepted, but the save fills in defaults the GET left out: authType and notifyAuthType BASIC, modernAuthIncomingNode.grantType client_credentials, and approve/deny phrases for every supported locale (17 \u2192 19 on the lab). The answer is the saved object with password empty.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -337,7 +337,7 @@
   "answer": "{host?: str, adminUserName?: str, adminPassword?: mask, showIgApprovals: bool, showIgRequestCatalog: bool}",
   "example": "GET \u2026/access/administration/igConfig -> {showIgApprovals:false, showIgRequestCatalog:false}",
   "notes": "Lab has no IG host or admin, so only the two flags come back. When an admin user is set the password is returned as a mask. Needs the 'igConfiguration' page right.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -389,7 +389,7 @@
   "answer": "the saved settings",
   "example": "",
   "notes": "Needs the 'igConfiguration' page right. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -401,7 +401,7 @@
   "answer": "{roleContainer, roleRequestContainer, defaultRoleRequestDef (name), roleAssignmentGracePeriod, roleLevels:[{name, level, cn, localizedNames:[{locale,name}]}], resourceContainer, resourceRequestContainer, defaultResourceGrantRequestDef, defaultResourceRevokeRequestDef, queryTimeout, queryRefreshRate, concatDisplayElements, queryDisplayElements:[str], sodContainer, defaultSODRequestDef (DN), defaultSODRequestDefName, sodQuorum?, sodApprovers?, reportContainer, roleToRoleApproval, roleToGroupApproval, roleToContainerApproval}",
   "example": "GET \u2026/catalog/administration/roleResourceSettings",
   "notes": "Lab: three role levels 10/20/30, query timeout 10, refresh 1440, grace period 0. sodQuorum and sodApprovers are absent on the lab (not set). Default request definitions come back as display names, except the SoD one which is also a DN.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -432,7 +432,7 @@
   "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
   "example": "",
   "notes": "Only queryRefreshRate and queryTimeout are read; negative values are refused, an empty body 'settings data required'. Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -494,7 +494,7 @@
   "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
   "example": "",
   "notes": "Only the grace period, role level names and the three approval switches are read; levels cannot be added or removed (unknown levels are skipped, invalid names refused). Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -537,7 +537,7 @@
   "answer": "the whole role/resource settings object, as GET \u2026/roleResourceSettings",
   "example": "",
   "notes": "Careful: the quorum is written even when absent, so a body without sodQuorum clears it; a quorum outside 1-100 or not a number is refused. Posting the whole GET \u2026/roleResourceSettings answer back unchanged left it identical.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -549,7 +549,7 @@
   "answer": "{permIndexClusterEnabled, permIndexClusterEnabledCurrentValue, clusterEnabled, clusterEnabledCurrentValue, groupID, currentGroupID, clusterProps, clusterCurrentProps, permIndexGroupID, currentPermIndexGroupID, permIndexClusterProps, clusterPermIndexCurrentProps, lockAcquTimeout, lockAcquCurrentTimeout, evictionPolicyClass, currentEvictionPolicyClass, wakeUpIntervalSeconds, currentWakeUpInterval, maxNodes, currentMaxNodes, timeToLiveSeconds, currentTimeToLive, local*?} all strings",
   "example": "GET \u2026/admin/cache/configuration",
   "notes": "All values are strings. Lab: clustering off, JGroups UDP stack, LRU eviction. Node-local fields (localClusterEnabled, localGroupID, \u2026) appear only when set; none on the lab. Needs the cacheConfig page right.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -691,7 +691,7 @@
   "answer": "{success:true, message:'Successfully updated the cache configuration'}",
   "example": "",
   "notes": "Global fields: empty or absent means keep. Node-local fields: empty or absent CLEARS the node-local override, so send the whole GET answer (the *Current* fields are read-only and ignored). Tested by posting the GET answer back unchanged; GET afterwards was identical.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -703,7 +703,7 @@
   "answer": "{arraySize: int, customizeCacheHolders:[{cacheValue (holder id), maxnodesCurrent:int, globalMaxnodes:str, localMaxnodes?, enableLocalMaxnodes?, timetoliveCurrent:int, globalTimetolive:str, loacalTimetolive?, enableLocalTimetolive?, maxageCurrent:int, globalMaxage:str, localMaxage?, enableLocalMaxage?, cacheEnable:str, cacheReadonly:str}]}",
   "example": "GET \u2026/admin/cache/customizedHolders -> 19 holders",
   "notes": "Lab has 19 holders (Authorization.AdminLevelsCacheHolder, DirectoryService.UserCacheHolder, Workflow.Model.Process, RestAccess, \u2026). The local time-to-live field is spelled 'loacalTimetolive'. Needs the cacheConfig page right.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -765,7 +765,7 @@
   "answer": "{success, succeeded:[{id: holder}], failed:[\u2026]}",
   "example": "",
   "notes": "DANGER: posting the GET answer back unchanged stopped the applications from starting after the next restart. The save writes a global property com.sssw.fw.cache.CacheHolderConfig:<holder> for every holder sent (in the User Application driver's cn=configuration,cn=AppDefs object), and for a read-only holder it always writes CacheHolder.active=true, whatever cacheEnable says. GlobalCacheHolder is read-only and had no such property; once written, the next start failed with 'ISPN000453: Attempt to define configuration for cache GlobalCacheHolder which already exists', the cache service did not start, and /IDMProv answered 404 everywhere. Restoring that object's XmlData from a copy taken before fixed it. So: send only the holders you change, never GlobalCacheHolder, and keep a copy of the configuration object. Per holder: unknown or blank cacheValue is reported as failed; omitting cacheEnable disables caching for that holder. The save also appends explicit zero values (MaxAgeSeconds=0, TimeToLiveSeconds=0) to holders that had none.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -792,7 +792,7 @@
   "answer": "{<key>: value}, e.g. {maxLimitUserSearch: 500}",
   "example": "GET \u2026/access/config?key=customization.maxLimitUserSearch&client=1 -> {maxLimitUserSearch:500}",
   "notes": "Missing key: 'Invalid or missing JSON Key/value.'; missing client: 'Admin settings client not found'; a key without a dot, or another section (helpdesk.*, dashboardAccess.*): 'Admin settings key is not valid - <key>'. The key names are the 'key' fields inside the client config (see GET config/clients/{id}).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -812,7 +812,7 @@
   "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
   "example": "GET \u2026/access/config/access?client=1",
   "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId=1 instead of client=1 \u2192 489 'Create User Payload is empty' (a misleading message: the parameter is client); a client id that does not exist (client=2 before one was made) \u2192 489 'Admin access settings not found'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -849,7 +849,7 @@
   "answer": "{access: [the saved items]}",
   "example": "",
   "notes": "The body is {\"access\": [the section's items]}, as config.access of GET \u2026/config/clients/{id} (the GET config/access read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -869,7 +869,7 @@
   "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
   "example": "GET \u2026/access/config/branding?client=1",
   "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId instead of client \u2192 489 'Create User Payload is empty'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -906,7 +906,7 @@
   "answer": "{branding: [the saved items]}",
   "example": "",
   "notes": "The body is {\"branding\": [the section's items]}, as config.branding of GET \u2026/config/clients/{id} (the GET config/branding read is broken). Saving the section back unchanged on a scratch client left the client's config identical. A changed titleColor read back through GET /access/config?key=branding.titleColor&client=<id>. Needs the 'settings' page right for that client.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -944,7 +944,7 @@
   "answer": "200, no body",
   "example": "",
   "notes": "Removed the scratch client; GET \u2026/config/clients no longer listed it. Empty or missing values: 'payload is empty'. Needs the 'manageclients' right. Also removes the client's helpdesk provisioning view value.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -956,7 +956,7 @@
   "answer": "{clients:[{name, id, matchCondition, config: JSON string with sections customization, access, branding, helpdesk, dashboardAccess, isDefault: bool}]}",
   "example": "GET \u2026/access/config/clients -> one client 'client1', id 1, default",
   "notes": "Answer is large (about 56 KB on the lab) because config carries every section as an escaped JSON string. 204 when no clients exist.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1005,7 +1005,7 @@
   "answer": "{name, id, matchCondition, isDefault:false}",
   "example": "",
   "notes": "matchCondition is an LDAP filter that picks the users of this client (the default client has an empty one); a filter matching no one, (cn=nobody), worked for a scratch client. The new client starts with the default sections. Name or match condition already in use: 489 with that message. Needs the 'manageclients' right (403).",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1025,7 +1025,7 @@
   "answer": "{name, id, matchCondition, config: JSON string, isDefault}",
   "example": "GET \u2026/access/config/clients/1",
   "notes": "Unknown id answers 204 with no body (lab: id 2), not an error. The config string is where the section contents really are (see the broken GET config/<section>).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1066,7 +1066,7 @@
   "answer": "200, no body",
   "example": "",
   "notes": "Saves a client's settings. Tested by posting the GET answer back unchanged: GET afterwards was identical. Blank body id: 'client not found'. Needs the 'settings' right for the path id. The dashboard has no call for it.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1086,7 +1086,7 @@
   "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
   "example": "GET \u2026/access/config/custom?client=1",
   "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1123,7 +1123,7 @@
   "answer": "{customization: [the saved items]}",
   "example": "",
   "notes": "The body is {\"customization\": [the section's items]}, as config.customization of GET \u2026/config/clients/{id} (the GET config/custom read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1143,7 +1143,7 @@
   "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
   "example": "GET \u2026/access/config/dashboard?client=1",
   "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'. Errors seen on the lab: clientId instead of client \u2192 489 'Create User Payload is empty'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1180,7 +1180,7 @@
   "answer": "{dashboardAccess: [the saved items]}",
   "example": "",
   "notes": "The body is {\"dashboardAccess\": [the section's items]}, as config.dashboardAccess of GET \u2026/config/clients/{id} (the GET config/dashboard read is broken). Saving the section back unchanged on a scratch client left the client's config identical. Needs the 'settings' page right for that client.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1200,7 +1200,7 @@
   "answer": "{escapeForwardSlashAlways: bool, recursionDepthLimit: int} (not the section)",
   "example": "GET \u2026/access/config/helpdesk?client=1",
   "notes": "Broken read: with a valid client the server answers 200 but the body is always {escapeForwardSlashAlways:true, recursionDepthLimit:500} (the JSON library object is serialised instead of its content), so the section is never shown. Read the section from GET /access/config/clients/{id} (field config, a JSON string) or one value from GET /access/config?key=. Without client: 489 'Create User Payload is empty'; unknown client: 489 '<section> settings not found'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1237,7 +1237,7 @@
   "answer": "{helpdesk: [the saved items]}",
   "example": "",
   "notes": "The body is {\"helpdesk\": [the section's items]}, as config.helpdesk of GET \u2026/config/clients/{id} (the GET config/helpdesk read is broken). Saving the section back unchanged on a scratch client left the client's config identical. accessRights users entries {userDn, action: add|remove} request or revoke that helpdesk resource for the user, with the client as its parameter (param1 \"client1(1)\" on the lab); GET /access/helpdesk/category then named that user. Reads list the users as {dn, fullName}. Needs the 'settings' page right for that client.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1264,7 +1264,7 @@
   "answer": "{key, value: the section's default JSON text}",
   "example": "",
   "notes": "Resets one section of a client to the defaults: a changed branding titleColor read back as the default afterwards. No body. Blank client: 'client not found'; any other key: 'key is not valid'. Needs the 'settings' right.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1284,7 +1284,7 @@
   "answer": "text/plain CSS",
   "example": "GET \u2026/access/config/style/idmdashcustom1.css",
   "notes": "A name without .css: 400 'Error reading custom style'; a .css name that does not exist (custom.css, style.css): 404 with the same message. The dashboard links the sample as /custom/css/idmdashcustom1.css. Request it with Accept */* or text/plain: Accept: text/css answered 406 with an HTML error page.",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1313,8 +1313,8 @@
   },
   "answer": "200, no body",
   "example": "",
-  "notes": "Body is the CSS text (Content-Type text/plain). Valid CSS: 200 with no body; text the CSS parser rejects: 489 'CSS file to upload is invalid'. Blank client or body: 'payload is empty'; content failing the XSS check: 400. The server method makes no page-right check. Errors seen on the lab: text that is not CSS \u2192 489 'CSS file to upload is invalid'.",
-  "evidence": "server code + live 2026-10-31"
+  "notes": "Body is the CSS text (Content-Type text/plain). Valid CSS: 200 with no body; text the CSS parser rejects: 489 'CSS file to upload is invalid'. Blank client or body: 'payload is empty'; content failing the XSS check: 400. It does not check the page right that the other config saves check. Errors seen on the lab: text that is not CSS \u2192 489 'CSS file to upload is invalid'.",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1341,7 +1341,7 @@
   "answer": "{rolesData:{expiryRoles, newRoles, rolesCount}, resourcesData:{newResources, resourcesCount}, tasksData:{expiryTasksCount, newTasks, cliamedTasks, reassignedTasks, delegatedTasks, tasksCount}, requestData:{requestPending, requestDenied, requestApproved, totalRequest, requestForOthersPending, requestForOthersDenied, requestForOthersApproved, totalRequestForOthers, requestHasMore, otherRequestHasMore}, helpdeskData:{openTickets}}",
   "example": "GET \u2026/access/dashboard?client=1 -> rolesCount 9, totalRequest 17",
   "notes": "The claimed-task count is spelled 'cliamedTasks'. client selects the notification expiry window. Same answer with isNewlyAssignedCount=false on the lab (no new items).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1361,7 +1361,7 @@
   "answer": "{dashboardCustomizations: JSON string {title, desc, dashboardLastUpdated, icon, structure, rows:[{columns:[{styleClass, cid, widgets:[\u2026]}]}]}}",
   "example": "GET \u2026/access/dashboard/globalTiles?client=1",
   "notes": "Lab layout is the shipped default (structure 12/4-4-4).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1393,7 +1393,7 @@
   "answer": "{dashboardCustomizations: string} (what was saved)",
   "example": "",
   "notes": "Saves the global dashboard layout. Tested by posting the GET answer's dashboardCustomizations back unchanged; GET afterwards was identical. Missing dashboardCustomizations: 'payload is empty'. Needs the global dashboard right (403). No dashboard call found.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1405,7 +1405,7 @@
   "answer": "{defaultRowsPerPage: int, optionsRowsPerPage: comma string, newRequestDefaultSortByOption?: str}",
   "example": "GET \u2026/admin/display/settings/general -> {defaultRowsPerPage:25, optionsRowsPerPage:'5,10,25,50,100,500'}",
   "notes": "No access check on the read. newRequestDefaultSortByOption is absent on the lab (dashboard falls back to closestMatch).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1442,7 +1442,7 @@
   "answer": "the saved settings",
   "example": "",
   "notes": "Needs the provisioning UI display right. Tested by posting the GET answer back unchanged; GET afterwards was identical.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1454,7 +1454,7 @@
   "answer": "{requestListSort, requestListSortDesc, defaultColumns:[{key,value}], columnsForUserOverride:[{key,value}], allColumns:[{key,value}], requestListColumnsOverride}",
   "example": "GET \u2026/admin/display/settings/request",
   "notes": "allColumns keys on the lab: name, requestState, requestDate, recipientName, entityType, processState, expirationDate, effectiveDate, action, requestOper, confirmationNumber.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1518,7 +1518,7 @@
   "answer": "the saved settings",
   "example": "",
   "notes": "Sort column and sort order must come together. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, \u2026) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, \u2026), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1530,7 +1530,7 @@
   "answer": "{taskListSort, taskListSortDesc, defaultColumns, columnsForUserOverride, columnsForSort, allColumns, taskListColumnsOverride, taskDetailOpenOverride, taskDetailClaim, taskDetailClaimOverride}",
   "example": "GET \u2026/admin/display/settings/task",
   "notes": "columnsForSort on the lab: activityName, assignedTo, recipientName, priority, claimedby, addresseetype, processName, createTime, expirationTime, confirmationNumber.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1619,7 +1619,7 @@
   "answer": "the saved settings",
   "example": "",
   "notes": "The sort column is always checked, so taskListSort is in effect required. Posting the GET answer back unchanged was accepted and GET read the same afterwards, but the stored values changed: the save rewrote older stored column and sort keys (requestdate_sort, creationTime_sort, recipient, assignType, \u2026) in the key names the GET shows (requestDate, createTime, recipientName, addresseetype, \u2026), and the task-detail setting from 'inline' to 'true'. They live in the User Application driver's cn=configuration,cn=AppDefs object (com.novell.idm.dashboard.* properties).",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -1647,7 +1647,7 @@
   "answer": "{success, succeeded:[{instanceId}]}",
   "example": "DELETE \u2026/access/featuredItems {items:[{itemId}]}",
   "notes": "Deleting an id that is already gone still answers success.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1659,7 +1659,7 @@
   "answer": "{itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder, subType, items:[{image, idmdashImage, itemId, name, desc, entityType, id, itemOrder, bulkRequestable, itemCategoryId}]}], editable: bool}",
   "example": "GET \u2026/access/featuredItems -> category 18 'Featured Items' with the HelpDesk Ticket PRD",
   "notes": "Images are inline base64 data URIs, so the answer is large (about 20 KB for one item). Items are landing-page entries: itemId is the item's numeric id, id is the permission DN, itemCategoryId the category. An item added with POST \u2026/ulp/featuredItems under the featured category was NOT listed here, though GET \u2026/ulp/landingItems/v2 showed it in that category.",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1707,7 +1707,7 @@
   "answer": "{success, succeeded:[{id, instanceId:<new item id>, name}]}",
   "example": "POST \u2026/access/featuredItems {items:[{id:<role DN>, itemOrder, image:''}]}",
   "notes": "The new item has NO category, and GET /access/featuredItems only lists items that have one, so it is invisible until PUT \u2026 gives it itemCategoryId. A just-created catalog role was accepted at once.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1750,7 +1750,7 @@
   "answer": "{success, succeeded:[{id:<permission DN>, instanceId}]}",
   "example": "PUT \u2026/access/featuredItems {items:[{itemId, itemCategoryId, itemOrder, image:''}]}",
   "notes": "",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -1778,7 +1778,7 @@
   "answer": "{success, succeeded:[{instanceId}]}",
   "example": "DELETE \u2026/access/featuredItems/categories {itemCategories:[{itemCategoryId}]}",
   "notes": "",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1813,7 +1813,7 @@
   "answer": "{success, succeeded:[{instanceId:<new category id as string>, name}]}",
   "example": "POST \u2026/access/featuredItems/categories {itemCategories:[{categoryName, itemCategoryOrder}]}",
   "notes": "The new id is in succeeded[].instanceId; GET /access/featuredItems lists it (subType FEATURED).",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1849,7 +1849,7 @@
   "answer": "{success, succeeded:[{instanceId}]}",
   "example": "PUT \u2026/access/featuredItems/categories {itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder}]}",
   "notes": "",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1883,7 +1883,7 @@
   "answer": "{emailTemplates:[{dn, fullName}], arraySize: int, nextIndex: int (0 when no more)}",
   "example": "GET \u2026/access/info/email/templates?q=*&nextIndex=1&size=5 -> 5 templates, nextIndex 6",
   "notes": "Lab has 30 standard templates under cn=Default Notification Collection,cn=Security. Locale-specific template copies are left out. q=Approval* also matched 'Email Based Approval Failure Notification'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1895,7 +1895,7 @@
   "answer": "{isDashboardCustomized: bool, dashboardCustomizations: JSON string, dashboardWidgetsAccess:[{key, value:'true'|'false'}]}",
   "example": "GET \u2026/access/info/user/dashboard",
   "notes": "Widget keys on the lab: tasks, access, selfrequests, requestsforothers, table, linklist, pieChart, lineChart, reviewtasks, sodviolation, manualfulfillmenttasks, helpdesk. Without a personal layout the global tiles are returned.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1921,7 +1921,7 @@
   "answer": "{isEquivalent: bool}",
   "example": "POST \u2026/access/info/user/equivalent {principals:[provadmin role DN]} -> {isEquivalent:true}",
   "notes": "Read-only POST. The user's own DN gives false, as do unknown DNs and o=data; a held role gives true. Empty or missing principals answer 204 with no body.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1943,7 +1943,7 @@
   "answer": "{menuItems:[{menuName, mapName, context, menuOrder, subMenuList?:[\u2026]}]}",
   "example": "POST \u2026/access/info/user/navigationmenu {} -> dashboard, main, task, access, people, administration, configuration, profileMenu",
   "notes": "Read-only POST.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1974,7 +1974,7 @@
   "answer": "{navPageRights:[{key, value:'true'|'false'}], areaDefault, areaDefaultDisplayName}",
   "example": "POST \u2026/access/info/user/navigationrights {navPageRights:[{key:'dashboard'},{key:'users'}]}",
   "notes": "Read-only POST. An empty body gives 489 'Create User Payload is empty'. The answer adds related sub-page keys (users brings createuser, usersedit, \u2026) and the area default. An unknown key came back true for the administrator.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1986,7 +1986,7 @@
   "answer": "{messages?:[{message, driverName, driverImage, status}]}",
   "example": "GET \u2026/access/info/user/passwordsyncstatus -> {}",
   "notes": "uaadmin has no password sync messages, so the answer is {}. A test user with a password, signed in as themselves, also got {}: the messages come from drivers that synchronise passwords, and the lab has none.",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31 (non-admin test user)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2010,7 +2010,7 @@
   "answer": "204 with no body when the user has no password sync messages",
   "example": "POST \u2026/access/info/user/passwordsyncstatus {dn:<user DN>}",
   "notes": "A real user without a password (and no driver password sync) also gives 204; messages would need a password change going through drivers, which the test did not do. Read-only POST. An invalid DN also answers 204. An empty body gives 489 'Internal Error'. Errors seen on the lab: {} \u2192 489 'Internal Error. Please contact Administrator.'.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2022,7 +2022,7 @@
   "answer": "{authorized, readOnly, teamReadOnly, proxyFor, clientId, clientName, isAdmin, isRoleAdmin, domains:[PROVISIONING|ROLES|RESOURCES], isDelegationTeamMgr, isAvailabilityTeamMgr}",
   "example": "GET \u2026/access/info/user/rights -> isAdmin true, client 1",
   "notes": "clientId/clientName name the client (setting profile) applied to this user.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2034,7 +2034,7 @@
   "answer": "{version: str}",
   "example": "GET \u2026/access/info/version -> {version:'0.0.1'}",
   "notes": "Returns 0.0.1 on a 4.10.2 lab, so it does not tell the product version.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2077,7 +2077,7 @@
   "answer": "{success:true, succeeded:[{name: package}]}",
   "example": "",
   "notes": "Missing name or level, or a level outside 1-6, is refused; the package must be one the server knows. Additivity is always set to true. Tested with one package at its current level: GET \u2026/logging/list unchanged.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -2141,7 +2141,7 @@
   "answer": "{success:true, succeeded:[{name: package}]}",
   "example": "",
   "notes": "Needs the logging right. Tested with changeAllLogs false, persist true and one package at its current level: GET \u2026/logging/list unchanged.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2214,7 +2214,7 @@
   "answer": "{success:true, message:'Successfully updated the audit configuration'}",
   "example": "",
   "notes": "Missing enableCEF (or {}): 489 'Data is required.'. {enableCEF:false} kept CEF off (GET \u2026/logging/list shows enableCEF and cefConfigs).",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -2226,7 +2226,7 @@
   "answer": "{success:true, message:'Successfully built the package description xliff.'}",
   "example": "",
   "notes": "No body. Writes PackageDescriptionRsrc_en.xlf under the server's XLF_PATH directory; not used by the dashboard. Needs the logging right.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2288,7 +2288,7 @@
   "answer": "{logConfigurations:[{packageConfigured:{packageName, packageDescription}, logAdditivity, logLevel:int}], nextIndex?, totalSize, total (rows in this page), enableCEF, cefConfigs:{destinationHost, destinationPort, protocol, useTLS, keyStorePath, keyStorePWD, intermediateStoragePath}}",
   "example": "GET \u2026/admin/logging/list?q=*&nextIndex=1&pageSize=3&sortBy=logName&sortOrder=desc -> 3 of 43",
   "notes": "Lab: 43 loggers, all level 4 (INFO), CEF off (cefConfigs {}). sortBy=bogus: 489 'Invalid sort column.'. sortBy=logLevel is accepted but does not sort. q='com.novell*' finds nothing (a * is only special alone). With fetchLogConfigs=false only total/enableCEF/cefConfigs come back. When TLS is on, cefConfigs can carry the keystore password field.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2336,7 +2336,7 @@
   "answer": "{packages:[{packageName, packageDescription}], nextIndex?, totalSize, total}",
   "example": "GET \u2026/admin/logging/packages/list?q=*&nextIndex=1&pageSize=3&sortOrder=desc",
   "notes": "Lab: 292 packages. q=cache matches by description too (com.netiq.cis.permindex). sortBy=packageDescription: 489 'Invalid sort column.'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2356,7 +2356,7 @@
   "answer": "{totalCount, newResourcesCount, newRolesCount, newTasksCount, newHelpdeskTasksCount} (ints)",
   "example": "GET \u2026/access/notifyService?client=1 -> all 0",
   "notes": "Counts are relative to the user's last notified time; all zero for uaadmin on the lab. The dashboard sends clientId= in one place, which the server ignores (default 1 used).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -2376,7 +2376,7 @@
   "answer": "the removed preference {isPreferenceAvailable:true, columns} (not empty, as earlier notes said)",
   "example": "DELETE \u2026/access/preference?attribute=<name>",
   "notes": "GET afterwards: {isPreferenceAvailable:false}. The answer carries the preference that was deleted.",
-  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2396,7 +2396,7 @@
   "answer": "{isPreferenceAvailable:bool, columns?:[\u2026]}",
   "example": "GET \u2026/access/preference?attribute=<name>",
   "notes": "Answers the caller's stored preference of that name: after POST \u2026/preference?attribute=<name> {columns:[\u2026]} it gave {isPreferenceAvailable:true, columns}. Without attribute (All) it answered {isPreferenceAvailable:false} even while a named one existed. Dashboard names: rolesPageSize, resourcesPageSize, tasksPageSize, \u2026 (page sizes are stored as columns[0]). Side effect: the first read moves preferences from the old store to the new one if only the old one has data.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2443,7 +2443,7 @@
   "answer": "empty 200",
   "example": "POST \u2026/access/preference?attribute=<name> {columns:[\u2026]}",
   "notes": "Used a scratch attribute name on uaadmin. GET \u2026/preference?attribute=<name> then answered {isPreferenceAvailable:true, columns}. uaadmin's preferences (attribute All) were empty before and after.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -2463,7 +2463,7 @@
   "answer": "{isDashboardCustomized:false, dashboardCustomizations:<the removed layout>}",
   "example": "DELETE \u2026/access/preference/dashboard?attribute=<name>",
   "notes": "GET afterwards: {isDashboardCustomized:false}. uaadmin's dashboard preferences (All) empty before and after. The answer carries the layout that was deleted.",
-  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2483,7 +2483,7 @@
   "answer": "{isDashboardCustomized:bool, dashboardCustomizations?:string}",
   "example": "GET \u2026/access/preference/dashboard?attribute=<name>",
   "notes": "After POST \u2026/preference/dashboard?attribute=<name> {dashboardCustomizations:\"<JSON text>\"} it gave {isDashboardCustomized:true, dashboardCustomizations}. Without attribute (All): {isDashboardCustomized:false}.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2515,7 +2515,7 @@
   "answer": "empty 200",
   "example": "POST \u2026/access/preference/dashboard?attribute=<name> {dashboardCustomizations:'\u2026'}",
   "notes": "GET \u2026/preference/dashboard?attribute=<name> then answered {isDashboardCustomized:true, dashboardCustomizations}.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2527,7 +2527,7 @@
   "answer": "{supportedLocales:[{locale, localeDisplayName}]}",
   "example": "GET \u2026/access/supportedlocales -> 17 locales",
   "notes": "Lab: 17 (zh_CN, pt, fr, ru, ja, zh_TW, it, da, \u2026).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2539,7 +2539,7 @@
   "answer": "{locale: str}",
   "example": "GET \u2026/access/supportedlocales/defaultlocale -> {locale:'en'}",
   "notes": "",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2551,7 +2551,7 @@
   "answer": "{locale: str}",
   "example": "GET \u2026/access/supportedlocales/userlocale -> {locale:'en'}",
   "notes": "",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -2579,7 +2579,7 @@
   "answer": "{success, succeeded:[{instanceId}]}",
   "example": "DELETE \u2026/access/ulp/categories {itemCategories:[{itemCategoryId}]}",
   "notes": "Deleted after its item was removed.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2614,7 +2614,7 @@
   "answer": "{success, succeeded:[{instanceId:<new id>, name}]}",
   "example": "POST \u2026/access/ulp/categories {itemCategories:[{categoryName, itemCategoryOrder}]}",
   "notes": "Shows in GET /access/ulp/landingItems/v2 with subType HOME. Featured and landing ids come from one counter (231\u2026234 here).",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -2650,7 +2650,7 @@
   "answer": "{success, succeeded:[{instanceId}]}",
   "example": "PUT \u2026/access/ulp/categories {itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder}]}",
   "notes": "",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2711,7 +2711,7 @@
   "answer": "{success, succeeded:[{id, instanceId, name}]}",
   "example": "",
   "notes": "Adds a featured item (answer instanceId is its itemId). Missing name: 'item name required'. With the featured category's itemCategoryId the item showed in GET \u2026/ulp/landingItems/v2 under that category but not in GET \u2026/access/featuredItems; DELETE \u2026/access/featuredItems {items:[{itemId}]} removed it.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -2739,7 +2739,7 @@
   "answer": "{success, succeeded:[{instanceId}]}",
   "example": "DELETE \u2026/access/ulp/items {items:[{itemId}]}",
   "notes": "GET /access/ulp/items no longer lists the navigation item afterwards.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2784,7 +2784,7 @@
   "answer": "{success, succeeded:[{id:<navigation item DN>, instanceId:<item id>, name}]}",
   "example": "POST \u2026/access/ulp/items {items:[{name, desc, appUrl, idmdashAppUrl, itemCategoryId, itemOrder}]}",
   "notes": "Also writes a directory object: cn=<name without dashes><32 hex>,cn=NavItems,cn=UIConfig,cn=AppConfig,\u2026, returned as id.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2796,7 +2796,7 @@
   "answer": "{locales:[{name: locale code, link}]}",
   "example": "GET \u2026/access/ulp/l10n -> 17 entries",
   "notes": "",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2808,7 +2808,7 @@
   "answer": "{locales:[{name: display name, link, localeKey}], localeSet:{}}",
   "example": "GET \u2026/access/ulp/l10n/list -> 17 entries",
   "notes": "localeSet is empty on the lab.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2845,7 +2845,7 @@
   "answer": "{response:{message:'Locale Preferences Saved'}}",
   "example": "",
   "notes": "Missing userDN: 'user DN not present'; another user's DN without global admin: unauthorized. Saves the user's preferred locales.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2865,7 +2865,7 @@
   "answer": "text/plain properties: key = value lines (category-*-name, item-*-name, item-*-description); non-English files carry '# English value:' comments",
   "example": "GET \u2026/access/ulp/l10n/de.properties",
   "notes": "Any locale code works: xx.properties returned all keys with empty values. Only landing page administrators may read it.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -2895,7 +2895,7 @@
   "answer": "{success, succeeded:[{id, instanceId?}]}",
   "example": "",
   "notes": "Body is the properties text (Content-Type text/plain), as GET \u2026/ulp/l10n/{locale}.properties returns it. Putting a locale's file back unchanged left it identical (31 KB for de). The answer lists every setting and item whose translation was written.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2922,7 +2922,7 @@
   "answer": "{itemCategories:[{itemCategoryId, categoryName, itemCategoryOrder, subType, items:[{image?, idmdashImage?, itemId, name, desc, entityType, id, itemOrder, appUrl, idmdashAppUrl, bulkRequestable, itemCategoryId}]}], uncategorizedItems:[\u2026], editable: bool}",
   "example": "GET \u2026/access/ulp/landingItems/v2?clientId=1&images=false",
   "notes": "Use images=false: with images the lab answer is about 850 KB, without about 8 KB. Lab: categories Home items (9) and Administration (6), 5 uncategorised; entity types CUSTOM and PRD. The change-password link points at the lab's SSPR.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -3004,7 +3004,7 @@
   "answer": "{success, succeeded:[{id, instanceId}]}",
   "example": "",
   "notes": "Missing itemId or id is refused. Send the items flattened from itemCategories[].items and uncategorizedItems, each with its itemCategoryId. Item names are stored once per item and locale and shared by PUT \u2026/ulp/items and PUT \u2026/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -3015,8 +3015,8 @@
   "body": null,
   "answer": "{wfEngineInfoList:[{engineId, engineState}]}",
   "example": "GET \u2026/admin/workflowengines -> engines 1, 3 Timedout; 6 Running",
-  "notes": "engineState is a localised word (Running, Timedout, \u2026). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right. Each start of the applications adds a new engine id; earlier ids stay listed as Timedout or Shutdown (2026-10-31). On the lab the engine's own cleanup of old timed-out engine ids failed every 2 minutes ('Engine Monitor Timer task failed \u2026 Error persisting cluster state', server log), so they are never removed. After a stop and start over POST \u2026/workflowengines/status, or a migration import, the running engine kept showing 'Starting' until the applications were restarted.",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31"
+  "notes": "engineState is a localised word (Running, Timedout, \u2026). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right. Each start of the applications adds a new engine id; earlier ids stay listed as Timedout or Shutdown (2026-10-31). On the lab the engine's own cleanup of old timed-out engine ids failed every 2 minutes (a cleanup error repeated every 2 minutes), so they are never removed. After a stop and start over POST \u2026/workflowengines/status, or a migration import, the running engine kept showing 'Starting' until the applications were restarted.",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -3028,7 +3028,7 @@
   "answer": "{minPoolSize, maxPoolSize, initialPoolSize, keepAliveTime (s), userActivityTimeout, completedProcessTimeout, webServiceActivityTimeout, pendingInterval (s), cleanupInterval (h), retryQueueInterval (min), maxShutdownTime (min), enableEmailNotification, processCacheInitialCapacity, processCacheMaxCapacity, processCacheLoadFactor, heartbeatInterval (s), heartbeatFactor}",
   "example": "GET \u2026/admin/workflowengines/configuration",
   "notes": "Lab: pool 10/20/5, heartbeat 60 s x2. Lab has processCacheInitialCapacity 700 above max 500, which the save does not cross-check.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -3170,7 +3170,7 @@
   "answer": "the saved configuration (as GET \u2026/workflowengines/configuration)",
   "example": "",
   "notes": "Every field is read and range-checked, so send the full GET object back. Posting the GET answer back unchanged left it identical, including the lab's processCacheInitialCapacity 700 above processCacheMaxCapacity 500, which the save does not cross-check. Needs the workflow-engine page right.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -3194,6 +3194,6 @@
   "answer": "{engineStatus: int} (what was sent)",
   "example": "POST \u2026/admin/workflowengines/status {engineStatus:1}",
   "notes": "engineStatus is fixed: 1 stops this server's workflow engine, 0 starts it; any other value or a missing one: 489 'invalid workflow status'. Stopping halts workflow processing until it is started again. The engine log showed STOPPING \u2192 STOPPED at once and STARTING \u2192 RUNNING within a second of the start, but GET \u2026/workflowengines kept showing the engine as 'Starting' (the stored state was not updated after a start over REST; a restart of the applications brought a new engine id 'Running'). Open approval tasks survived. Provisioning administrator only (403). No dashboard call found.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  }
 ]

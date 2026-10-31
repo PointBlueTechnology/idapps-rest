@@ -34,7 +34,7 @@
   "answer": "200, no body",
   "example": "",
   "notes": "Saves one setting. key is '<section>.<item>' (only access, customization and branding sections), value its value; the server saves it with no client (the default client). GET /access/config?key=<section>.<item>&client=<id> reads one setting as {<item>: value} (both parameters required: 'Invalid or missing JSON Key/value.' otherwise). Tested by saving branding.titleColor with its current value.",
-  "evidence": "server code + live 2026-10-31",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -63,7 +63,7 @@
   "answer": "{names:[{dn,name,entityType}]}",
   "example": "POST \u2026/access/entities/resolvedNames {names:[{dn}]}",
   "notes": "",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -117,7 +117,7 @@
   "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[{name, dn, allUsers, includeManager, readOnly}]}], arraySize, nextIndex, \u2026}",
   "example": "POST \u2026/access/groups/groupmembers?q=&nextIndex=1&size=5 {dn:<group DN>}",
   "notes": "Works once a group has members: like /groups/members, but each member also lists the teams that reach them (targetSetList): the real team they are in (named by its generated cn, not its display name) plus the three virtual administrator teams (Role Admin Team, Resource Admin Team, Provision Request Defination Admin Team, with DNs such as Role_Admin_Virtual_Team_Dn). size=1 paged; sortOrder=desc reversed the order. A DN that is not a group answers 489 'Invalid Group Detected'. Errors seen on the lab: right after a group was created, or a group that does not exist \u2192 489 'Invalid Group Detected: [<DN>].'.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -138,7 +138,7 @@
   "answer": "{itemCategories:[{itemCategoryId,categoryName,itemCategoryOrder,subType,items:[{itemId,name,desc,entityType,id,\u2026}]}]}",
   "example": "GET \u2026/access/ulp/items?images=false",
   "notes": "Item ids and categories are per installation (the landing page's configuration).",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -167,7 +167,7 @@
   "answer": "{items:[{image: data URI, \u2026}]}",
   "example": "",
   "notes": "Read-only despite POST: returns the images of the given items.",
-  "evidence": "server code + live 2026-10-31",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -194,7 +194,7 @@
   "answer": "{success, succeeded:[{id, instanceId}]}",
   "example": "",
   "notes": "Updates existing items by itemId (id = the item's external id, both required). Send the items flattened from the GET. Item names are stored once per item and locale and shared by PUT \u2026/ulp/items and PUT \u2026/ulp/landingItems/v2: on the lab the two reads showed different names for two items (the client view 'Search User', the admin list 'Search'), and saving either list back unchanged overwrote the other's name. Only one of the two can be put back; the client view was restored.",
-  "evidence": "server code + live 2026-10-31",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -228,7 +228,7 @@
   "answer": "",
   "example": "",
   "notes": "Only for calls made by the workflow engine (the server checks a workflow-request flag on the session); a person's token gets 489 'Unauthorized user'.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -256,7 +256,7 @@
   "answer": "{userQuickInfo:{dn,fullName,primaryAttributes,secondaryAttributes,\u2026}}",
   "example": "GET \u2026/access/orgChart/position?dn=<user DN>",
   "notes": "",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -295,7 +295,7 @@
   "answer": "{addresse,id,includeDelegations,proxyUserList,delUserList}",
   "example": "",
   "notes": "Workflow engine only: a person's token gets 489 'Unauthorized user'.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -322,7 +322,7 @@
   "answer": "{arraySize, \u2026properties}",
   "example": "POST \u2026/access/rob/ismproperties {}",
   "notes": "An empty body answers arraySize 0.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -371,7 +371,7 @@
   "answer": "{recipients:[{name, dn, isGroupAssignment, targetSetList:[\u2026]}], arraySize, nextIndex}",
   "example": "GET \u2026/access/teams/recipients/users?q=Alice&nextIndex=1&size=10&client=1",
   "notes": "Lists the people the caller may act for as a team manager (for a domain administrator: everyone in the user root), each with the teams that reach them. q matches the name.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -434,7 +434,7 @@
   "answer": "{teams:[{name, dn, description, recipients:[{name, dn, type, isGroupAssignment}], requestors:[\u2026], allUsers, includeManager, localizedNames, localizedDescriptions, readOnly, domainTypes}], \u2026}",
   "example": "GET \u2026/access/teams/list?q=dctest&nextIndex=1&size=10",
   "notes": "Shows the team at once (no forceRefresh needed); q matched the team name; sortBy=name with sortOrder=desc and forceRefresh=true also worked. Each team comes with its full recipients and requestors (team managers).",
-  "evidence": "live 2026-10-30 (test users, groups and a team)",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -455,7 +455,7 @@
   "answer": "{total,hasMore,userTypeInTask,\u2026}",
   "example": "GET \u2026/access/tasks?limit=10",
   "notes": " 2026-10-31: still {total:0} for the administrator while a role approval task addressed to another user was open (GET \u2026/tasks/list listed that task).",
-  "evidence": "live 2026-10-30 + server code, live 2026-10-31",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -468,7 +468,7 @@
   "answer": "{dn,name}",
   "example": "GET \u2026/access/users/fullName",
   "notes": "",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -497,7 +497,7 @@
   "answer": "{names:[{dn,name}]}",
   "example": "",
   "notes": "",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -526,7 +526,7 @@
   "answer": "204 when none of them has a photo",
   "example": "",
   "notes": "The lab's administrator has no photo, so it answered 204.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -551,7 +551,7 @@
   "answer": "{dn,attributes:[{key,displayLabel,value,dataType}]}",
   "example": "",
   "notes": "The attributes shown are per installation (the quick-info configuration).",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -580,7 +580,7 @@
   "answer": "{users:[{dn,attributes:[\u2026]}]}",
   "example": "",
   "notes": "",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -657,7 +657,7 @@
   "answer": "{members:[{dn, firstName, lastName}], nextIndex (0 = no more, else the next start), arraySize, token}",
   "example": "GET \u2026/access/users?q=Alice&nextIndex=1&size=10",
   "notes": "q matches first and last name (contains), not cn or title: 'Alice' and 'Dctest' found people, 'dctest-a' and 'Test Analyst' found nothing; an empty q lists everyone in the user search root. sortBy accepts only FirstName (anything else: 489 'Invalid sort-by column: LastName'); sortOrder asc/desc is checked, but the order did not follow it: Bob, Alice, then Dctest Manager came back in that order for both asc and desc. Paging: size=2 gave nextIndex 3, the next page nextIndex 0. limit=2 did not cut the list of 3. The token names a server-side cache of the result; forceRefresh=true with the token drops it.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -682,7 +682,7 @@
   "answer": "{user, roleAssignments:[role name]}",
   "example": "POST \u2026/access/users/role/assignments {dn:<user DN>}",
   "notes": "With a role assigned: the role's display name (names only, no DNs). Correction: the earlier write-up said these were only the applications' administrator assignments; with data, an ordinary IDM role assigned to the user is listed too.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -719,7 +719,7 @@
   "answer": "{id,name,subContainers:[{id,name}]}",
   "example": "",
   "notes": "With none of the fields it lists the entity's search root. A field named dn is ignored. The server reads containers with a system context, not the caller's rights.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -796,7 +796,7 @@
   "answer": "{groups:[{id, name, description}], arraySize, nextIndex (0 = no more), token}",
   "example": "GET \u2026/catalog/groups?q=one&nextIndex=1&size=10&sortBy=Description&sortOrder=desc",
   "notes": "q matches the description (contains); 'dctest-group2' (the cn) found nothing. sortBy=Description with desc reversed the order. Paging: size=1 gave nextIndex 2, then 0. The id field is the DN (here it is called id, in /access/groups dn).",
-  "evidence": "live 2026-10-30 (test users, groups and a team)",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -809,7 +809,7 @@
   "answer": "{version}",
   "example": "",
   "notes": "Answered 0.0.1 on 4.10.2: not the product version.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -822,7 +822,7 @@
   "answer": "{supportedLocales:[{locale,localeDisplayName}]}",
   "example": "",
   "notes": "The set is per installation.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -835,7 +835,7 @@
   "answer": "",
   "example": "",
   "notes": "Answered 200 with a serializer's settings ({escapeForwardSlashAlways, recursionDepthLimit}) instead of a locale on 4.10.2.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -848,7 +848,7 @@
   "answer": "",
   "example": "",
   "notes": "Same as userlocale: a serializer's settings, not a locale.",
-  "evidence": "live 2026-10-30 + server code",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -880,7 +880,7 @@
   "answer": "",
   "example": "",
   "notes": "489 'Unable to find abstract layer object definition for the specified definition key.': like POST \u2026/resources/category, the server looks up a directory abstraction layer entity this installation does not define. Nothing was created.",
-  "evidence": "server code + live 2026-10-31",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -948,7 +948,7 @@
   "answer": "{assignmentStatusList:[{dn, recipientType:'USER', recipientTypeSubContainer, recipientDn, recipientFullName, statusCode:'50', statusDisplay:'Completed', effectiveDate (epoch ms as string), expiryDate, description, grant}], nextIndex, arraySize, total, hasmore}",
   "example": "POST \u2026/catalog/roles/role/assignments/v2?nextIndex=1&size=20 {dn:<role DN>}",
   "notes": "The body field is dn here, not id as in v1: {id: \u2026} gives 489 'Invalid input DN: '. statusCode 50 = Completed; description is the assign-time reason; grant true for an assignment. Limited to the user search root, like v1.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -1002,7 +1002,7 @@
   "answer": "{sods:[\u2026as POST /sods/sod\u2026]}",
   "example": "POST \u2026/catalog/sods/list {roles:[{id:\"cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
   "notes": "Finds the SoDs that involve the given roles (one role gave both of its SoDs). {} or a body without roles answers {arraySize:0}, and q alone finds nothing: it is not a search of all SoDs (use GET \u2026/catalog/sods for that).",
-  "evidence": "server code + live 2026-10-31",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -1014,8 +1014,8 @@
   "body": null,
   "answer": "",
   "example": "",
-  "notes": "Its classes are in the 4.10.2 jars, and older releases mapped them under /IDMProv/roa/v1, but nothing answers there on the lab (404): not deployed.",
-  "evidence": "live 2026-10-30 + server code",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -1027,8 +1027,8 @@
   "body": null,
   "answer": "",
   "example": "",
-  "notes": "Its classes are in the 4.10.2 jars, and older releases mapped them under /IDMProv/roa/v1, but nothing answers there on the lab (404): not deployed.",
-  "evidence": "live 2026-10-30 + server code",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -1040,8 +1040,8 @@
   "body": null,
   "answer": "",
   "example": "",
-  "notes": "Its classes are in the 4.10.2 jars, and older releases mapped them under /IDMProv/roa/v1, but nothing answers there on the lab (404): not deployed.",
-  "evidence": "live 2026-10-30 + server code",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -1053,8 +1053,8 @@
   "body": null,
   "answer": "",
   "example": "",
-  "notes": "Its classes are in the 4.10.2 jars, and older releases mapped them under /IDMProv/roa/v1, but nothing answers there on the lab (404): not deployed.",
-  "evidence": "live 2026-10-30 + server code",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -1066,8 +1066,8 @@
   "body": null,
   "answer": "",
   "example": "",
-  "notes": "Its classes are in the 4.10.2 jars, and older releases mapped them under /IDMProv/roa/v1, but nothing answers there on the lab (404): not deployed.",
-  "evidence": "live 2026-10-30 + server code",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed.",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  },
  {
@@ -1079,8 +1079,8 @@
   "body": null,
   "answer": "",
   "example": "",
-  "notes": "Its classes are in the 4.10.2 jars, and older releases mapped them under /IDMProv/roa/v1, but nothing answers there on the lab (404): not deployed. Setting passwords is marked a future feature.",
-  "evidence": "live 2026-10-30 + server code",
+  "notes": "Older releases served this under /IDMProv/roa/v1; on 4.10.2 nothing answers there (404): it is not deployed. Setting passwords is marked a future feature.",
+  "evidence": "inspection and observation, October 2026",
   "in_reference": false
  }
 ]

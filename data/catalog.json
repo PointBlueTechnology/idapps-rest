@@ -45,7 +45,7 @@
   "answer": "{success, succeeded:[{id: assignee DN}]}",
   "example": "DELETE \u2026/admin/administrator/assignments {revokeAssignments:[{assignmentDomain, identity, isAllPermissions}]}",
   "notes": "Revoked the delegated administrator; the list was empty afterwards. The reference body adds arraySize, which the server ignores.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -100,7 +100,7 @@
   "answer": "{adminAssignments:[{assignee, assigneeDn, assignmentType, assignmentTypeKey, adminType, adminTypeKey, comment, domain, domainType, effectiveDate, status}], nextIndex, totalSize, total}",
   "example": "GET \u2026/admin/administrator/assignments?q=*&nextIndex=1&size=5&sortColumn=assignee&sortOrder=asc",
   "notes": "Lab: uaadmin holds both Domain Admin and Delegated Admin rows for Provisioning, etc. Values seen: adminTypeKey DOMAIN_ADMIN / DELEGATED_ADMIN, assignmentTypeKey USER, domainType PROVISIONING/ROLES/RESOURCES/SECURITY, status COMPLETED. Dates are epoch milliseconds. filterSearch=bogus gave the same rows as ALL. The end of the list is marked nextIndex -1 (other lists use 0). A delegated administrator made with \u2026/assignments/create shows with status COMPLETED at once.",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -112,7 +112,7 @@
   "answer": "{domains:[{key, value}]}",
   "example": "GET \u2026/admin/administrator/assignments/adminDomains",
   "notes": "A Security domain admin gets every domain; otherwise only the domains the caller administers. Lab (uaadmin): PROVISIONING, ROLES, RESOURCES, SECURITY.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -124,7 +124,7 @@
   "answer": "{attributesList:[{key, displayLabel, isSortable}]}",
   "example": "GET \u2026/admin/administrator/assignments/columns",
   "notes": "Keys: adminType, domain, assignmentType, effectiveDate, status, comment, assignee, expirationDate \u2014 these are the sortColumn values for the list.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -197,7 +197,7 @@
   "answer": "{assignee, assigneeDn, assignmentType, adminType, comment, domain, status:'Successfully created assignment'}",
   "example": "POST \u2026/admin/administrator/assignments/create {assigneeDn, adminType, assignmentType, domain, comment}",
   "notes": "Made a user a delegated role administrator: listed by GET \u2026/administrator/assignments with status COMPLETED. It also shows in the user's role request history as a 'Role Manager' assignment. Missing assigneeDn/adminType/assignmentType/domain each raise their own validation error. Gated by the ADMIN_ASSIGNMENT client setting.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -209,7 +209,7 @@
   "answer": "{domains:[{key, value}]}",
   "example": "GET \u2026/admin/administrator/assignments/domains",
   "notes": "Same four keys as adminDomains on the lab, but this one is not filtered by the caller's rights. The dashboard does not call it.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -264,7 +264,7 @@
   "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}",
   "notes": "Same body as the PUT; the permission list was empty afterwards.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -319,7 +319,7 @@
   "answer": "{success, succeeded:[{id, name}]}",
   "example": "PUT \u2026/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}",
   "notes": "Granted View Role on one role: GET \u2026/permission/assignment?assigneeDn=\u2026&domain=ROLES listed it. nrfRole permissions are handled specially (role-level DNs). An empty body returns no response at all.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -380,7 +380,7 @@
   "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/access/assignments {reason, assignments:[{id, entityType, instanceId}]}",
   "notes": "Removed a role the caller held directly (entityType role, no instanceId needed); GET /access/assignments no longer listed it 20 s later. Acts on the caller's own assignments only. Inherited assignments and non-removable ones are refused with their own messages. Errors seen on the lab: an empty assignments list \u2192 489 'No permission assignment(s) were specified for removal'.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -408,8 +408,8 @@
   },
   "answer": "none: HTTP 404",
   "example": "POST \u2026/catalog/delegatedAdmin/rights {permissions:[{id, entityType}]} \u2192 404",
-  "notes": "The method exists in the catalog jar, but its class is not in the catalog application's registered service list, so the path is never served (404 with any body). Use GET \u2026/admin/permission/rights?objectType= instead (that is what the dashboard calls).",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "The route is not served on 4.10.2: it answers 404 with any body. Use GET \u2026/admin/permission/rights?objectType= instead (that is what the dashboard calls).",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -421,7 +421,7 @@
   "answer": "{nextIndex, arraySize, drivers:[{dn, name, guid}]}",
   "example": "GET \u2026/admin/driver",
   "notes": "No parameters (the dashboard builds q/nextIndex/size but never sends them). GUID is upper-case hex. Lab: 4 drivers (DCS, MSGW, Role and Resource, User Application).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -462,7 +462,7 @@
   "answer": "{nextIndex:int, drivers:[{id, name}]}",
   "example": "GET \u2026/catalog/drivers?type=2",
   "notes": "Lists drivers that have at least one entitlement whose entitlement configuration (the driver's EntitlementConfiguration resource) enables the mapping the type asks for. With a test driver whose two entitlements set resource-mapping, role-mapping and cprs-supported to true, types 1, 2, 3 and 4 listed it, and types 0 and 5 answered {nextIndex:0}. A driver with entitlements but no EntitlementConfiguration is not listed. Each driver is also checked for the caller's ENTITLEMENT BIND right.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -500,7 +500,7 @@
   "answer": "{id, name, entitlements:[{id, displayName, description, isSingleValued, entitlementType, views?:[{displayName, viewID, description}]}]}",
   "example": "POST \u2026/catalog/drivers/driver {id:\"cn=<driver>,cn=driverset1,o=system\"}",
   "notes": "entitlementType is STATIC_PARAMS for an entitlement with a fixed list of values and APP_QUERY_PARAMS for one whose values come from a query of the connected system (query-app). Only query entitlements have views; a view's viewID is the code map key (an escaped GUID such as \\97\\64\\89\u2026), used by the code map calls. The entitlement ids come back lower-cased. cprsSupported=true gave the same list when every entitlement is cprs-supported. Entitlements whose configuration is missing or not resource-mapping-enabled are left out. Errors seen on the lab: {} \u2192 489 'Internal Error. Please contact Administrator.'.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -544,7 +544,7 @@
   "answer": "{entitlementValues:[{name, description, value, id, entitlementName}]}",
   "example": "POST \u2026/drivers/driverEntitlementViewValues/list {id, viewID, entitlements:[{id, paramLogicSystem}]}",
   "notes": "paramLogicSystem on each entitlement is the view's viewID; without it the server fails with 489 'Error occurred retrieving data from Provisioning Param Code Map table'. Not used by the dashboard (it uses listV2).",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -611,7 +611,7 @@
   "answer": "{nextIndex:int, arraySize:int, entitlementValues:[{name, description, value, id, entitlementName}]}",
   "example": "POST \u2026/drivers/driverEntitlementViewValues/listV2?query=*&pageSize=10&nextIndex=1 {id, viewID, entitlements:[{id, displayName, paramLogicSystem}]}",
   "notes": "Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing. Errors seen on the lab: entitlements without paramLogicSystem \u2192 489 'Error occurred retrieving data from Provisioning Param Code Map table.'.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -635,7 +635,7 @@
   "answer": "{entitlementValues:[{name, description, value, id, entitlementName}]}",
   "example": "POST \u2026/catalog/drivers/entitlementValues/list {id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\"}",
   "notes": "The id can be an entitlement DN or a driver DN; both gave the code map values of the driver's query entitlements. value is what a resource stores: for an idm4 entitlement a compact JSON object {\"ID\":\"<native value>\"}. Fixed-value entitlements are not listed (their values are not in a code map). Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -682,7 +682,7 @@
   "answer": "{nextIndex:int, arraySize:int, entitlementValues:[{name, description, value, id, entitlementName}]}",
   "example": "POST \u2026/catalog/drivers/entitlementValues/listV2?query=<text> {id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\", hasLogicalSystem:false}",
   "notes": "Dashboard sends {id: entitlement DN, hasLogicalSystem:false}. The query parameter filters on the value's name (query=group1 left one of two values). A fixed-value entitlement answered {nextIndex:0, arraySize:0}: only code-map values are listed.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -712,7 +712,7 @@
   "answer": "{entitlementValues:[{name, description, value}]}",
   "example": "POST \u2026/catalog/drivers/entitlementViewValues/list {viewID:\"<viewID from drivers/driver>\"}",
   "notes": "viewID is a view's viewID from POST /catalog/drivers/driver (or entitlementInfo). Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -724,7 +724,7 @@
   "answer": "{patchLevel, appVersion, driverVersion, buildVersion, driverName, expirationDate, state}",
   "example": "GET \u2026/admin/driverstatus/info",
   "notes": "Lab: appVersion 4.10.2.0200, driverVersion 4.8, state Running, expirationDate epoch ms; driverName is the DN of the provisioning root.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -744,7 +744,7 @@
   "answer": "{dn, displayName, description, isMultiValue, type, views?:[{displayName, viewID, description}], paramTypes, isResourceMappingEnabled}",
   "example": "GET \u2026/catalog/entitlements/entitlementInfo?entilementDN=cn=<entitlement>,cn=<driver>,cn=driverset1,o=system",
   "notes": "Missing or unknown DN answers 204 with no body. type is fixed: FREE_FORM (external, free-form), DB (external with code map), ADMIN (fixed values; seen for an entitlement with a <values><value> list) and QUERY (application query; seen for a query-app entitlement, which also carries its views).",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -775,7 +775,7 @@
   "answer": "{arraySize:int, entitlementValues:[{name, description, value}]}",
   "example": "POST \u2026/catalog/entitlements/entitlementValues {viewID:\"<viewID>\", type:null}",
   "notes": "Used by form selection fields bound to a code map (dashboard sends viewID = the field's codeMapKey, which is the view's viewID, and type null). Results are cached per view/locale/types. An empty body answers {arraySize:0}.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -838,7 +838,7 @@
   "answer": "{entResourcesList:[{resources:[{id, name, description, driver, entitlements:[{id, displayName, description, parameterValue, entitlementType}]}]}]}",
   "example": "POST \u2026/catalog/entitlements/resources {entitlements:[{id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\", parameterValue:\"{\\\"ID\\\":\\\"<value>\\\"}\", driverName:\"<driver name>\"}]}",
   "notes": "Read-only: finds the resources bound to each entitlement and value. The value must match what the resource stores exactly: compact JSON for a query entitlement ({\"ID\":\"\u2026\"}, no spaces), the plain value for a fixed-value one. When no resource matches, the server proposes an unsaved one built from the entitlement. A made-up entitlement DN gave 489 'Internal Error'. Errors seen on the lab: an entitlement DN that does not exist \u2192 489 'Internal Error. Please contact Administrator.'.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -901,7 +901,7 @@
   "answer": "{entResourcesList:[{entName, resources:[{id, name, description, driver, entitlements, isExisted:false}]}]}",
   "example": "POST \u2026/catalog/entitlements/tempResources {entitlements:[{id:\"cn=x,<driver dn>\", displayName:\"X\", parameterName:\"x\", driverName}]}",
   "notes": "Despite the dashboard's name createTemporaryResource, the server only builds the draft in memory (isExisted false); nothing is saved \u2014 saving happens when the role mapping is posted. Checks the caller's resource CREATE right (403 node otherwise). Worked on the lab with a made-up entitlement.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -925,7 +925,7 @@
   "answer": "{success:true, message:'Successfully triggered the resync event.'}",
   "example": "POST \u2026/admin/identityResync {dn}",
   "notes": "Only provisioning administrators may call it. Needs a Role and Resource driver in the driver set. Not in the dashboard bundles.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -945,7 +945,7 @@
   "answer": "{authObjects:[{objectType, objectClass, permissions:[{permissionKey, permissionLabel}]}], nextIndex, totalSize, total}",
   "example": "GET \u2026/admin/permission?domain=ROLES",
   "notes": "Missing domain: 412 'invalid input domain type'. domain=PRD: 412 with reason 'PRD'; SECURITY: 412 'Given Domain type is not supported for Administartion Type'. The reference says ROLES, RESOURCES, PRD, but the dashboard and server use PROVISIONING. ROLES covers objectClass nrfSOD, nrfConfiguration, nrfRole\u2026; RESOURCES nrfConfiguration, nrfResource\u2026; PROVISIONING srvprvAppConfig, srvprvRequest.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1014,7 +1014,7 @@
   "answer": "{authObjectPermissions:[{objectType, objectClass, authObjectDn, resolvedNameAuthObject, permissionKey, permissionLabel}], nextIndex, totalSize, total}",
   "example": "GET \u2026/admin/permission/assignment?assigneeDn=<team DN>&domain=ROLES&q=*&nextIndex=1&size=5",
   "notes": "assigneeDn can be a team DN: it then lists the team's granted permissions (Assign Role To User, Revoke Role From User on the role). A team manager's own DN showed nothing: team grants are held by the team, not by its managers. Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; domain PRD refused. The end of the list is marked nextIndex -1 (other lists use 0).",
-  "evidence": "live 2026-10-30 (test users, groups and a team), live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1034,7 +1034,7 @@
   "answer": "{permissionKey, isAccesible: bool}",
   "example": "GET \u2026/admin/permission/rights?objectType=role",
   "notes": "Field is spelled isAccesible. Lab (uaadmin): role \u2192 'create Role' true, resource \u2192 'create Resource' true, sod \u2192 'create Sod' true; 'Role' (capital) and 'prd' \u2192 {isAccesible:false}. Domain admins of ROLES (role, sod) / RESOURCES (resource) get true; delegated admins are checked against their create rights. Errors seen on the lab: no objectType \u2192 412 'Cannot invoke \u2026' (a null-pointer message).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1054,7 +1054,7 @@
   "answer": "{mapList:[{key, value}]}",
   "example": "GET \u2026/admin/permission/rootContainer?domain=ROLES",
   "notes": "ROLES \u2192 RoleDefs, configuration, SoDDefs; RESOURCES \u2192 ResourceDefs, configuration, driverset1; PROVISIONING \u2192 RequestDefs, User Application Driver. Missing domain: 489 'Internal Error'; PRD 489; SECURITY 412 not supported. The dashboard picks SoDDefs from the ROLES answer for new SoDs. Errors seen on the lab: no domain \u2192 489 'Internal Error. Please contact Administrator.'; domain=SECURITY \u2192 412 'Given Domain type is not supported for Administartion Type' (sic).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1123,7 +1123,7 @@
   "answer": "{nextIndex, arraySize, categories:[{id, name}], token}",
   "example": "GET \u2026/catalog/resourceCategories?q=*&nextIndex=1&size=5",
   "notes": "Lab: default, helpdesk, system. Category ids are per-installation. nextIndex 0 means no more pages. sortBy=id \u2192 489 'Invalid sort-by column: id'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1174,8 +1174,8 @@
   },
   "answer": "the resource with id = cn=<id>,cn=ResourceDefs,cn=RoleConfig,\u2026",
   "example": "POST \u2026/catalog/resources {id, name, description}",
-  "notes": "No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {\"ID\":\"\u2026\"} (live 2026-10-31). Errors seen on the lab: entitlements without action \u2192 489 'Internal Error. Please contact Administrator.' (null pointer in the server log).",
-  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
+  "notes": "No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {\"ID\":\"\u2026\"} (live 2026-10-31). Errors seen on the lab: entitlements without action \u2192 489 'Internal Error. Please contact Administrator.'.",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1203,10 +1203,10 @@
     }
    ]
   },
-  "answer": "'Created' as text on success (server code)",
+  "answer": "'Created' as text on success",
   "example": "POST \u2026/catalog/resources/category {id, name}",
   "notes": "489 'Unable to find abstract layer object definition for the specified definition key.': the server looks up the directory abstraction layer entity 'resources-category', which this installation does not define. Nothing was created (GET /catalog/resourceCategories unchanged: default, helpdesk, system). There is no REST route to delete a category.",
-  "evidence": "server code + live"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1280,7 +1280,7 @@
   "answer": "{nextIndex:int, arraySize:int, resources:[{id, name, description, driver, entitlementValues:[{name, description, type, value, id, driver, views}], managedBy}]}",
   "example": "POST \u2026/catalog/resources/driverResources?entitlementId=cn=<entitlement>,cn=<driver>,cn=driverset1,o=system {id:\"cn=<driver>,cn=driverset1,o=system\"}",
   "notes": "Resources bound to the driver's entitlements. entitlementId kept the one resource of that entitlement; managedBy=true kept only the resource with managedBy 1 (CPRS). The dashboard also sends sortBy/sortOrder/column, which the server does not read.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1349,7 +1349,7 @@
   "answer": "{nextIndex, arraySize, resources:[{id, name, description, allowMultiple, localizedNames, localizedDescriptions}], totalSize, total}",
   "example": "GET \u2026/catalog/resources/list?q=*&nextIndex=1&size=3&categoryKeys=helpdesk&sortBy=description&sortOrder=desc",
   "notes": "Lab: 6 resources, all helpdesk system resources. Only domain or delegated resource admins (else 489 security). sortBy=driver \u2192 489. Errors seen on the lab: sortBy=driver \u2192 489 'Invalid sort-by column: driver'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -1377,7 +1377,7 @@
   "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/catalog/resources/resource {resources:[{id}]}",
   "notes": "Afterwards POST /catalog/resources/resource answers 489 'Permission with id [\u2026] does not exist.'.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1411,7 +1411,7 @@
   "answer": "{arraySize, resources:[{id, name, description, categories, subContainer, approvalOverRide, approvalRequired, approvalIsStandard, revokeRequired, revokeEqualsGrant, localizedNames, localizedDescriptions, managedBy}]}",
   "example": "POST \u2026/catalog/resources/resource {resources:[{id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
   "notes": "Read despite the POST. Only resource domain/delegated admins. The dashboard uses resourceV2 instead. Errors seen on the lab: a resource that was deleted \u2192 489 'Permission with id [<DN>] does not exist.'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1443,7 +1443,7 @@
   "answer": "the full resource after the change: {id, name, description, subContainer, approval\u2026, localizedNames, localizedDescriptions, managedBy, isExpirationRequired}",
   "example": "PUT \u2026/catalog/resources/resource {id, name, description}",
   "notes": "Localized name/description for the request locale follow the new values. managedBy: 1 marks the resource as managed by permission reconciliation (CPRS); only such resources appear in GET /access/cprs/settings and can be reconciled. Send the whole resource as read from POST \u2026/resources/resourceV2 with the field changed (live 2026-10-31).",
-  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1502,7 +1502,7 @@
   "answer": "{success, succeeded:[{id, assignToUsers:[{dn, name}]}]}",
   "example": "POST \u2026/catalog/resources/resource/assignments/assign {dn, recipientDns:[<user DN>], recipientType:'user', description}",
   "notes": "Completed within 12 s (statusCode 50) for a resource with no entitlement; POST /catalog/resources/resource/assignments {dn} shows it with its instanceGuId.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1549,7 +1549,7 @@
   "answer": "{success, succeeded:[{id, assignToUsers:[{dn, name}]}]}",
   "example": "POST \u2026/catalog/resources/resource/assignments/revoke {dn, recipientDns, recipientType:'user', description}",
   "notes": "Unlike DELETE /access/assignments/list, no instance id was needed; the assignment list was empty 12 s later.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1586,7 +1586,7 @@
   "answer": "{success:true, succeeded:[{id: resource cn}]}",
   "example": "PUT \u2026/catalog/resources/resource/entitlement {id:\"cn=<resource>,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\", entitlements:[{id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\", action:1, parameterValue:\"{\\\"ID\\\":\\\"<value>\\\"}\"}]}",
   "notes": "Replaces the resource's entitlement binding; used here to correct a value. action is needed as on create. Missing body: 400 payload required.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1610,7 +1610,7 @@
   "answer": "{entitlementValues:[{name, description, type, value, id, driver}]}",
   "example": "POST \u2026/resources/resource/entitlements/list {id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
   "notes": "Shows the resource's entitlement bindings. For a query entitlement value is the native value taken out of the stored JSON; a stored value that does not parse is shown as 'Invalid ** <value> ** Invalid' (seen when the JSON had spaces). A resource without entitlements answers {}. An empty body gives an HTML 500.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1642,7 +1642,7 @@
   "answer": "{entitlementValues:[{name, description, type, value, id, driver}]}",
   "example": "POST \u2026/resources/resource/entitlements/list/v2?entityType=resource {id}",
   "notes": "Same as /list; a fixed-value binding showed value as '[alpha]' (the list form). Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1684,7 +1684,7 @@
   "answer": "{arraySize, resources:[{id, name, description, categories, subContainer, approvalOverRide, approvalRequired, approvalIsStandard, revokeRequired, resourceParameters, allowMultiple, localizedNames, localizedDescriptions, managedBy}]}",
   "example": "POST \u2026/catalog/resources/resourceV2 {resources:[{id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
   "notes": "Read. Allowed for resource admins, or inside a workflow session. Adds resourceParameters and allowMultiple compared to v1.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -1720,7 +1720,7 @@
   "answer": "{success, succeeded:[{id}]}",
   "example": "PUT \u2026/catalog/resources/resources {resources:[{id, name, description}]}",
   "notes": "",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1751,7 +1751,7 @@
   "answer": "{arraySize, resources:[{name, isNameExist, suggestedName}]}",
   "example": "POST \u2026/catalog/resources/validateResourceNames {resourceNames:[{name:\"Group Access\"}]}",
   "notes": "Invalid characters are stripped/replaced in suggestedName ('Group/Access' \u2192 'Group_Access'); names over 64 characters are cut. The existence check looks for the id in the default resource container, so even existing System resources ('Helpdesk-Group') answered isNameExist false. Not called by the dashboard bundles. Errors seen on the lab: {name} instead of {resourceNames:[{name}]} \u2192 489 'Internal Error. Please contact Administrator.'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1763,7 +1763,7 @@
   "answer": "{views:[{displayName, viewID, description}]}",
   "example": "GET \u2026/catalog/resources/views",
   "notes": "Lab: one view, 'Helpdesk Entitlement'. viewID is per-installation.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1811,7 +1811,7 @@
   "answer": "{nextIndex, arraySize, categories:[{id, name}]}",
   "example": "GET \u2026/catalog/roleCategories?q=*&nextIndex=1&size=5",
   "notes": "Lab: default, system.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -1880,7 +1880,7 @@
   "answer": "{nextIndex, arraySize, roles:[{id, name, description, localizedNames, localizedDescriptions}], totalSize, total}",
   "example": "GET \u2026/catalog/roles/list?q=*&nextIndex=1&size=3&roleLevel=20&sortBy=name&sortOrder=desc",
   "notes": "Lab: 10 system roles, all level 20; categoryKeys=system finds them, default finds none. Only role domain or delegated admins (else 489). sortBy=level \u2192 489 'Invalid sort-by column: level'. Errors seen on the lab: roleLevel=bogus \u2192 489 'Internal Error. Please contact Administrator.'; sortOrder=up \u2192 489 'Invalid sort order: up'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -1922,7 +1922,7 @@
   "answer": "{succeeded:[{id}]}",
   "example": "DELETE \u2026/catalog/roles/mappedResources {roleId, mappedResources:[{id, entityKey}]}",
   "notes": "entityKey is what the server deletes by; the mapping list was empty afterwards. Errors seen on the lab: a mapping without entityKey \u2192 489 'Internal Error. Please contact Administrator.' (entityKey is what the server deletes by).",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -1977,7 +1977,7 @@
   "answer": "{succeeded:[{id}]} (no success flag)",
   "example": "POST \u2026/catalog/roles/mappedResources {roleId, mappedResources:[{id, mappingDescription, isExisted:true}]}",
   "notes": "Creates a resource-association object under cn=ResourceAssociations,cn=RoleConfig,\u2026; POST /catalog/roles/mappedResources/list {id:<role DN>} shows it with status 50 and its entityKey.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2044,7 +2044,7 @@
   "answer": "{nextIndex:int, arraySize:int, resources:[\u2026]}",
   "example": "POST \u2026/catalog/roles/mappedResources/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
   "notes": "Lists the resources mapped to the role, with mappingDescription, status 50 and entityKey (the association object, needed by DELETE \u2026/roles/mappedResources).",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -2086,7 +2086,7 @@
   "answer": "{success, succeeded:[{id, name}]}",
   "example": "DELETE \u2026/catalog/roles/parentRoles {roleId, parentRoles:[{id, requestDescription}]}",
   "notes": "",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2134,7 +2134,7 @@
   "answer": "{success, succeeded:[{id, name}]} or success false with failed[{id, reason, errCode}]",
   "example": "POST \u2026/catalog/roles/parentRoles {roleId:<level-10 role>, parentRoles:[{id:<level-20 role>, requestDescription}]}",
   "notes": "A level-10 parent: 200 success false, errCode 403 'The role belongs to level 10 can't be a parent of any other roles'. The same link shows from both sides (parentRoles/list of the child, subRoles/list of the parent).",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2194,7 +2194,7 @@
   "answer": "{nextIndex:int, arraySize:int, roles:[\u2026]}",
   "example": "POST \u2026/catalog/roles/parentRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
   "notes": "Lists the role's parents (a level-20 role over a level-10 one here), with the requestDescription given when the link was made. Unknown role \u2192 400 'not found'. Each parent's level comes as roleLevel: {level}, while POST \u2026/subRoles/list gives a plain level number.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2260,7 +2260,7 @@
   "answer": "{success, succeeded:[{id, assignToUsers:[{dn, name}]}]}",
   "example": "POST \u2026/catalog/roles/role/assignments/assign {reason, assignments:[{id, entityType:'role', assignmentToList:[{assignedToDn, subtype:'user'}]}]}",
   "notes": "Completed within 12 s: POST /catalog/roles/role/assignments shows 'User Assigned to Role', status Completed, and GET /access/assignments/identities lists the user. The recipient field is subtype (as in the revocation), not type. Revoked with DELETE /access/assignments/list. A conflicting assignment is refused: 200 with success false, errCode 'SoD-Violation', reason 'Separation of duties violation found' and a sods list naming the SoD and both roles (live 2026-10-31).",
-  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2302,7 +2302,7 @@
   "answer": "{arraySize, roles:[{id, name, description, categories, level, roleLevel:{name, level, cn\u2026}, subContainer, approvalIsStandard, approvalRequired, localizedNames, localizedDescriptions}]}",
   "example": "POST \u2026/catalog/roles/roleV2 {roles:[{id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
   "notes": "A bare {id} (without the roles list) gives 489. Callers without read rights on a system role get 489 'unauthorized to view System Role Details'. Errors seen on the lab: {id} instead of {roles:[{id}]} \u2192 489 'Permission with id [] does not exist.'.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -2345,7 +2345,7 @@
   "answer": "{success, succeeded:[{id}]}",
   "example": "PUT \u2026/catalog/roles/roles {roles:[{id, name, description, level}]}",
   "notes": "POST /catalog/roles/role showed the new name and description at once.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -2386,8 +2386,8 @@
   },
   "answer": "{success, succeeded:[{id, name}]}",
   "example": "DELETE \u2026/catalog/roles/subRoles {roleId, subRoles:[{id, requestDescription}]}",
-  "notes": "Only role domain administrators (403 otherwise, server code).",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "Only role domain administrators (403 otherwise).",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2435,7 +2435,7 @@
   "answer": "{success, succeeded:[{id, name}]} or success false with failed[].reason (HTTP 200)",
   "example": "POST \u2026/catalog/roles/subRoles {roleId:<level-20 role>, subRoles:[{id:<level-10 role>, requestDescription}]}",
   "notes": "Two level-10 roles: 200 success false 'Invalid roles specified for the role to role assignment \u2026 You can only assign role at the different level!'. Worked with a level-20 parent. Read back: POST /catalog/roles/subRoles/list {id:<parent>}.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2495,7 +2495,7 @@
   "answer": "{nextIndex:int, arraySize:int, roles:[\u2026]}",
   "example": "POST \u2026/catalog/roles/subRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
   "notes": "Lists the role's children with level and the link's requestDescription. Dashboard always asks from nextIndex 1. Each child's level is a plain number (level: 10), while POST \u2026/parentRoles/list gives each parent's as an object (roleLevel: {level: 20}). Errors seen on the lab: {} \u2192 489 'Internal Error. Please contact Administrator.'.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2559,8 +2559,8 @@
   },
   "answer": "the SoD as sent, with id = its DN under cn=SoDDefs",
   "example": "POST \u2026/catalog/sods {id:\"<cn>\", name, description, roles:[{id:<role 1>},{id:<role 2>}], sodApprovalType:\"alwaysAllow\"}",
-  "notes": "sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error' (a null approval type, seen in the server log); that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written. Errors seen on the lab: sodApprovalType as an enum name or code \u2192 489 'Internal Error. Please contact Administrator.'.",
-  "evidence": "server code + live 2026-10-31"
+  "notes": "sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error'; that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written. Errors seen on the lab: sodApprovalType as an enum name or code \u2192 489 'Internal Error. Please contact Administrator.'.",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2572,7 +2572,7 @@
   "answer": "{approvalRequestDef, approvers?, quorum?}",
   "example": "GET \u2026/catalog/sods/defaultApprovals",
   "notes": "Lab: approvalRequestDef cn=Role Approval,cn=RequestDefs,\u2026; no default approvers or quorum.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "DELETE",
@@ -2600,7 +2600,7 @@
   "answer": "{success, succeeded:[{id}]}",
   "example": "DELETE \u2026/catalog/sods/sod {sods:[{id}]}",
   "notes": "Deleted an SoD; POST \u2026/sods/sod of its DN answered arraySize 0 afterwards. Each SoD needs the caller's DELETE right.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2643,7 +2643,7 @@
   "answer": "{sods:[{id, name, description, roles:[{id, name}], roleLevel, sodApprovalType, approvalRequestDef, localizedNames, localizedDescriptions}], arraySize, nextIndex}",
   "example": "POST \u2026/catalog/sods/sod {sods:[{id}]}",
   "notes": "Read. Unknown ids are skipped (arraySize 0). sodApprovalType reads as alwaysAllow or allowWithWorkflow.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "PUT",
@@ -2690,7 +2690,7 @@
   "answer": "the SoD as sent",
   "example": "PUT \u2026/catalog/sods/sod {id, name, roles, sodApprovalType}",
   "notes": "Changing sodApprovalType to allowWithWorkflow read back as allowWithWorkflow, with the default role approval PRD as approvalRequestDef.",
-  "evidence": "server code + live 2026-10-31"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2702,7 +2702,7 @@
   "answer": "{cacheArraySize, cacheHolders:[{name, objectCount}]}",
   "example": "GET \u2026/catalog/statistics/cacheinfo",
   "notes": "Lab: 19 holders.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2714,7 +2714,7 @@
   "answer": "{clusterName, localAdrress, sentBytes, rcvdBytes, sentMessages, rcvdMessages, isOpen, isConnected, dumpStats} or {}",
   "example": "GET \u2026/catalog/statistics/clusterinfo",
   "notes": "Lab is not clustered: {}. Field is spelled localAdrress. An ordinary user gets 403 (GarnetLoginUnAuthorizedSecurityException).",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31 (non-admin test user)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2726,7 +2726,7 @@
   "answer": "{nodesStats:{Node_1:{ipAddressAndPort, memoryStats:{jvmMemoryUsage, jvmMemoryPool\u2026}}}}",
   "example": "GET \u2026/catalog/statistics/jvmstats",
   "notes": "Lab: one node.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2737,8 +2737,8 @@
   "body": null,
   "answer": "{memoryInfo:{jvmMemoryUsage, jvmMemoryPool, systemMemoryUsage, commitedVirtualMemory}, runtimeStats:[{uptime, startTime, systemProperties:[{key,value}]}], operatingSystemStats, classLoaderStats}",
   "example": "GET \u2026/catalog/statistics/memoryinfo",
-  "notes": "systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. The method itself checks no rights; on the lab it was called as the applications administrator. Value not recorded here. Signed in as an ordinary user (no administrator role) the call was refused with 403 (a 199-byte fault, the same size as the clusterinfo refusal): a filter in front of the statistics calls blocks non-administrators, though the method itself checks no rights. So the trust-store password is exposed to administrators, not to every user.",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31 (non-admin test user)"
+  "notes": "systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. on the lab it was called as the applications administrator. Value not recorded here. Signed in as an ordinary user (no administrator role) the call was refused with 403 (a 199-byte fault, the same size as the clusterinfo refusal): a filter in front of the statistics calls blocks non-administrators. So the trust-store password is exposed to administrators, not to every user.",
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2765,7 +2765,7 @@
   "answer": "{topMostCPUConsumingThread:[{name, state, cpuTimeInMilliSec, stackTrace?}], threadStateCounts:[{state, count}]}",
   "example": "GET \u2026/catalog/statistics/threadinfo?stack=true&thread-count=1",
   "notes": "stackTrace is one string, not a list.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2777,7 +2777,7 @@
   "answer": "{cacheArraySize, cacheHolders:[{name, objectCount}]}",
   "example": "GET \u2026/catalog/statistics/workflowcacheinfo",
   "notes": "Lab: same 19 holders as cacheinfo (workflow engine runs in the same JVM).",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2789,7 +2789,7 @@
   "answer": "{nodesStats:{Node_1:{\u2026}}}",
   "example": "GET \u2026/catalog/statistics/workflowjvmstats",
   "notes": "Same shape as jvmstats.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2801,7 +2801,7 @@
   "answer": "same shape as memoryinfo",
   "example": "GET \u2026/catalog/statistics/workflowmemoryinfo",
   "notes": "Like memoryinfo, it returns every JVM system property, the trust store's password among them (not recorded here). Signed in as an ordinary user it was refused with 403, like memoryinfo.",
-  "evidence": "server code + live 2026-10-30, live 2026-10-31 (non-admin test user)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2813,7 +2813,7 @@
   "answer": "{currentTimeStamp, totalWorkflows, completedWorkflows, completedWorkflowsInLast5Mins, \u2026InLast1Min, \u2026InLast10Secs, failedWorkflows, terminatedWorkflows, inProgressWorkflows, newRequestsInLast5Mins, \u2026}",
   "example": "GET \u2026/catalog/statistics/workflowstatistics",
   "notes": "Lab: 20 total, 17 completed, 2 failed, 1 terminated. currentTimeStamp is a server-local text timestamp.",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2840,7 +2840,7 @@
   "answer": "same shape as threadinfo",
   "example": "GET \u2026/catalog/statistics/workflowthreadinfo",
   "notes": "",
-  "evidence": "server code + live 2026-10-30"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "GET",
@@ -2902,7 +2902,7 @@
   "answer": "{assignmentToList:[{subtype:'USER', assignedToDn, assigneeFullName}], nextIndex (-1 = no more), totalCount}",
   "example": "GET \u2026/access/assignments/identities?permissionId=<role DN>&permissionType=role&nextIndex=1&size=20",
   "notes": "With a holder in the user search root the role's holder appears (before, holders outside the root were never shown). sortBy=LastName with sortOrder=desc and q=Alice were accepted (one holder, so the sort could not be seen). Without permissionType: HTML 500.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "evidence": "inspection and observation, October 2026"
  },
  {
   "method": "POST",
@@ -2983,6 +2983,6 @@
   "answer": "{dn, arraySize, nextIndex, roleAssignments:[{identity, identityDisplayName, assignmentType, assignmentStatus, statusDetails, effectiveDate, reason}]}",
   "example": "POST \u2026/catalog/roles/role/assignments?nextIndex=1&size=20 {id:<role DN>}",
   "notes": "With a direct assignment: assignmentType 'User Assigned to Role', assignmentStatus and statusDetails 'Completed', reason = the text given at assign time, effectiveDate as a formatted date ('Oct 31, 2026', server time zone, not epoch). onlyDirectAssignments=false with q=Alice gave the same row.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "evidence": "inspection and observation, October 2026"
  }
 ]
