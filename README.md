@@ -587,10 +587,9 @@ administrators) takes the permission's DN in the `item` **query** parameter, not
 - `DELETE /access/queue/entry` (empty a cart) hung because of an uncommitted transaction left by an earlier call. It
   worked at once after the applications were restarted **[live]**.
 
-**Not run to the end on the lab:** `POST /access/cprs/assignments/publish` (it needs a finished CPRS delta, which
-the lab's test driver can't produce) and `POST /access/user` (the lab's password policy needs an initial password).
-Their pages under [docs/reference/](docs/reference/) give the body as worked out from the server's code, marked
-"not run". [Every endpoint](docs/endpoints.md) has the counts.
+**Not run to the end on the lab:** `POST /access/cprs/assignments/publish`: it needs a finished CPRS delta, which
+the lab's test driver can't produce. Its page under [docs/reference/](docs/reference/) gives the body as worked out
+from the server's code, marked "not run". [Every endpoint](docs/endpoints.md) has the counts.
 
 **Saves that change more than they say** **[live]**:
 
