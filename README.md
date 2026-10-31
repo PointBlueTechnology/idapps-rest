@@ -571,8 +571,12 @@ administrators) takes the permission's DN in the `item` **query** parameter, not
   worked at once after the applications were restarted **[live]**.
 
 **Not called on the lab:** the writes that change the system's configuration or can't be undone on a shared lab,
-such as configuration saves, logging, caches, the workflow engines, resynchronization and migration. Each one's page
-under [docs/reference/](docs/reference/) gives its body as worked out from the server's and the dashboard's code,
-marked "not run". [Every endpoint](docs/endpoints.md) has the counts.
+such as configuration saves, logging, caches, resynchronization and the migration import. Each one's page under
+[docs/reference/](docs/reference/) gives its body as worked out from the server's and the dashboard's code, marked
+"not run". [Every endpoint](docs/endpoints.md) has the counts.
+
+**The workflow data export** (`GET /access/data/migration/workflow`) works only while the workflow engine is stopped:
+stop it (`POST /admin/workflowengines/status {"engineStatus": 1}`), export, and start it again (`{"engineStatus": 0}`)
+**[live]**. The zip holds the workflow tables, including its settings, so keep it like a secret.
 
 Corrections and results from other versions are welcome.

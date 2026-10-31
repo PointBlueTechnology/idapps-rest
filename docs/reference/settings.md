@@ -8,11 +8,11 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 55 |
+| validated on the lab | 56 |
 | not run: worked out from the server's and the dashboard's code | 29 |
 | did not work on the lab | 5 |
 | answered on the lab, which had no data to show | 2 |
-| not known yet | 2 |
+| not known yet | 1 |
 
 ## Contents
 
@@ -2064,7 +2064,7 @@ List the workflow engines in the cluster with their state.
 
 **Example:** GET …/admin/workflowengines -> engines 1, 3 Timedout; 6 Running
 
-**Notes:** engineState is a localised word (Running, Timedout, …). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right.
+**Notes:** engineState is a localised word (Running, Timedout, …). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right. Each start of the applications adds a new engine id; earlier ids stay listed as Timedout or Shutdown (2026-10-31).
 
 <a id="get-idmprov-rest-admin-workflowengines-configuration"></a>
 ### GET `/IDMProv/rest/admin/workflowengines/configuration`
@@ -2138,7 +2138,7 @@ Save the workflow engine settings.
 
 Start or stop the workflow engine.
 
-**Status:** not known yet. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -2150,9 +2150,11 @@ Start or stop the workflow engine.
 }
 ```
 
-**Answer:** echoes the body
+**Answer:** {engineStatus: int} (what was sent)
 
-**Notes:** Not called (write; stopping halts workflow processing). Any other value or a missing one: 489 'invalid workflow status'. Provisioning administrator only (403). No dashboard call found.
+**Example:** POST …/admin/workflowengines/status {engineStatus:1}
+
+**Notes:** engineStatus is fixed: 1 stops this server's workflow engine, 0 starts it; any other value or a missing one: 489 'invalid workflow status'. Stopping halts workflow processing until it is started again. The engine log showed STOPPING → STOPPED at once and STARTING → RUNNING within a second of the start, but GET …/workflowengines kept showing the engine as 'Starting' (the stored state was not updated after a start over REST; a restart of the applications brought a new engine id 'Running'). Open approval tasks survived. Provisioning administrator only (403). No dashboard call found.
 
 <a id="get-idmprov-rest-catalog-administration-roleresourcesettings"></a>
 ### GET `/IDMProv/rest/catalog/administration/roleResourceSettings`

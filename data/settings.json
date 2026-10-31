@@ -3015,7 +3015,7 @@
   "body": null,
   "answer": "{wfEngineInfoList:[{engineId, engineState}]}",
   "example": "GET \u2026/admin/workflowengines -> engines 1, 3 Timedout; 6 Running",
-  "notes": "engineState is a localised word (Running, Timedout, \u2026). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right.",
+  "notes": "engineState is a localised word (Running, Timedout, \u2026). The lab shows two stale engine ids timed out next to the running one. Needs the workflow-engine page right. Each start of the applications adds a new engine id; earlier ids stay listed as Timedout or Shutdown (2026-10-31).",
   "evidence": "server code + live 2026-10-30"
  },
  {
@@ -3175,7 +3175,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/workflowengines/status",
-  "status": "unknown",
+  "status": "validated",
   "purpose": "Start or stop the workflow engine.",
   "params": [],
   "body": {
@@ -3191,9 +3191,9 @@
     }
    ]
   },
-  "answer": "echoes the body",
-  "example": "",
-  "notes": "Not called (write; stopping halts workflow processing). Any other value or a missing one: 489 'invalid workflow status'. Provisioning administrator only (403). No dashboard call found.",
-  "evidence": "server code"
+  "answer": "{engineStatus: int} (what was sent)",
+  "example": "POST \u2026/admin/workflowengines/status {engineStatus:1}",
+  "notes": "engineStatus is fixed: 1 stops this server's workflow engine, 0 starts it; any other value or a missing one: 489 'invalid workflow status'. Stopping halts workflow processing until it is started again. The engine log showed STOPPING \u2192 STOPPED at once and STARTING \u2192 RUNNING within a second of the start, but GET \u2026/workflowengines kept showing the engine as 'Starting' (the stored state was not updated after a start over REST; a restart of the applications brought a new engine id 'Running'). Open approval tasks survived. Provisioning administrator only (403). No dashboard call found.",
+  "evidence": "server code + live 2026-10-31"
  }
 ]

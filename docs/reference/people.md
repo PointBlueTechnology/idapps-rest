@@ -8,10 +8,9 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 41 |
+| validated on the lab | 42 |
 | not run: worked out from the server's and the dashboard's code | 6 |
 | answered on the lab, which had no data to show | 3 |
-| did not work on the lab | 1 |
 
 ## Contents
 
@@ -180,11 +179,13 @@ Counts roles, resources or users (one kind per call).
 
 Exports the workflow database for migration as a zip file.
 
-**Status:** did not work on the lab. **Evidence:** server code + live 2026-10-31.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
-**Answer:** application/zip download named wf_db_migration.zip
+**Answer:** application/zip, Content-Disposition attachment; filename="wf_db_migration.zip": one <TABLE>/<n>.json file per workflow table (AFACTIVITY, AFCOMMENT, AFDOCUMENT, AFENGINE, AFENGINESTATE, AFFORM, AFMODEL, AFPROCESS, AFPROVISIONINGSTATUS, AFWORKTASK, CONFIGURATION, LOCALIZATION), each {"<TABLE>": [rows]} with lower-case column names; large tables are split into 1.json, 2.json, …
 
-**Notes:** Produces only application/zip (Accept: application/json gets 406). With Accept: application/zip on a running system the answer was an HTML 500; server log: 'Workflow data migration is not possible, since the engine is in running state.' The export needs the workflow engine stopped first (POST /admin/workflowengines/status), which halts workflow processing, so it was not tried. Requires a provisioning administrator. Not used by the dashboard.
+**Example:** POST …/admin/workflowengines/status {engineStatus:1}; GET …/access/data/migration/workflow (Accept: application/zip); POST …/admin/workflowengines/status {engineStatus:0}
+
+**Notes:** Exports the workflow engine's database tables for migration. Only while the workflow engine is stopped: on a running engine the answer is an HTML 500 (server log: 'Workflow data migration is not possible, since the engine is in running state.'). With the engine stopped the export took 0.4 s (425 KB, 14 files, on a small lab). Send Accept: application/zip; Accept: application/json gets 406. The CONFIGURATION table carries the workflow settings, including the email-based approval account's password setting (empty on the lab; whether a set value is exported in clear was not seen), so treat the file as sensitive. Requires a provisioning administrator. Not used by the dashboard.
 
 <a id="post-idmprov-rest-access-data-migration-workflow"></a>
 ### POST `/IDMProv/rest/access/data/migration/workflow`
