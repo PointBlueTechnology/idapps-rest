@@ -8,10 +8,10 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 19 |
+| validated on the lab | 20 |
 | did not work on the lab | 10 |
 | not run: worked out from the server's and the dashboard's code | 4 |
-| answered on the lab, which had no data to show | 2 |
+| answered on the lab, which had no data to show | 1 |
 
 ## Contents
 
@@ -224,7 +224,7 @@ For the workflow engine: the best locale for each user.
 
 The signed-in person's tasks, simple form.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 + server code.
+**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 + server code, live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -233,6 +233,8 @@ The signed-in person's tasks, simple form.
 **Answer:** {total,hasMore,userTypeInTask,…}
 
 **Example:** GET …/access/tasks?limit=10
+
+**Notes:**  2026-10-31: still {total:0} for the administrator while a role approval task addressed to another user was open (GET …/tasks/list listed that task).
 
 <a id="get-idmprov-rest-access-teams-list"></a>
 ### GET `/IDMProv/rest/access/teams/list`
@@ -607,7 +609,7 @@ A role's assignments, with paging, sorting and a filter by source.
 
 Search separation-of-duties constraints.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** live 2026-10-30 + server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -615,9 +617,28 @@ Search separation-of-duties constraints.
 | `nextIndex` | query | no | 1-based start (default 1) |  |
 | `size` | query | no | page size (default 10) |  |
 
-**Answer:** {arraySize,nextIndex,…}
+| Body field | Required | Accepted values | Kind |
+|---|---|---|---|
+| `roles` | yes | [{id: role DN}]: the SoDs any of these roles is part of | per installation |
 
-**Notes:** The lab has no SoDs.
+```json
+{
+  "roles": [
+    {
+      "id": "cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+    },
+    {
+      "id": "cn=<role 2>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+    }
+  ]
+}
+```
+
+**Answer:** {sods:[…as POST /sods/sod…]}
+
+**Example:** POST …/catalog/sods/list {roles:[{id:"cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}]}
+
+**Notes:** Finds the SoDs that involve the given roles (one role gave both of its SoDs). {} or a body without roles answers {arraySize:0}, and q alone finds nothing: it is not a search of all SoDs (use GET …/catalog/sods for that).
 
 <a id="get-idmprov-rest-catalog-supportedlocales"></a>
 ### GET `/IDMProv/rest/catalog/supportedlocales`

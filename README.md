@@ -48,6 +48,7 @@ How each fact is known:
 - **[server code]:** read from the 4.10.2 server's REST classes: their routes, defaults, the fields they check and
   the values they compare against. The reference pages say so in each operation's status. The code itself is not
   reproduced here.
+- **[server log]:** read from the applications' own log (`catalina.out`) after a call failed with a generic error.
 - **[reference]:** only from the vendor's reference.
 
 ---
@@ -468,7 +469,9 @@ All **[live]**:
 | `GET /access/proxy/for` | the people the caller may act for: `{"userArraySize", …}` |
 | `GET /access/availability` | `{"totalAvailability", "availabilityStatus", "hasDelegatesAssigned", "newable"}` |
 
-The lab had no SoD constraints, delegations or proxy assignments, so the shapes are those of empty answers.
+With test data in place (two SoD constraints, a delegation and a proxy), the full answers are on the
+[reference pages](docs/reference/). An assignment that breaks an SoD is refused with `errCode` "SoD-Violation", so
+the violation reads stay short unless an approved exception exists.
 
 ---
 
@@ -558,6 +561,14 @@ request object):
 administrators) takes the permission's DN in the `item` **query** parameter, not in `id`
 (`?item=<role DN>&type=role`, body `{}`) **[server code, live]**. The answer is
 `{"totalSize", "total", "nextIndex", …}`.
+
+**Also since fixed:**
+
+- `POST /catalog/sods` (create an SoD constraint) takes `sodApprovalType` as `alwaysAllow` or `allowWithWorkflow`,
+  the names the reads return. The enum names (`ALWAYS_ALLOW`) and the codes (`"0"`) arrive as no value, and the
+  server fails with a generic 489 **[server log, live]**.
+- `DELETE /access/queue/entry` (empty a cart) hung because of an uncommitted transaction left by an earlier call. It
+  worked at once after the applications were restarted **[live]**.
 
 **Not called on the lab:** the writes that change the system's configuration or can't be undone on a shared lab,
 such as configuration saves, logging, caches, the workflow engines, resynchronization and migration. Each one's page

@@ -2,7 +2,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/codeMap/{id}/values",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the values of one entitlement code map, paged and filtered.",
   "params": [
    {
@@ -35,15 +35,15 @@
    }
   ],
   "body": null,
-  "answer": "{nextIndex:int, arraySize:int, hasMore:bool, codeMapValues?:[...]}",
-  "example": "GET \u2026/codeMap/SGVscGRlc2sgRW50aXRsZW1lbnQ=/values?q=*&nextIndex=1&size=5",
-  "notes": "An unknown id is not an error: it answers 200 with arraySize 0. The lab has no entitlement code maps (no drivers with entitlements in the catalog), so every id tried came back empty. A blank id gives 489. The dashboard reads codeMapValues from the answer.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{nextIndex:int, arraySize:int, hasMore:bool, codeMapValues:[{id, value, displayLabel, description, nativeValue}]}",
+  "example": "GET \u2026/codeMap/<Base64 of the viewID>/values?q=*",
+  "notes": "id is the Base64 of the code map key, which is the entitlement view's viewID (the escaped GUID string from POST /catalog/drivers/driver, e.g. \\97\\64\\89\u2026). The entitlement DN or name, Base64-encoded, answered arraySize 0. An unknown id is not an error (200, arraySize 0); a blank id gives 489. value is the compact JSON a resource stores; nativeValue is the connected system's own key.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/codemaprefresh/driver",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Starts a code map refresh for every resource-mapped entitlement of the given drivers.",
   "params": [],
   "body": {
@@ -69,10 +69,10 @@
     }
    ]
   },
-  "answer": "{succeeded:[{id,name}], failed:[{id,reason}]}",
+  "answer": "{succeeded:[{id, name}], failed:[{id, reason}]}",
   "example": null,
-  "notes": "Not called (it refreshes). The driver key is 'id', not 'dn'. Only entitlements configured for resource mapping are refreshed; if a refresh is already in progress the call returns at once with that entity listed under succeeded and an in-progress reason. Also flushes the driver and entitlement-value caches. Dashboard defines the call (body passed through).",
-  "evidence": "server code + dashboard code"
+  "notes": "Refreshes the code maps of the driver's resource-mapping entitlements by querying the connected system through the driver (a running driver is needed). A query entitlement succeeded; a fixed-value one is listed under failed with 'Unable to complete codemap refresh' (it has no code map, which is expected). The driver key is 'id', not 'dn'. If a refresh is already in progress the call returns at once with that entity listed under succeeded and an in-progress reason. Also flushes the driver and entitlement-value caches.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -236,14 +236,14 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/data/migration/workflow",
-  "status": "unknown",
+  "status": "not-working",
   "purpose": "Exports the workflow database for migration as a zip file.",
   "params": [],
   "body": null,
   "answer": "application/zip download named wf_db_migration.zip",
   "example": null,
-  "notes": "Not called (migration endpoint). Produces only application/zip, so a request with Accept: application/json gets 406 (seen in the first pass). Requires a provisioning administrator. Not used by the dashboard.",
-  "evidence": "server code"
+  "notes": "Produces only application/zip (Accept: application/json gets 406). With Accept: application/zip on a running system the answer was an HTML 500; server log: 'Workflow data migration is not possible, since the engine is in running state.' The export needs the workflow engine stopped first (POST /admin/workflowengines/status), which halts workflow processing, so it was not tried. Requires a provisioning administrator. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",

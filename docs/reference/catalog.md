@@ -8,10 +8,10 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 46 |
-| answered on the lab, which had no data to show | 18 |
-| not run: worked out from the server's and the dashboard's code | 9 |
-| did not work on the lab | 3 |
+| validated on the lab | 66 |
+| not run: worked out from the server's and the dashboard's code | 7 |
+| did not work on the lab | 2 |
+| answered on the lab, which had no data to show | 1 |
 
 ## Contents
 
@@ -507,7 +507,7 @@ Would check which of the listed permissions the signed-in delegated administrato
 
 Lists the drivers whose entitlements the caller may bind to resources (resource-mapping drivers).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -516,18 +516,18 @@ Lists the drivers whose entitlements the caller may bind to resources (resource-
 | `nextIndex` | query | no | echoed back, no paging |  |
 | `size` | query | no | ignored |  |
 
-**Answer:** {nextIndex, drivers:[{id, name}]} (drivers omitted when none)
+**Answer:** {nextIndex:int, drivers:[{id, name}]}
 
 **Example:** GET …/catalog/drivers?type=2
 
-**Notes:** Lab has no entitlement-enabled drivers, so every type (0-5) answered {nextIndex:0}. Each driver is also checked for the caller's ENTITLEMENT BIND right.
+**Notes:** Lists drivers that have at least one entitlement whose entitlement configuration (the driver's EntitlementConfiguration resource) enables the mapping the type asks for. With a test driver whose two entitlements set resource-mapping, role-mapping and cprs-supported to true, types 1, 2, 3 and 4 listed it, and types 0 and 5 answered {nextIndex:0}. A driver with entitlements but no EntitlementConfiguration is not listed. Each driver is also checked for the caller's ENTITLEMENT BIND right.
 
 <a id="post-idmprov-rest-catalog-drivers-driver"></a>
 ### POST `/IDMProv/rest/catalog/drivers/driver`
 
 Returns a driver with its entitlements (types, views/logical systems, parameter types) for resource mapping.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -544,18 +544,18 @@ Returns a driver with its entitlements (types, views/logical systems, parameter 
 }
 ```
 
-**Answer:** {id, name, entitlements:[{id, displayName, description, entitlementType, views:[{displayName, viewID, queryKey}], paramTypes}]}
+**Answer:** {id, name, entitlements:[{id, displayName, description, isSingleValued, entitlementType, views?:[{displayName, viewID, description}]}]}
 
-**Example:** POST …/catalog/drivers/driver {id:"cn=User Application Driver,cn=driverset1,o=system"}
+**Example:** POST …/catalog/drivers/driver {id:"cn=<driver>,cn=driverset1,o=system"}
 
-**Notes:** Lab drivers have no entitlements: the answer is just {id, name}. Entitlements whose configuration is missing or not resource-mapping-enabled are left out.
+**Notes:** entitlementType is STATIC_PARAMS for an entitlement with a fixed list of values and APP_QUERY_PARAMS for one whose values come from a query of the connected system (query-app). Only query entitlements have views; a view's viewID is the code map key (an escaped GUID such as \97\64\89…), used by the code map calls. The entitlement ids come back lower-cased. cprsSupported=true gave the same list when every entitlement is cprs-supported. Entitlements whose configuration is missing or not resource-mapping-enabled are left out.
 
 <a id="post-idmprov-rest-catalog-drivers-driverentitlementviewvalues-list"></a>
 ### POST `/IDMProv/rest/catalog/drivers/driverEntitlementViewValues/list`
 
 Lists code-map values of several entitlements for one logical system (view), unpaged.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -577,18 +577,18 @@ Lists code-map values of several entitlements for one logical system (view), unp
 }
 ```
 
-**Answer:** {entitlementValues:[…], arraySize} or {} when none
+**Answer:** {entitlementValues:[{name, description, value, id, entitlementName}]}
 
 **Example:** POST …/drivers/driverEntitlementViewValues/list {id, viewID, entitlements:[{id, paramLogicSystem}]}
 
-**Notes:** Without paramLogicSystem the server fails with 489 'Error occurred retrieving data from Provisioning Param Code Map table'. With it the lab answered {} (no code maps). Not used by the dashboard (it uses listV2).
+**Notes:** paramLogicSystem on each entitlement is the view's viewID; without it the server fails with 489 'Error occurred retrieving data from Provisioning Param Code Map table'. Not used by the dashboard (it uses listV2).
 
 <a id="post-idmprov-rest-catalog-drivers-driverentitlementviewvalues-listv2"></a>
 ### POST `/IDMProv/rest/catalog/drivers/driverEntitlementViewValues/listV2`
 
 Paged variant: lists code-map values of entitlements that have a logical system (view).
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -617,18 +617,18 @@ Paged variant: lists code-map values of entitlements that have a logical system 
 }
 ```
 
-**Answer:** {nextIndex, arraySize, entitlementValues:[…]}
+**Answer:** {nextIndex:int, arraySize:int, entitlementValues:[{name, description, value, id, entitlementName}]}
 
 **Example:** POST …/drivers/driverEntitlementViewValues/listV2?query=*&pageSize=10&nextIndex=1 {id, viewID, entitlements:[{id, displayName, paramLogicSystem}]}
 
-**Notes:** Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing; with it the lab answered nothing.
+**Notes:** Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing.
 
 <a id="post-idmprov-rest-catalog-drivers-entitlementvalues-list"></a>
 ### POST `/IDMProv/rest/catalog/drivers/entitlementValues/list`
 
 Lists every code-map value of a driver's (or one entitlement's) resource-mapping entitlements, unpaged.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -640,18 +640,18 @@ Lists every code-map value of a driver's (or one entitlement's) resource-mapping
 }
 ```
 
-**Answer:** {entitlementValues:[{id, value, name, description, entitlementName}], arraySize} or {}
+**Answer:** {entitlementValues:[{name, description, value, id, entitlementName}]}
 
-**Example:** POST …/drivers/entitlementValues/list {id:"cn=User Application Driver,cn=driverset1,o=system"}
+**Example:** POST …/catalog/drivers/entitlementValues/list {id:"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system"}
 
-**Notes:** Lab answered {}. Not used by the dashboard.
+**Notes:** The id can be an entitlement DN or a driver DN; both gave the code map values of the driver's query entitlements. value is what a resource stores: for an idm4 entitlement a compact JSON object {"ID":"<native value>"}. Fixed-value entitlements are not listed (their values are not in a code map). Not used by the dashboard.
 
 <a id="post-idmprov-rest-catalog-drivers-entitlementvalues-listv2"></a>
 ### POST `/IDMProv/rest/catalog/drivers/entitlementValues/listV2`
 
 Paged list of an entitlement's code-map values when it has no logical system.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -670,18 +670,18 @@ Paged list of an entitlement's code-map values when it has no logical system.
 }
 ```
 
-**Answer:** {nextIndex, arraySize, entitlementValues:[…]}
+**Answer:** {nextIndex:int, arraySize:int, entitlementValues:[{name, description, value, id, entitlementName}]}
 
-**Example:** POST …/drivers/entitlementValues/listV2?query=*&pageSize=10&nextIndex=1 {id}
+**Example:** POST …/catalog/drivers/entitlementValues/listV2?query=<text> {id:"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system", hasLogicalSystem:false}
 
-**Notes:** Dashboard sends {id: entitlement DN, hasLogicalSystem:false}. Lab: {nextIndex:0, arraySize:0}.
+**Notes:** Dashboard sends {id: entitlement DN, hasLogicalSystem:false}. The query parameter filters on the value's name (query=group1 left one of two values). A fixed-value entitlement answered {nextIndex:0, arraySize:0}: only code-map values are listed.
 
 <a id="post-idmprov-rest-catalog-drivers-entitlementviewvalues-list"></a>
 ### POST `/IDMProv/rest/catalog/drivers/entitlementViewValues/list`
 
 Lists the values of one code-map view.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -694,35 +694,35 @@ Lists the values of one code-map view.
 }
 ```
 
-**Answer:** {entitlementValues:[…]} or {}
+**Answer:** {entitlementValues:[{name, description, value}]}
 
-**Example:** POST …/drivers/entitlementViewValues/list {viewID:"Helpdesk Entitlement"}
+**Example:** POST …/catalog/drivers/entitlementViewValues/list {viewID:"<viewID from drivers/driver>"}
 
-**Notes:** Lab answered {} even for its one view. Not used by the dashboard.
+**Notes:** viewID is a view's viewID from POST /catalog/drivers/driver (or entitlementInfo). Not used by the dashboard.
 
 <a id="get-idmprov-rest-catalog-entitlements-entitlementinfo"></a>
 ### GET `/IDMProv/rest/catalog/entitlements/entitlementInfo`
 
 Returns one entitlement's configuration: value type, multi-value, resource mapping, views and parameter types.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `entilementDN` | query | yes | entitlement DN (note the vendor's spelling, missing the t) | per installation |
 
-**Answer:** {dn, name, description, multiValue, resourceMappingEnabled, type: NO_VALUE|FREE_FORM|DB|ADMIN|QUERY, entitlementLists, entitlementParamTypes}
+**Answer:** {dn, displayName, description, isMultiValue, type, views?:[{displayName, viewID, description}], paramTypes, isResourceMappingEnabled}
 
-**Example:** GET …/catalog/entitlements/entitlementInfo?entilementDN=cn=Group,cn=<driver>,cn=driverset1,o=system
+**Example:** GET …/catalog/entitlements/entitlementInfo?entilementDN=cn=<entitlement>,cn=<driver>,cn=driverset1,o=system
 
-**Notes:** Missing or unknown DN answers 204 with no body (lab has no entitlements). type is fixed: FREE_FORM (external, free-form), DB (external with code map), ADMIN (static), QUERY (application query).
+**Notes:** Missing or unknown DN answers 204 with no body. type is fixed: FREE_FORM (external, free-form), DB (external with code map), ADMIN (fixed values; seen for an entitlement with a <values><value> list) and QUERY (application query; seen for a query-app entitlement, which also carries its views).
 
 <a id="post-idmprov-rest-catalog-entitlements-entitlementvalues"></a>
 ### POST `/IDMProv/rest/catalog/entitlements/entitlementValues`
 
 Lists the code-map values of a view, optionally limited to parameter types.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -736,18 +736,18 @@ Lists the code-map values of a view, optionally limited to parameter types.
 }
 ```
 
-**Answer:** {entitlementValues:[{name, description, paramType, value}], arraySize}
+**Answer:** {arraySize:int, entitlementValues:[{name, description, value}]}
 
-**Example:** POST …/catalog/entitlements/entitlementValues {viewID:"Helpdesk Entitlement", type:null}
+**Example:** POST …/catalog/entitlements/entitlementValues {viewID:"<viewID>", type:null}
 
-**Notes:** Used by form selection fields bound to a code map (dashboard sends viewID = the field's codeMapKey and type null). Results are cached per view/locale/types. Lab: arraySize 0 even for its one view; an empty body also answers {arraySize:0}.
+**Notes:** Used by form selection fields bound to a code map (dashboard sends viewID = the field's codeMapKey, which is the view's viewID, and type null). Results are cached per view/locale/types. An empty body answers {arraySize:0}.
 
 <a id="post-idmprov-rest-catalog-entitlements-resources"></a>
 ### POST `/IDMProv/rest/catalog/entitlements/resources`
 
 Finds the existing resources bound to an entitlement value, or proposes a new one, when mapping an entitlement to a role.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -773,11 +773,11 @@ Finds the existing resources bound to an entitlement value, or proposes a new on
 }
 ```
 
-**Answer:** {entResourcesList:[{entName, resources:[resource…]}]}
+**Answer:** {entResourcesList:[{resources:[{id, name, description, driver, entitlements:[{id, displayName, description, parameterValue, entitlementType}]}]}]}
 
-**Example:** POST …/catalog/entitlements/resources {entitlements:[{id, displayName, parameterName, parameterValue, driverName}]}
+**Example:** POST …/catalog/entitlements/resources {entitlements:[{id:"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system", parameterValue:"{\"ID\":\"<value>\"}", driverName:"<driver name>"}]}
 
-**Notes:** Read-only. Lab has no entitlements; a made-up entitlement DN gave 489 'Internal Error'. When no resource matches, the server proposes an unsaved one built from the entitlement.
+**Notes:** Read-only: finds the resources bound to each entitlement and value. The value must match what the resource stores exactly: compact JSON for a query entitlement ({"ID":"…"}, no spaces), the plain value for a fixed-value one. When no resource matches, the server proposes an unsaved one built from the entitlement. A made-up entitlement DN gave 489 'Internal Error'.
 
 <a id="post-idmprov-rest-catalog-entitlements-tempresources"></a>
 ### POST `/IDMProv/rest/catalog/entitlements/tempResources`
@@ -845,7 +845,7 @@ Searches resource categories.
 
 Create a resource (here without an entitlement binding).
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects), live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -870,7 +870,7 @@ Create a resource (here without an entitlement binding).
 
 **Example:** POST …/catalog/resources {id, name, description}
 
-**Notes:** No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed).
+**Notes:** No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {"ID":"…"} (live 2026-10-31).
 
 <a id="post-idmprov-rest-catalog-resources-category"></a>
 ### POST `/IDMProv/rest/catalog/resources/category`
@@ -902,7 +902,7 @@ Create a resource category (meant to).
 
 Lists resources bound to a given driver, with filters.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -924,11 +924,11 @@ Lists resources bound to a given driver, with filters.
 }
 ```
 
-**Answer:** {nextIndex, arraySize, resources:[{id, name, description, driver, entitlementValues, managedBy}]}
+**Answer:** {nextIndex:int, arraySize:int, resources:[{id, name, description, driver, entitlementValues:[{name, description, type, value, id, driver, views}], managedBy}]}
 
-**Example:** POST …/catalog/resources/driverResources?q=*&nextIndex=1&size=10 {id:"cn=User Application Driver,cn=driverset1,o=system"}
+**Example:** POST …/catalog/resources/driverResources?entitlementId=cn=<entitlement>,cn=<driver>,cn=driverset1,o=system {id:"cn=<driver>,cn=driverset1,o=system"}
 
-**Notes:** Lab has no driver-bound resources, so arraySize 0. The dashboard also sends sortBy/sortOrder/column, which the server does not read.
+**Notes:** Resources bound to the driver's entitlements. entitlementId kept the one resource of that entitlement; managedBy=true kept only the resource with managedBy 1 (CPRS). The dashboard also sends sortBy/sortOrder/column, which the server does not read.
 
 <a id="get-idmprov-rest-catalog-resources-list"></a>
 ### GET `/IDMProv/rest/catalog/resources/list`
@@ -1014,7 +1014,7 @@ Returns full details of one or more resources (v1).
 
 Change one resource.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects), live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1033,7 +1033,7 @@ Change one resource.
 
 **Example:** PUT …/catalog/resources/resource {id, name, description}
 
-**Notes:** Localized name/description for the request locale follow the new values.
+**Notes:** Localized name/description for the request locale follow the new values. managedBy: 1 marks the resource as managed by permission reconciliation (CPRS); only such resources appear in GET /access/cprs/settings and can be reconciled. Send the whole resource as read from POST …/resources/resourceV2 with the field changed (live 2026-10-31).
 
 <a id="post-idmprov-rest-catalog-resources-resource-assignments-assign"></a>
 ### POST `/IDMProv/rest/catalog/resources/resource/assignments/assign`
@@ -1104,7 +1104,7 @@ Revoke a resource from identities.
 
 Changes the entitlement binding of an existing resource.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1124,18 +1124,18 @@ Changes the entitlement binding of an existing resource.
 }
 ```
 
-**Answer:** response list
+**Answer:** {success:true, succeeded:[{id: resource cn}]}
 
-**Example:** PUT …/resources/resource/entitlement {id, entitlements}
+**Example:** PUT …/catalog/resources/resource/entitlement {id:"cn=<resource>,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system", entitlements:[{id:"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system", action:1, parameterValue:"{\"ID\":\"<value>\"}"}]}
 
-**Notes:** Not called (write). Missing body: 400 payload required.
+**Notes:** Replaces the resource's entitlement binding; used here to correct a value. action is needed as on create. Missing body: 400 payload required.
 
 <a id="post-idmprov-rest-catalog-resources-resource-entitlements-list"></a>
 ### POST `/IDMProv/rest/catalog/resources/resource/entitlements/list`
 
 Lists the entitlement values bound to a resource.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1147,18 +1147,18 @@ Lists the entitlement values bound to a resource.
 }
 ```
 
-**Answer:** {entitlementValues:[…]} or {} when the resource has none
+**Answer:** {entitlementValues:[{name, description, type, value, id, driver}]}
 
 **Example:** POST …/resources/resource/entitlements/list {id:"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}
 
-**Notes:** Lab helpdesk resources have no entitlements: {}. An empty body gives an HTML 500.
+**Notes:** Shows the resource's entitlement bindings. For a query entitlement value is the native value taken out of the stored JSON; a stored value that does not parse is shown as 'Invalid ** <value> ** Invalid' (seen when the JSON had spaces). A resource without entitlements answers {}. An empty body gives an HTML 500.
 
 <a id="post-idmprov-rest-catalog-resources-resource-entitlements-list-v2"></a>
 ### POST `/IDMProv/rest/catalog/resources/resource/entitlements/list/v2`
 
 Same as entitlements/list, typed by entity.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1174,11 +1174,11 @@ Same as entitlements/list, typed by entity.
 }
 ```
 
-**Answer:** {entitlementValues:[…]} or {}
+**Answer:** {entitlementValues:[{name, description, type, value, id, driver}]}
 
 **Example:** POST …/resources/resource/entitlements/list/v2?entityType=resource {id}
 
-**Notes:** Lab: {}. Not used by the dashboard.
+**Notes:** Same as /list; a fixed-value binding showed value as '[alpha]' (the list form). Not used by the dashboard.
 
 <a id="put-idmprov-rest-catalog-resources-resources"></a>
 ### PUT `/IDMProv/rest/catalog/resources/resources`
@@ -1398,7 +1398,7 @@ Map resources to a role.
 
 Lists the resources mapped to a role.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1419,11 +1419,11 @@ Lists the resources mapped to a role.
 }
 ```
 
-**Answer:** {nextIndex, arraySize, resources:[{id, name, description, status, mappingDescription, entityKey, driver…}]}
+**Answer:** {nextIndex:int, arraySize:int, resources:[…]}
 
 **Example:** POST …/catalog/roles/mappedResources/list?nextIndex=1&size=10&q=* {id:"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}
 
-**Notes:** Lab system roles have no mapped resources. The dashboard sends the selected role object and driverID.
+**Notes:** Lists the resources mapped to the role, with mappingDescription, status 50 and entityKey (the association object, needed by DELETE …/roles/mappedResources).
 
 <a id="delete-idmprov-rest-catalog-roles-parentroles"></a>
 ### DELETE `/IDMProv/rest/catalog/roles/parentRoles`
@@ -1491,7 +1491,7 @@ Give a role parent roles.
 
 Lists a role's parent roles.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1511,11 +1511,11 @@ Lists a role's parent roles.
 }
 ```
 
-**Answer:** {nextIndex, arraySize, roles:[{id, name, description, level…}]}
+**Answer:** {nextIndex:int, arraySize:int, roles:[…]}
 
 **Example:** POST …/catalog/roles/parentRoles/list?nextIndex=1&size=10&q=* {id:"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}
 
-**Notes:** Lab system roles have no parents. Unknown role → 400 'not found'.
+**Notes:** Lists the role's parents (a level-20 role over a level-10 one here), with the requestDescription given when the link was made. Unknown role → 400 'not found'.
 
 <a id="post-idmprov-rest-catalog-roles-role-assignments"></a>
 ### POST `/IDMProv/rest/catalog/roles/role/assignments`
@@ -1556,7 +1556,7 @@ Lists a role's assignments (who has it and how).
 
 Assign a role directly to identities (no request workflow).
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects), live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1589,7 +1589,7 @@ Assign a role directly to identities (no request workflow).
 
 **Example:** POST …/catalog/roles/role/assignments/assign {reason, assignments:[{id, entityType:'role', assignmentToList:[{assignedToDn, subtype:'user'}]}]}
 
-**Notes:** Completed within 12 s: POST /catalog/roles/role/assignments shows 'User Assigned to Role', status Completed, and GET /access/assignments/identities lists the user. The recipient field is subtype (as in the revocation), not type. Revoked with DELETE /access/assignments/list.
+**Notes:** Completed within 12 s: POST /catalog/roles/role/assignments shows 'User Assigned to Role', status Completed, and GET /access/assignments/identities lists the user. The recipient field is subtype (as in the revocation), not type. Revoked with DELETE /access/assignments/list. A conflicting assignment is refused: 200 with success false, errCode 'SoD-Violation', reason 'Separation of duties violation found' and a sods list naming the SoD and both roles (live 2026-10-31).
 
 <a id="put-idmprov-rest-catalog-roles-roles"></a>
 ### PUT `/IDMProv/rest/catalog/roles/roles`
@@ -1723,7 +1723,7 @@ Make roles children of a role.
 
 Lists a role's child roles with their request details.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1743,28 +1743,27 @@ Lists a role's child roles with their request details.
 }
 ```
 
-**Answer:** {nextIndex, arraySize, roles:[{id, name, description, level, requestDescription, requester, approval}]}
+**Answer:** {nextIndex:int, arraySize:int, roles:[…]}
 
 **Example:** POST …/catalog/roles/subRoles/list?nextIndex=1&size=10&q=* {id:"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"}
 
-**Notes:** Lab system roles have no children. Dashboard always asks from nextIndex 1.
+**Notes:** Lists the role's children with level and the link's requestDescription. Dashboard always asks from nextIndex 1.
 
 <a id="post-idmprov-rest-catalog-sods"></a>
 ### POST `/IDMProv/rest/catalog/sods`
 
-Create a separation-of-duties constraint between two roles (meant to).
+Create a separation-of-duties constraint between two roles.
 
-**Status:** did not work on the lab. **Evidence:** server code + live.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
-| `id` | yes | the new SoD's cn; placed under the SoD container |  |
+| `id` | yes | the new SoD's cn |  |
 | `name` | yes | display name |  |
-| `description` | yes | required by the server code |  |
-| `roles` | yes | the two conflicting roles [{id}] | per installation |
-| `sodApprovalType` | yes | enumeration names ALWAYS_ALLOW or ALLOW_WITH_WORKFLOW (the server's enum carries '0'/'1' internally; the JSON form is the name) | fixed |
-| `isDefaultApproversUsed / approvers / approvalRequestDef / approvalQuorum` | no | approval settings; defaults from GET /catalog/sods/defaultApprovals | per installation |
-| `localizedNames / localizedDescriptions` | no | [{locale, name}] / [{locale, desc}] | per installation |
+| `description` | yes | text |  |
+| `roles` | yes | two different roles of the same level, [{id: role DN}] | per installation |
+| `sodApprovalType` | yes | alwaysAllow or allowWithWorkflow | fixed |
+| `approvalRequestDef / isDefaultApproversUsed / approvers` | no | for allowWithWorkflow; defaults from GET …/sods/defaultApprovals | per installation |
 
 ```json
 {
@@ -1773,21 +1772,21 @@ Create a separation-of-duties constraint between two roles (meant to).
   "description": "<text>",
   "roles": [
     {
-      "id": "<role DN 1>"
+      "id": "cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
     },
     {
-      "id": "<role DN 2>"
+      "id": "cn=<role 2>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
     }
   ],
-  "sodApprovalType": "ALWAYS_ALLOW"
+  "sodApprovalType": "alwaysAllow"
 }
 ```
 
-**Answer:** the SoD with its DN and hasConflicts (server code)
+**Answer:** the SoD as sent, with id = its DN under cn=SoDDefs
 
-**Example:** POST …/catalog/sods {id, name, description, roles, sodApprovalType}
+**Example:** POST …/catalog/sods {id:"<cn>", name, description, roles:[{id:<role 1>},{id:<role 2>}], sodApprovalType:"alwaysAllow"}
 
-**Notes:** Five variants (sodApprovalType '0', ALWAYS_ALLOW, ALLOW_WITH_WORKFLOW; with and without approvalRequestDef from sods/defaultApprovals, isDefaultApproversUsed and localized names) all gave 489 'Internal Error. Please contact Administrator.' with subcode 'Internal exception occurred processing REST service'. Nothing was created (GET /catalog/sods arraySize 0, POST /catalog/sods/sod of the expected DN empty). The duplicate-SoD check before the write wraps any failure in that generic message, so the cause is not visible.
+**Notes:** sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error' (a null approval type, seen in the server log); that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written.
 
 <a id="get-idmprov-rest-catalog-sods-defaultapprovals"></a>
 ### GET `/IDMProv/rest/catalog/sods/defaultApprovals`
@@ -1834,7 +1833,7 @@ Deletes SoDs.
 
 Returns details of one or more SoDs.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1855,50 +1854,47 @@ Returns details of one or more SoDs.
 }
 ```
 
-**Answer:** {sods:[…], arraySize, nextIndex}
+**Answer:** {sods:[{id, name, description, roles:[{id, name}], roleLevel, sodApprovalType, approvalRequestDef, localizedNames, localizedDescriptions}], arraySize, nextIndex}
 
 **Example:** POST …/catalog/sods/sod {sods:[{id}]}
 
-**Notes:** Read. Lab has no SoDs; unknown ids are skipped (arraySize 0).
+**Notes:** Read. Unknown ids are skipped (arraySize 0). sodApprovalType reads as alwaysAllow or allowWithWorkflow.
 
 <a id="put-idmprov-rest-catalog-sods-sod"></a>
 ### PUT `/IDMProv/rest/catalog/sods/sod`
 
 Updates a SoD.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
-| `id` | yes | for create: the new SoD's CN (the server puts it under the SoD container); for update: SoD DN |  |
-| `name` | yes | display name |  |
-| `description` | no | text |  |
-| `roles` | yes | the two conflicting roles [{id}] | per installation |
-| `sodApprovalType` | yes | 0 = always allow, 1 = allow with approval workflow | fixed |
-| `isDefaultApproversUsed / approvers / approvalRequestDef / approvalQuorum` | no | approval settings (defaults from …/sods/defaultApprovals) | per installation |
-| `localizedNames / localizedDescriptions` | no | per locale | per installation |
+| `id` | yes | the SoD's DN | per installation |
+| `sodApprovalType` | yes | alwaysAllow or allowWithWorkflow | fixed |
+| `name / description / roles` | yes | as on create |  |
 
 ```json
 {
-  "id": "<sod dn>",
-  "name": "\u2026",
+  "id": "cn=<sod>,cn=SoDDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+  "name": "<display name>",
+  "description": "<text>",
   "roles": [
     {
-      "id": "<role dn 1>"
+      "id": "cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
     },
     {
-      "id": "<role dn 2>"
+      "id": "cn=<role 2>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
     }
   ],
-  "sodApprovalType": "0"
+  "sodApprovalType": "allowWithWorkflow"
 }
 ```
 
-**Answer:** response list
+**Answer:** the SoD as sent
 
 **Example:** PUT …/catalog/sods/sod {id, name, roles, sodApprovalType}
 
-**Notes:** Not called (write).
+**Notes:** Changing sodApprovalType to allowWithWorkflow read back as allowWithWorkflow, with the default role approval PRD as approvalRequestDef.
 
 <a id="get-idmprov-rest-catalog-statistics-cacheinfo"></a>
 ### GET `/IDMProv/rest/catalog/statistics/cacheinfo`

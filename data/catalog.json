@@ -426,7 +426,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/catalog/drivers",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the drivers whose entitlements the caller may bind to resources (resource-mapping drivers).",
   "params": [
    {
@@ -459,15 +459,15 @@
    }
   ],
   "body": null,
-  "answer": "{nextIndex, drivers:[{id, name}]} (drivers omitted when none)",
+  "answer": "{nextIndex:int, drivers:[{id, name}]}",
   "example": "GET \u2026/catalog/drivers?type=2",
-  "notes": "Lab has no entitlement-enabled drivers, so every type (0-5) answered {nextIndex:0}. Each driver is also checked for the caller's ENTITLEMENT BIND right.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lists drivers that have at least one entitlement whose entitlement configuration (the driver's EntitlementConfiguration resource) enables the mapping the type asks for. With a test driver whose two entitlements set resource-mapping, role-mapping and cprs-supported to true, types 1, 2, 3 and 4 listed it, and types 0 and 5 answered {nextIndex:0}. A driver with entitlements but no EntitlementConfiguration is not listed. Each driver is also checked for the caller's ENTITLEMENT BIND right.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/drivers/driver",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Returns a driver with its entitlements (types, views/logical systems, parameter types) for resource mapping.",
   "params": [
    {
@@ -497,15 +497,15 @@
     }
    ]
   },
-  "answer": "{id, name, entitlements:[{id, displayName, description, entitlementType, views:[{displayName, viewID, queryKey}], paramTypes}]}",
-  "example": "POST \u2026/catalog/drivers/driver {id:\"cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lab drivers have no entitlements: the answer is just {id, name}. Entitlements whose configuration is missing or not resource-mapping-enabled are left out.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{id, name, entitlements:[{id, displayName, description, isSingleValued, entitlementType, views?:[{displayName, viewID, description}]}]}",
+  "example": "POST \u2026/catalog/drivers/driver {id:\"cn=<driver>,cn=driverset1,o=system\"}",
+  "notes": "entitlementType is STATIC_PARAMS for an entitlement with a fixed list of values and APP_QUERY_PARAMS for one whose values come from a query of the connected system (query-app). Only query entitlements have views; a view's viewID is the code map key (an escaped GUID such as \\97\\64\\89\u2026), used by the code map calls. The entitlement ids come back lower-cased. cprsSupported=true gave the same list when every entitlement is cprs-supported. Entitlements whose configuration is missing or not resource-mapping-enabled are left out.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/drivers/driverEntitlementViewValues/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists code-map values of several entitlements for one logical system (view), unpaged.",
   "params": [],
   "body": {
@@ -541,15 +541,15 @@
     }
    ]
   },
-  "answer": "{entitlementValues:[\u2026], arraySize} or {} when none",
+  "answer": "{entitlementValues:[{name, description, value, id, entitlementName}]}",
   "example": "POST \u2026/drivers/driverEntitlementViewValues/list {id, viewID, entitlements:[{id, paramLogicSystem}]}",
-  "notes": "Without paramLogicSystem the server fails with 489 'Error occurred retrieving data from Provisioning Param Code Map table'. With it the lab answered {} (no code maps). Not used by the dashboard (it uses listV2).",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "paramLogicSystem on each entitlement is the view's viewID; without it the server fails with 489 'Error occurred retrieving data from Provisioning Param Code Map table'. Not used by the dashboard (it uses listV2).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/drivers/driverEntitlementViewValues/listV2",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Paged variant: lists code-map values of entitlements that have a logical system (view).",
   "params": [
    {
@@ -608,15 +608,15 @@
     }
    ]
   },
-  "answer": "{nextIndex, arraySize, entitlementValues:[\u2026]}",
+  "answer": "{nextIndex:int, arraySize:int, entitlementValues:[{name, description, value, id, entitlementName}]}",
   "example": "POST \u2026/drivers/driverEntitlementViewValues/listV2?query=*&pageSize=10&nextIndex=1 {id, viewID, entitlements:[{id, displayName, paramLogicSystem}]}",
-  "notes": "Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing; with it the lab answered nothing.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/drivers/entitlementValues/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists every code-map value of a driver's (or one entitlement's) resource-mapping entitlements, unpaged.",
   "params": [],
   "body": {
@@ -632,15 +632,15 @@
     }
    ]
   },
-  "answer": "{entitlementValues:[{id, value, name, description, entitlementName}], arraySize} or {}",
-  "example": "POST \u2026/drivers/entitlementValues/list {id:\"cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lab answered {}. Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{entitlementValues:[{name, description, value, id, entitlementName}]}",
+  "example": "POST \u2026/catalog/drivers/entitlementValues/list {id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\"}",
+  "notes": "The id can be an entitlement DN or a driver DN; both gave the code map values of the driver's query entitlements. value is what a resource stores: for an idm4 entitlement a compact JSON object {\"ID\":\"<native value>\"}. Fixed-value entitlements are not listed (their values are not in a code map). Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/drivers/entitlementValues/listV2",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Paged list of an entitlement's code-map values when it has no logical system.",
   "params": [
    {
@@ -679,15 +679,15 @@
     }
    ]
   },
-  "answer": "{nextIndex, arraySize, entitlementValues:[\u2026]}",
-  "example": "POST \u2026/drivers/entitlementValues/listV2?query=*&pageSize=10&nextIndex=1 {id}",
-  "notes": "Dashboard sends {id: entitlement DN, hasLogicalSystem:false}. Lab: {nextIndex:0, arraySize:0}.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{nextIndex:int, arraySize:int, entitlementValues:[{name, description, value, id, entitlementName}]}",
+  "example": "POST \u2026/catalog/drivers/entitlementValues/listV2?query=<text> {id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\", hasLogicalSystem:false}",
+  "notes": "Dashboard sends {id: entitlement DN, hasLogicalSystem:false}. The query parameter filters on the value's name (query=group1 left one of two values). A fixed-value entitlement answered {nextIndex:0, arraySize:0}: only code-map values are listed.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/drivers/entitlementViewValues/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the values of one code-map view.",
   "params": [],
   "body": {
@@ -709,10 +709,10 @@
     }
    ]
   },
-  "answer": "{entitlementValues:[\u2026]} or {}",
-  "example": "POST \u2026/drivers/entitlementViewValues/list {viewID:\"Helpdesk Entitlement\"}",
-  "notes": "Lab answered {} even for its one view. Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{entitlementValues:[{name, description, value}]}",
+  "example": "POST \u2026/catalog/drivers/entitlementViewValues/list {viewID:\"<viewID from drivers/driver>\"}",
+  "notes": "viewID is a view's viewID from POST /catalog/drivers/driver (or entitlementInfo). Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -729,7 +729,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/catalog/entitlements/entitlementInfo",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Returns one entitlement's configuration: value type, multi-value, resource mapping, views and parameter types.",
   "params": [
    {
@@ -741,15 +741,15 @@
    }
   ],
   "body": null,
-  "answer": "{dn, name, description, multiValue, resourceMappingEnabled, type: NO_VALUE|FREE_FORM|DB|ADMIN|QUERY, entitlementLists, entitlementParamTypes}",
-  "example": "GET \u2026/catalog/entitlements/entitlementInfo?entilementDN=cn=Group,cn=<driver>,cn=driverset1,o=system",
-  "notes": "Missing or unknown DN answers 204 with no body (lab has no entitlements). type is fixed: FREE_FORM (external, free-form), DB (external with code map), ADMIN (static), QUERY (application query).",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{dn, displayName, description, isMultiValue, type, views?:[{displayName, viewID, description}], paramTypes, isResourceMappingEnabled}",
+  "example": "GET \u2026/catalog/entitlements/entitlementInfo?entilementDN=cn=<entitlement>,cn=<driver>,cn=driverset1,o=system",
+  "notes": "Missing or unknown DN answers 204 with no body. type is fixed: FREE_FORM (external, free-form), DB (external with code map), ADMIN (fixed values; seen for an entitlement with a <values><value> list) and QUERY (application query; seen for a query-app entitlement, which also carries its views).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/entitlements/entitlementValues",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the code-map values of a view, optionally limited to parameter types.",
   "params": [],
   "body": {
@@ -772,15 +772,15 @@
     }
    ]
   },
-  "answer": "{entitlementValues:[{name, description, paramType, value}], arraySize}",
-  "example": "POST \u2026/catalog/entitlements/entitlementValues {viewID:\"Helpdesk Entitlement\", type:null}",
-  "notes": "Used by form selection fields bound to a code map (dashboard sends viewID = the field's codeMapKey and type null). Results are cached per view/locale/types. Lab: arraySize 0 even for its one view; an empty body also answers {arraySize:0}.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{arraySize:int, entitlementValues:[{name, description, value}]}",
+  "example": "POST \u2026/catalog/entitlements/entitlementValues {viewID:\"<viewID>\", type:null}",
+  "notes": "Used by form selection fields bound to a code map (dashboard sends viewID = the field's codeMapKey, which is the view's viewID, and type null). Results are cached per view/locale/types. An empty body answers {arraySize:0}.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/entitlements/resources",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Finds the existing resources bound to an entitlement value, or proposes a new one, when mapping an entitlement to a role.",
   "params": [],
   "body": {
@@ -835,10 +835,10 @@
     }
    ]
   },
-  "answer": "{entResourcesList:[{entName, resources:[resource\u2026]}]}",
-  "example": "POST \u2026/catalog/entitlements/resources {entitlements:[{id, displayName, parameterName, parameterValue, driverName}]}",
-  "notes": "Read-only. Lab has no entitlements; a made-up entitlement DN gave 489 'Internal Error'. When no resource matches, the server proposes an unsaved one built from the entitlement.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{entResourcesList:[{resources:[{id, name, description, driver, entitlements:[{id, displayName, description, parameterValue, entitlementType}]}]}]}",
+  "example": "POST \u2026/catalog/entitlements/resources {entitlements:[{id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\", parameterValue:\"{\\\"ID\\\":\\\"<value>\\\"}\", driverName:\"<driver name>\"}]}",
+  "notes": "Read-only: finds the resources bound to each entitlement and value. The value must match what the resource stores exactly: compact JSON for a query entitlement ({\"ID\":\"\u2026\"}, no spaces), the plain value for a fixed-value one. When no resource matches, the server proposes an unsaved one built from the entitlement. A made-up entitlement DN gave 489 'Internal Error'.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -1174,8 +1174,8 @@
   },
   "answer": "the resource with id = cn=<id>,cn=ResourceDefs,cn=RoleConfig,\u2026",
   "example": "POST \u2026/catalog/resources {id, name, description}",
-  "notes": "No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed).",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed). Bound to an entitlement: send entitlements:[{id: entitlement DN, action: 1, parameterValue}]. Without action the server fails with 489 'Internal Error' (a null action). parameterValue is the plain value for a fixed-value entitlement and the code map value for a query entitlement, as compact JSON {\"ID\":\"\u2026\"} (live 2026-10-31).",
+  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
  },
  {
   "method": "POST",
@@ -1211,7 +1211,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/resources/driverResources",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists resources bound to a given driver, with filters.",
   "params": [
    {
@@ -1277,10 +1277,10 @@
     }
    ]
   },
-  "answer": "{nextIndex, arraySize, resources:[{id, name, description, driver, entitlementValues, managedBy}]}",
-  "example": "POST \u2026/catalog/resources/driverResources?q=*&nextIndex=1&size=10 {id:\"cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lab has no driver-bound resources, so arraySize 0. The dashboard also sends sortBy/sortOrder/column, which the server does not read.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{nextIndex:int, arraySize:int, resources:[{id, name, description, driver, entitlementValues:[{name, description, type, value, id, driver, views}], managedBy}]}",
+  "example": "POST \u2026/catalog/resources/driverResources?entitlementId=cn=<entitlement>,cn=<driver>,cn=driverset1,o=system {id:\"cn=<driver>,cn=driverset1,o=system\"}",
+  "notes": "Resources bound to the driver's entitlements. entitlementId kept the one resource of that entitlement; managedBy=true kept only the resource with managedBy 1 (CPRS). The dashboard also sends sortBy/sortOrder/column, which the server does not read.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1442,8 +1442,8 @@
   },
   "answer": "the full resource after the change: {id, name, description, subContainer, approval\u2026, localizedNames, localizedDescriptions, managedBy, isExpirationRequired}",
   "example": "PUT \u2026/catalog/resources/resource {id, name, description}",
-  "notes": "Localized name/description for the request locale follow the new values.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "Localized name/description for the request locale follow the new values. managedBy: 1 marks the resource as managed by permission reconciliation (CPRS); only such resources appear in GET /access/cprs/settings and can be reconciled. Send the whole resource as read from POST \u2026/resources/resourceV2 with the field changed (live 2026-10-31).",
+  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
  },
  {
   "method": "POST",
@@ -1554,7 +1554,7 @@
  {
   "method": "PUT",
   "path": "/IDMProv/rest/catalog/resources/resource/entitlement",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Changes the entitlement binding of an existing resource.",
   "params": [],
   "body": {
@@ -1583,15 +1583,15 @@
     }
    ]
   },
-  "answer": "response list",
-  "example": "PUT \u2026/resources/resource/entitlement {id, entitlements}",
-  "notes": "Not called (write). Missing body: 400 payload required.",
-  "evidence": "server code + dashboard code"
+  "answer": "{success:true, succeeded:[{id: resource cn}]}",
+  "example": "PUT \u2026/catalog/resources/resource/entitlement {id:\"cn=<resource>,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\", entitlements:[{id:\"cn=<entitlement>,cn=<driver>,cn=driverset1,o=system\", action:1, parameterValue:\"{\\\"ID\\\":\\\"<value>\\\"}\"}]}",
+  "notes": "Replaces the resource's entitlement binding; used here to correct a value. action is needed as on create. Missing body: 400 payload required.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/resources/resource/entitlements/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the entitlement values bound to a resource.",
   "params": [],
   "body": {
@@ -1607,15 +1607,15 @@
     }
    ]
   },
-  "answer": "{entitlementValues:[\u2026]} or {} when the resource has none",
+  "answer": "{entitlementValues:[{name, description, type, value, id, driver}]}",
   "example": "POST \u2026/resources/resource/entitlements/list {id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lab helpdesk resources have no entitlements: {}. An empty body gives an HTML 500.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Shows the resource's entitlement bindings. For a query entitlement value is the native value taken out of the stored JSON; a stored value that does not parse is shown as 'Invalid ** <value> ** Invalid' (seen when the JSON had spaces). A resource without entitlements answers {}. An empty body gives an HTML 500.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/resources/resource/entitlements/list/v2",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Same as entitlements/list, typed by entity.",
   "params": [
    {
@@ -1639,10 +1639,10 @@
     }
    ]
   },
-  "answer": "{entitlementValues:[\u2026]} or {}",
+  "answer": "{entitlementValues:[{name, description, type, value, id, driver}]}",
   "example": "POST \u2026/resources/resource/entitlements/list/v2?entityType=resource {id}",
-  "notes": "Lab: {}. Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Same as /list; a fixed-value binding showed value as '[alpha]' (the list form). Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -1982,7 +1982,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/roles/mappedResources/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists the resources mapped to a role.",
   "params": [
    {
@@ -2041,10 +2041,10 @@
     }
    ]
   },
-  "answer": "{nextIndex, arraySize, resources:[{id, name, description, status, mappingDescription, entityKey, driver\u2026}]}",
+  "answer": "{nextIndex:int, arraySize:int, resources:[\u2026]}",
   "example": "POST \u2026/catalog/roles/mappedResources/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lab system roles have no mapped resources. The dashboard sends the selected role object and driverID.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lists the resources mapped to the role, with mappingDescription, status 50 and entityKey (the association object, needed by DELETE \u2026/roles/mappedResources).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
@@ -2139,7 +2139,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/roles/parentRoles/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists a role's parent roles.",
   "params": [
    {
@@ -2191,10 +2191,10 @@
     }
    ]
   },
-  "answer": "{nextIndex, arraySize, roles:[{id, name, description, level\u2026}]}",
+  "answer": "{nextIndex:int, arraySize:int, roles:[\u2026]}",
   "example": "POST \u2026/catalog/roles/parentRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lab system roles have no parents. Unknown role \u2192 400 'not found'.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lists the role's parents (a level-20 role over a level-10 one here), with the requestDescription given when the link was made. Unknown role \u2192 400 'not found'.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -2259,8 +2259,8 @@
   },
   "answer": "{success, succeeded:[{id, assignToUsers:[{dn, name}]}]}",
   "example": "POST \u2026/catalog/roles/role/assignments/assign {reason, assignments:[{id, entityType:'role', assignmentToList:[{assignedToDn, subtype:'user'}]}]}",
-  "notes": "Completed within 12 s: POST /catalog/roles/role/assignments shows 'User Assigned to Role', status Completed, and GET /access/assignments/identities lists the user. The recipient field is subtype (as in the revocation), not type. Revoked with DELETE /access/assignments/list.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "Completed within 12 s: POST /catalog/roles/role/assignments shows 'User Assigned to Role', status Completed, and GET /access/assignments/identities lists the user. The recipient field is subtype (as in the revocation), not type. Revoked with DELETE /access/assignments/list. A conflicting assignment is refused: 200 with success false, errCode 'SoD-Violation', reason 'Separation of duties violation found' and a sods list naming the SoD and both roles (live 2026-10-31).",
+  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
  },
  {
   "method": "POST",
@@ -2440,7 +2440,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/roles/subRoles/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Lists a role's child roles with their request details.",
   "params": [
    {
@@ -2492,16 +2492,16 @@
     }
    ]
   },
-  "answer": "{nextIndex, arraySize, roles:[{id, name, description, level, requestDescription, requester, approval}]}",
+  "answer": "{nextIndex:int, arraySize:int, roles:[\u2026]}",
   "example": "POST \u2026/catalog/roles/subRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "Lab system roles have no children. Dashboard always asks from nextIndex 1.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lists the role's children with level and the link's requestDescription. Dashboard always asks from nextIndex 1.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/sods",
-  "status": "not-working",
-  "purpose": "Create a separation-of-duties constraint between two roles (meant to).",
+  "status": "validated",
+  "purpose": "Create a separation-of-duties constraint between two roles.",
   "params": [],
   "body": {
    "example": {
@@ -2510,19 +2510,19 @@
     "description": "<text>",
     "roles": [
      {
-      "id": "<role DN 1>"
+      "id": "cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
      },
      {
-      "id": "<role DN 2>"
+      "id": "cn=<role 2>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
      }
     ],
-    "sodApprovalType": "ALWAYS_ALLOW"
+    "sodApprovalType": "alwaysAllow"
    },
    "fields": [
     {
      "name": "id",
      "required": true,
-     "values": "the new SoD's cn; placed under the SoD container",
+     "values": "the new SoD's cn",
      "kind": "free"
     },
     {
@@ -2534,39 +2534,33 @@
     {
      "name": "description",
      "required": true,
-     "values": "required by the server code",
+     "values": "text",
      "kind": "free"
     },
     {
      "name": "roles",
      "required": true,
-     "values": "the two conflicting roles [{id}]",
+     "values": "two different roles of the same level, [{id: role DN}]",
      "kind": "per-installation"
     },
     {
      "name": "sodApprovalType",
      "required": true,
-     "values": "enumeration names ALWAYS_ALLOW or ALLOW_WITH_WORKFLOW (the server's enum carries '0'/'1' internally; the JSON form is the name)",
+     "values": "alwaysAllow or allowWithWorkflow",
      "kind": "fixed"
     },
     {
-     "name": "isDefaultApproversUsed / approvers / approvalRequestDef / approvalQuorum",
+     "name": "approvalRequestDef / isDefaultApproversUsed / approvers",
      "required": false,
-     "values": "approval settings; defaults from GET /catalog/sods/defaultApprovals",
-     "kind": "per-installation"
-    },
-    {
-     "name": "localizedNames / localizedDescriptions",
-     "required": false,
-     "values": "[{locale, name}] / [{locale, desc}]",
+     "values": "for allowWithWorkflow; defaults from GET \u2026/sods/defaultApprovals",
      "kind": "per-installation"
     }
    ]
   },
-  "answer": "the SoD with its DN and hasConflicts (server code)",
-  "example": "POST \u2026/catalog/sods {id, name, description, roles, sodApprovalType}",
-  "notes": "Five variants (sodApprovalType '0', ALWAYS_ALLOW, ALLOW_WITH_WORKFLOW; with and without approvalRequestDef from sods/defaultApprovals, isDefaultApproversUsed and localized names) all gave 489 'Internal Error. Please contact Administrator.' with subcode 'Internal exception occurred processing REST service'. Nothing was created (GET /catalog/sods arraySize 0, POST /catalog/sods/sod of the expected DN empty). The duplicate-SoD check before the write wraps any failure in that generic message, so the cause is not visible.",
-  "evidence": "server code + live"
+  "answer": "the SoD as sent, with id = its DN under cn=SoDDefs",
+  "example": "POST \u2026/catalog/sods {id:\"<cn>\", name, description, roles:[{id:<role 1>},{id:<role 2>}], sodApprovalType:\"alwaysAllow\"}",
+  "notes": "sodApprovalType takes the camel-case names the server returns (alwaysAllow, allowWithWorkflow). The enum names (ALWAYS_ALLOW) and the codes ('0', '1') come through as no value, and the server then fails with 489 'Internal Error' (a null approval type, seen in the server log); that was the cause of the earlier failures. The same role twice: 489 'Conflicting roles cannot be same role'; roles of different levels and an existing pair are refused before anything is written.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -2611,7 +2605,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/sods/sod",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Returns details of one or more SoDs.",
   "params": [
    {
@@ -2646,80 +2640,57 @@
     }
    ]
   },
-  "answer": "{sods:[\u2026], arraySize, nextIndex}",
+  "answer": "{sods:[{id, name, description, roles:[{id, name}], roleLevel, sodApprovalType, approvalRequestDef, localizedNames, localizedDescriptions}], arraySize, nextIndex}",
   "example": "POST \u2026/catalog/sods/sod {sods:[{id}]}",
-  "notes": "Read. Lab has no SoDs; unknown ids are skipped (arraySize 0).",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Read. Unknown ids are skipped (arraySize 0). sodApprovalType reads as alwaysAllow or allowWithWorkflow.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "PUT",
   "path": "/IDMProv/rest/catalog/sods/sod",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Updates a SoD.",
   "params": [],
   "body": {
    "example": {
-    "id": "<sod dn>",
-    "name": "\u2026",
+    "id": "cn=<sod>,cn=SoDDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+    "name": "<display name>",
+    "description": "<text>",
     "roles": [
      {
-      "id": "<role dn 1>"
+      "id": "cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
      },
      {
-      "id": "<role dn 2>"
+      "id": "cn=<role 2>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
      }
     ],
-    "sodApprovalType": "0"
+    "sodApprovalType": "allowWithWorkflow"
    },
    "fields": [
     {
      "name": "id",
      "required": true,
-     "values": "for create: the new SoD's CN (the server puts it under the SoD container); for update: SoD DN",
-     "kind": "free"
-    },
-    {
-     "name": "name",
-     "required": true,
-     "values": "display name",
-     "kind": "free"
-    },
-    {
-     "name": "description",
-     "required": false,
-     "values": "text",
-     "kind": "free"
-    },
-    {
-     "name": "roles",
-     "required": true,
-     "values": "the two conflicting roles [{id}]",
+     "values": "the SoD's DN",
      "kind": "per-installation"
     },
     {
      "name": "sodApprovalType",
      "required": true,
-     "values": "0 = always allow, 1 = allow with approval workflow",
+     "values": "alwaysAllow or allowWithWorkflow",
      "kind": "fixed"
     },
     {
-     "name": "isDefaultApproversUsed / approvers / approvalRequestDef / approvalQuorum",
-     "required": false,
-     "values": "approval settings (defaults from \u2026/sods/defaultApprovals)",
-     "kind": "per-installation"
-    },
-    {
-     "name": "localizedNames / localizedDescriptions",
-     "required": false,
-     "values": "per locale",
-     "kind": "per-installation"
+     "name": "name / description / roles",
+     "required": true,
+     "values": "as on create",
+     "kind": "free"
     }
    ]
   },
-  "answer": "response list",
+  "answer": "the SoD as sent",
   "example": "PUT \u2026/catalog/sods/sod {id, name, roles, sodApprovalType}",
-  "notes": "Not called (write).",
-  "evidence": "server code + dashboard code"
+  "notes": "Changing sodApprovalType to allowWithWorkflow read back as allowWithWorkflow, with the default role approval PRD as approvalRequestDef.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",

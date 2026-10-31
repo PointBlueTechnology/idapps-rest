@@ -454,8 +454,8 @@
   "body": null,
   "answer": "{total,hasMore,userTypeInTask,\u2026}",
   "example": "GET \u2026/access/tasks?limit=10",
-  "notes": "",
-  "evidence": "live 2026-10-30 + server code",
+  "notes": " 2026-10-31: still {total:0} for the administrator while a role approval task addressed to another user was open (GET \u2026/tasks/list listed that task).",
+  "evidence": "live 2026-10-30 + server code, live 2026-10-31",
   "in_reference": false
  },
  {
@@ -954,7 +954,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/catalog/sods/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Search separation-of-duties constraints.",
   "params": [
    {
@@ -980,13 +980,29 @@
    }
   ],
   "body": {
-   "example": {},
-   "fields": []
+   "example": {
+    "roles": [
+     {
+      "id": "cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     },
+     {
+      "id": "cn=<role 2>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roles",
+     "required": true,
+     "values": "[{id: role DN}]: the SoDs any of these roles is part of",
+     "kind": "per-installation"
+    }
+   ]
   },
-  "answer": "{arraySize,nextIndex,\u2026}",
-  "example": "",
-  "notes": "The lab has no SoDs.",
-  "evidence": "live 2026-10-30 + server code",
+  "answer": "{sods:[\u2026as POST /sods/sod\u2026]}",
+  "example": "POST \u2026/catalog/sods/list {roles:[{id:\"cn=<role 1>,cn=Level10,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
+  "notes": "Finds the SoDs that involve the given roles (one role gave both of its SoDs). {} or a body without roles answers {arraySize:0}, and q alone finds nothing: it is not a search of all SoDs (use GET \u2026/catalog/sods for that).",
+  "evidence": "server code + live 2026-10-31",
   "in_reference": false
  },
  {

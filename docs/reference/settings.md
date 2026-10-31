@@ -8,11 +8,11 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 51 |
+| validated on the lab | 55 |
 | not run: worked out from the server's and the dashboard's code | 29 |
 | did not work on the lab | 5 |
-| not known yet | 4 |
-| answered on the lab, which had no data to show | 4 |
+| answered on the lab, which had no data to show | 2 |
+| not known yet | 2 |
 
 ## Contents
 
@@ -514,7 +514,7 @@ Read one client (setting profile) with its full settings.
 
 Update a client's name or match condition.
 
-**Status:** not known yet. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -522,23 +522,21 @@ Update a client's name or match condition.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
-| `id` | yes | client id; the server uses this, not the path, to find the client | per installation |
-| `name` | no | must not be in use by another client |  |
-| `matchCondition` | no | must not be used by another client |  |
-| `config` | no |  |  |
-| `isDefault` | no |  |  |
+| `id` | yes | the client id (same as the path) | per installation |
+| `name / matchCondition / config` | no | as read from GET …/config/clients/{id} | per installation |
 
 ```json
 {
-  "id": "2",
-  "name": "Contractors",
-  "matchCondition": "<condition>"
+  "id": "1",
+  "name": "<client name>",
+  "matchCondition": "<condition>",
+  "config": "<config JSON text from GET>"
 }
 ```
 
-**Answer:** empty 200
+**Answer:** 200, no body
 
-**Notes:** Not called (write); the dashboard has no call for it. Blank body id: 'client not found'. Needs the 'settings' right for the path id.
+**Notes:** Saves a client's settings. Tested by posting the GET answer back unchanged: GET afterwards was identical. Blank body id: 'client not found'. Needs the 'settings' right for the path id. The dashboard has no call for it.
 
 <a id="get-idmprov-rest-access-config-custom"></a>
 ### GET `/IDMProv/rest/access/config/custom`
@@ -777,7 +775,7 @@ Read the global dashboard tile layout.
 
 Save the global dashboard tile layout.
 
-**Status:** not known yet. **Evidence:** server code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -793,9 +791,9 @@ Save the global dashboard tile layout.
 }
 ```
 
-**Answer:** empty 200
+**Answer:** {dashboardCustomizations: string} (what was saved)
 
-**Notes:** Not called (write); no dashboard call found. Missing dashboardCustomizations: 'payload is empty'. Needs the global dashboard right (403).
+**Notes:** Saves the global dashboard layout. Tested by posting the GET answer's dashboardCustomizations back unchanged; GET afterwards was identical. Missing dashboardCustomizations: 'payload is empty'. Needs the global dashboard right (403). No dashboard call found.
 
 <a id="delete-idmprov-rest-access-featureditems"></a>
 ### DELETE `/IDMProv/rest/access/featuredItems`
@@ -1169,7 +1167,7 @@ Notification badge counts for the signed-in user (new roles, resources, tasks, h
 
 Remove one of the caller's preferences.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects), live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1179,24 +1177,24 @@ Remove one of the caller's preferences.
 
 **Example:** DELETE …/access/preference?attribute=<name>
 
-**Notes:** GET afterwards: {isPreferenceAvailable:false}.
+**Notes:** GET afterwards: {isPreferenceAvailable:false}. The answer carries the preference that was deleted.
 
 <a id="get-idmprov-rest-access-preference"></a>
 ### GET `/IDMProv/rest/access/preference`
 
 Read one of the signed-in user's stored preferences.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `attribute` | query | no | preference name; default All. Dashboard names: rolesPageSize, resourcesPageSize, tasksPageSize, teamsPageSize, groupsPageSizeAttribute, groupMembersPageSizeAttribute, adminAssignmentsPageSize, adminPermissionsofAssignmentPageSize, historyPageSize, com.novell.idm.dashboard.userslist-columns.preference, com.netiq.en-dash.history.type-*.preference, com.netiq.en-dash.permissions.type-*.preference, com.novell.idm.admin.adminAssignmentsList-columns.preference, com.novell.idm.dashboard.task-detail-open | fixed |
 
-**Answer:** {isPreferenceAvailable: bool, columns?: [str], openFormInPopUp?: bool}
+**Answer:** {isPreferenceAvailable:bool, columns?:[…]}
 
-**Example:** GET …/access/preference?attribute=rolesPageSize -> {isPreferenceAvailable:false}
+**Example:** GET …/access/preference?attribute=<name>
 
-**Notes:** uaadmin has no stored preferences, so every name tried answered false. Page sizes are stored as columns[0]. Side effect: the first read moves preferences from the old store to the new one if only the old one has data.
+**Notes:** Answers the caller's stored preference of that name: after POST …/preference?attribute=<name> {columns:[…]} it gave {isPreferenceAvailable:true, columns}. Without attribute (All) it answered {isPreferenceAvailable:false} even while a named one existed. Dashboard names: rolesPageSize, resourcesPageSize, tasksPageSize, … (page sizes are stored as columns[0]). Side effect: the first read moves preferences from the old store to the new one if only the old one has data.
 
 <a id="post-idmprov-rest-access-preference"></a>
 ### POST `/IDMProv/rest/access/preference`
@@ -1235,7 +1233,7 @@ Store one of the caller's preferences (column list).
 
 Remove a stored dashboard layout.
 
-**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects).
+**Status:** validated on the lab. **Evidence:** live 2026-10-30 (scratch objects), live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -1245,24 +1243,24 @@ Remove a stored dashboard layout.
 
 **Example:** DELETE …/access/preference/dashboard?attribute=<name>
 
-**Notes:** GET afterwards: {isDashboardCustomized:false}. uaadmin's dashboard preferences (All) empty before and after.
+**Notes:** GET afterwards: {isDashboardCustomized:false}. uaadmin's dashboard preferences (All) empty before and after. The answer carries the layout that was deleted.
 
 <a id="get-idmprov-rest-access-preference-dashboard"></a>
 ### GET `/IDMProv/rest/access/preference/dashboard`
 
 Read the signed-in user's personal dashboard layout.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
 | `attribute` | query | no | preference name; default All |  |
 
-**Answer:** {isDashboardCustomized: bool, dashboardCustomizations?: JSON string}
+**Answer:** {isDashboardCustomized:bool, dashboardCustomizations?:string}
 
-**Example:** GET …/access/preference/dashboard -> {isDashboardCustomized:false}
+**Example:** GET …/access/preference/dashboard?attribute=<name>
 
-**Notes:** uaadmin has no personal layout. No dashboard call found for this path.
+**Notes:** After POST …/preference/dashboard?attribute=<name> {dashboardCustomizations:"<JSON text>"} it gave {isDashboardCustomized:true, dashboardCustomizations}. Without attribute (All): {isDashboardCustomized:false}.
 
 <a id="post-idmprov-rest-access-preference-dashboard"></a>
 ### POST `/IDMProv/rest/access/preference/dashboard`

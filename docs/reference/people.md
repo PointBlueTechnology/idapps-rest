@@ -8,10 +8,10 @@ signing in and errors.
 
 | Status | Operations |
 |---|---|
-| validated on the lab | 39 |
-| not run: worked out from the server's and the dashboard's code | 7 |
-| answered on the lab, which had no data to show | 4 |
-| not known yet | 1 |
+| validated on the lab | 41 |
+| not run: worked out from the server's and the dashboard's code | 6 |
+| answered on the lab, which had no data to show | 3 |
+| did not work on the lab | 1 |
 
 ## Contents
 
@@ -74,7 +74,7 @@ signing in and errors.
 
 Lists the values of one entitlement code map, paged and filtered.
 
-**Status:** answered on the lab, which had no data to show. **Evidence:** server code + live 2026-10-30.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Parameter | In | Required | Accepted values | Kind |
 |---|---|---|---|---|
@@ -83,11 +83,11 @@ Lists the values of one entitlement code map, paged and filtered.
 | `nextIndex` | query | no | 1-based start, default 1 |  |
 | `size` | query | no | page size, default 10 |  |
 
-**Answer:** {nextIndex:int, arraySize:int, hasMore:bool, codeMapValues?:[...]}
+**Answer:** {nextIndex:int, arraySize:int, hasMore:bool, codeMapValues:[{id, value, displayLabel, description, nativeValue}]}
 
-**Example:** GET …/codeMap/SGVscGRlc2sgRW50aXRsZW1lbnQ=/values?q=*&nextIndex=1&size=5
+**Example:** GET …/codeMap/<Base64 of the viewID>/values?q=*
 
-**Notes:** An unknown id is not an error: it answers 200 with arraySize 0. The lab has no entitlement code maps (no drivers with entitlements in the catalog), so every id tried came back empty. A blank id gives 489. The dashboard reads codeMapValues from the answer.
+**Notes:** id is the Base64 of the code map key, which is the entitlement view's viewID (the escaped GUID string from POST /catalog/drivers/driver, e.g. \97\64\89…). The entitlement DN or name, Base64-encoded, answered arraySize 0. An unknown id is not an error (200, arraySize 0); a blank id gives 489. value is the compact JSON a resource stores; nativeValue is the connected system's own key.
 
 <a id="post-idmprov-rest-access-containers-container"></a>
 ### POST `/IDMProv/rest/access/containers/container`
@@ -180,11 +180,11 @@ Counts roles, resources or users (one kind per call).
 
 Exports the workflow database for migration as a zip file.
 
-**Status:** not known yet. **Evidence:** server code.
+**Status:** did not work on the lab. **Evidence:** server code + live 2026-10-31.
 
 **Answer:** application/zip download named wf_db_migration.zip
 
-**Notes:** Not called (migration endpoint). Produces only application/zip, so a request with Accept: application/json gets 406 (seen in the first pass). Requires a provisioning administrator. Not used by the dashboard.
+**Notes:** Produces only application/zip (Accept: application/json gets 406). With Accept: application/zip on a running system the answer was an HTML 500; server log: 'Workflow data migration is not possible, since the engine is in running state.' The export needs the workflow engine stopped first (POST /admin/workflowengines/status), which halts workflow processing, so it was not tried. Requires a provisioning administrator. Not used by the dashboard.
 
 <a id="post-idmprov-rest-access-data-migration-workflow"></a>
 ### POST `/IDMProv/rest/access/data/migration/workflow`
@@ -1184,7 +1184,7 @@ Searches users whose request history the caller may view (helpdesk).
 
 Starts a code map refresh for every resource-mapped entitlement of the given drivers.
 
-**Status:** not run: worked out from the server's and the dashboard's code. **Evidence:** server code + dashboard code.
+**Status:** validated on the lab. **Evidence:** server code + live 2026-10-31.
 
 | Body field | Required | Accepted values | Kind |
 |---|---|---|---|
@@ -1201,9 +1201,9 @@ Starts a code map refresh for every resource-mapped entitlement of the given dri
 }
 ```
 
-**Answer:** {succeeded:[{id,name}], failed:[{id,reason}]}
+**Answer:** {succeeded:[{id, name}], failed:[{id, reason}]}
 
-**Notes:** Not called (it refreshes). The driver key is 'id', not 'dn'. Only entitlements configured for resource mapping are refreshed; if a refresh is already in progress the call returns at once with that entity listed under succeeded and an in-progress reason. Also flushes the driver and entitlement-value caches. Dashboard defines the call (body passed through).
+**Notes:** Refreshes the code maps of the driver's resource-mapping entitlements by querying the connected system through the driver (a running driver is needed). A query entitlement succeeded; a fixed-value one is listed under failed with 'Unable to complete codemap refresh' (it has no code map, which is expected). The driver key is 'id', not 'dn'. If a refresh is already in progress the call returns at once with that entity listed under succeeded and an in-progress reason. Also flushes the driver and entitlement-value caches.
 
 <a id="post-idmprov-rest-catalog-codemaprefresh-entitlement"></a>
 ### POST `/IDMProv/rest/catalog/codemaprefresh/entitlement`

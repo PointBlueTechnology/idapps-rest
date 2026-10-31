@@ -308,8 +308,8 @@
   },
   "answer": "{requestId, nextIndex, arraySize, deltaAssignmentsList:[{dn, firstName, lastName, entitlementDn, entitlementValue, logicalSystemId, source, instanceGuId, id}]}",
   "example": "POST \u2026/cprs/assignments/delta?q=*&nextIndex=1&size=5 {\"driverDn\":\"cn=User Application Driver,cn=driverset1,o=system\",\"opType\":\"fetch\"}",
-  "notes": "A read, but it only works after a reconcile with opType delta has completed for the same driver/entitlement/logical system; otherwise 489 'Delta computation might not have been perfomed\u2026'. The lab has no CPRS-mapped resources (GET \u2026/cprs/settings is empty) so no delta exists. If a request is still running and opType is fetch, the server refuses with 'request in progress'. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator. The dashboard also adds entitlementValues [{id}] to the body; the server's body type has no such field.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "A read, but it only works after a reconcile with opType delta has completed for the same driver/entitlement/logical system; otherwise 489 'Delta computation might not have been perfomed\u2026'. The lab has no CPRS-mapped resources (GET \u2026/cprs/settings is empty) so no delta exists. If a request is still running and opType is fetch, the server refuses with 'request in progress'. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator. The dashboard also adds entitlementValues [{id}] to the body; the server's body type has no such field. 2026-10-31: while a delta run was still going the answer was 489 'Migration/delta computation in progress. Try again after some time'; the run never finished on the lab (see \u2026/reconcile), so no delta was seen.",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31"
  },
  {
   "method": "POST",
@@ -386,7 +386,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/cprs/assignments/reconcile",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Start a CPRS run (delta computation or migration) for a driver or one entitlement.",
   "params": [],
   "body": {
@@ -441,15 +441,15 @@
     }
    ]
   },
-  "answer": "{succeeded:bool, succeedNodes:[{id: entitlement DN, requestId}], failNodes:[{id, reason}]}",
+  "answer": "{success:bool, succeeded:[{id: entitlement DN, requestId: DN under cn=CprsRequests}], failed:[{id, reason}]}",
   "example": "POST \u2026/cprs/assignments/reconcile {driverDn, opType:'delta'} (not called)",
-  "notes": "Creates one CPRS request per mapped entitlement and records it; fails per entitlement when a run is already in progress, and overall when no CPRS resource is configured for the driver/entitlement. The driver must be in a usable state. Both 'refresh' and 'migrate permissions' in the dashboard post here. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator.",
-  "evidence": "server code + dashboard code"
+  "notes": "Starts one CPRS request per mapped entitlement. Without a managedBy-1 resource for the entitlement: success false, 'Resource is not configured for permission reconciliation for entitlement \u2026'. A second call while one runs: 'Delta Computation is already in progress for driver [\u2026]'. The run then waits for the driver to report the entitlement's current assignments; a driver without that support (a Loopback driver here) leaves it running (opStatus 1) and blocks further reconciles for that driver. CPRS must be enabled and the caller must be a Resources domain administrator.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/cprs/cprsrequest/status",
-  "status": "empty-on-lab",
+  "status": "not-working",
   "purpose": "Read the status of one CPRS request by its id.",
   "params": [],
   "body": {
@@ -467,13 +467,13 @@
   },
   "answer": "the request's status object {id, driverDn, entitlementDn, logicalSystem, opType, opStatus, statusMessage, counts, times}, or an empty 200 answer when the id is unknown",
   "example": "POST \u2026/cprs/cprsrequest/status {\"id\":\"00000000000000000000000000000000\"}",
-  "notes": "Works with any body; an unknown or missing id answers 200 with no content. The lab has no CPRS requests, so only the empty answer was seen. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator. Not used by the dashboard.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "With the id of a running request (from \u2026/status/list) the server fails with 489 'Internal Error': it reads the completion time, which a running request does not have yet (seen in the server log). An unknown or missing id answers 200 with no content. Only a finished request might work; none finished on the lab. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/cprs/cprsrequest/status/list",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List past CPRS requests for a driver/entitlement, newest first.",
   "params": [
    {
@@ -530,15 +530,15 @@
     }
    ]
   },
-  "answer": "{nextIndex:int, arraySize:int, total:int, requestStatusList?:[\u2026]}",
+  "answer": "{cprsRequestStatus:[{id, driverDn, entitlementDn, opType, opStatus, totalAssignments, failedAssignments, requestStartTime, requestCompletionTime}], nextIndex, arraySize, total}",
   "example": "POST \u2026/cprs/cprsrequest/status/list?nextIndex=1&size=5 {\"driverDn\":\"cn=User Application Driver,cn=driverset1,o=system\"}",
-  "notes": "An empty body {} \u2192 489 'Internal Error'; give driverDn or entitlementDn. Unlike the other CPRS calls this one does not require CPRS to be enabled, only Resources domain administrator. Lab: empty (no CPRS runs).",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "An empty body {} \u2192 489 'Internal Error'; give driverDn (entitlementDn alone answered nothing). opStatus 1 = running (requestCompletionTime empty). Unlike the other CPRS calls this one does not require CPRS to be enabled, only Resources domain administrator.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/cprs/settings",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the entitlement-value to resource mappings used by CPRS.",
   "params": [
    {
@@ -585,10 +585,10 @@
    }
   ],
   "body": null,
-  "answer": "{nextIndex:int, arraySize:int, total:int, settings rows when present}",
+  "answer": "{cprsSettingList:[{drivername, logicalsystem, entitlement, entitlementvalue, resource, id}], nextIndex, arraySize, total}",
   "example": "GET \u2026/cprs/settings?q=*&nextIndex=1&size=5",
-  "notes": "Resources domain administrator only. Lab: no resource is CPRS-enabled, so the list is empty even though CPRS itself is enabled.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Resources domain administrator only. Lists resources with managedBy 1 (set with PUT \u2026/catalog/resources/resource) that are bound to a cprs-supported entitlement; a resource bound to such an entitlement but with managedBy 0 is not listed. entitlementvalue is the stored value (compact JSON for a query entitlement).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
@@ -1164,25 +1164,25 @@
   "body": null,
   "answer": "{totalSize:int, entries when present}",
   "example": "GET \u2026/monitoring/workentries?requestId=34f1826bc4594d29b8b62d2171fc2cb8",
-  "notes": "No requestId \u2192 489 'Invalid requestId'. All tried requests (completed, retracted, failed) answered {totalSize:0}; entries probably exist only for requests with open work.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "No requestId \u2192 489 'Invalid requestId'. All tried requests (completed, retracted, failed) answered {totalSize:0}; entries probably exist only for requests with open work. 2026-10-31: a role request waiting for approval (its request DN under cn=Requests and its task id) also answered {totalSize:0}.",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/admin/proxy/configuration",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Read the proxy settings: notification template and retention time.",
   "params": [],
   "body": null,
-  "answer": "{} or {template?, retention?}",
+  "answer": "{proxyNotfTemplate?, proxyRetentionTime?: minutes}",
   "example": "GET \u2026/admin/proxy/configuration",
-  "notes": "Still {} with a proxy definition in place: this is the global proxy setting (notification template, retention), not the list of proxies; the lab has none set. Proxies themselves read from GET /access/proxy/all. Allowed for a team manager or anyone with the delegation/proxy configuration right. Retention is stored in ms and returned in minutes.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "notes": "The global proxy setting (notification template, retention), not the list of proxies (those read from GET /access/proxy/all). {} until one is set; after POST {proxyRetentionTime:60} it read {proxyRetentionTime:60}. Allowed for a team manager or anyone with the delegation/proxy configuration right. Retention is stored in ms and returned in minutes.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
   "path": "/IDMProv/rest/admin/proxy/configuration",
-  "status": "from-ui",
+  "status": "validated",
   "purpose": "Save the proxy notification template and retention time.",
   "params": [],
   "body": {
@@ -1205,10 +1205,10 @@
     }
    ]
   },
-  "answer": "{success:true, message}",
+  "answer": "{success:true, message:'Successfully updated the Proxy Configuration.'}",
   "example": "POST /IDMProv/rest/admin/proxy/configuration (not called)",
-  "notes": "Both fields optional; only those present are saved. Empty body \u2192 error. Needs the delegation/proxy configuration right.",
-  "evidence": "server code + dashboard code"
+  "notes": "Both fields optional; only those present are saved (proxyRetentionTime alone worked). Empty body \u2192 error. Needs the delegation/proxy configuration right.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -1400,7 +1400,7 @@
  {
   "method": "DELETE",
   "path": "/IDMProv/rest/access/queue/entry",
-  "status": "not-working",
+  "status": "validated",
   "purpose": "Remove a whole cart.",
   "params": [],
   "body": {
@@ -1422,15 +1422,15 @@
     }
    ]
   },
-  "answer": "the removed cart (server code)",
+  "answer": "{cartOwner, cartAction}",
   "example": "DELETE \u2026/access/queue/entry {cartAction}",
-  "notes": "Every call (3, owner given or defaulted) hung until the client gave up (120 s, then nginx 504 at 180 s). Cause, from the behaviour: the earlier 'successful' item delete left an uncommitted database transaction in one server worker (that worker then read the item as gone, the others still saw it), so deletes of the cart row waited on its lock. The lab answers through more than one worker: GETs alternated between the two views. The lock cleared after a later cart write failed in that worker (rolled back); then both views showed the cart empty. Side effect still visible at 21:20: about 1 in 20 GET /access/queue/entry reads answers 489 'Internal Error' (one worker's session looks broken); a User Application restart should clear it. Do not script cart deletes without a timeout.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "Deletes the caller's whole cart for that cartAction; GET afterwards: totalCount 0. Worked at once (0.1 s) after the applications were restarted. Before, every call hung until the client gave up (120 s, then an nginx 504): an earlier item delete had left an uncommitted database transaction in one server worker, whose lock the cart delete waited on. If this call hangs, look for such a transaction (or restart).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/queue/entry",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Read the signed-in user's cart for one cart action, with its items.",
   "params": [
    {
@@ -1449,10 +1449,10 @@
    }
   ],
   "body": null,
-  "answer": "{cartOwner, cartAction, totalCount:int, cartItems?:[{itemDn, itemType, itemFullname, itemAssignees:[{instanceId, type, subtype, assignedToDn, assigneeFullName, comment, sodJustification, entRef, reqForm}]}]}",
+  "answer": "{cartOwner, cartAction, totalCount:int, cartItems?:[{itemDn, itemType, itemAssignees:[{instanceId, subtype, assignedToDn}]}]}",
   "example": "GET \u2026/queue/entry?cartAction=revoke",
-  "notes": "Missing cartAction \u2192 489 'Value for cartAction is missing in payload\u2026'. Another user's cartOwner \u2192 489 'You are unauthorized for this operation.'. Lab: empty cart (totalCount 0).",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Missing cartAction \u2192 489 'Value for cartAction is missing in payload\u2026'. Another user's cartOwner \u2192 489 'You are unauthorized for this operation.'. After a restart of the applications, 20 reads in a row all answered 200 (the earlier 1-in-20 489 was the hung transaction, see DELETE).",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
@@ -1639,8 +1639,8 @@
   "body": null,
   "answer": "{requests:[\u2026], nextIndex:int} when it works",
   "example": "GET \u2026/requests/history?nextIndex=1&size=5",
-  "notes": "Lab: always 489 'Failed to get process request history', with or without parameters. The server merges PRD history with role/resource history and fails as a whole if either part fails. Use GET or POST \u2026/requests/historylist instead. The dashboard uses this path only with DELETE, to retract requests.",
-  "evidence": "server code + live 2026-10-30"
+  "notes": "Lab: always 489 'Failed to get process request history', with or without parameters. The server merges PRD history with role/resource history and fails as a whole if either part fails. Use GET or POST \u2026/requests/historylist instead. The dashboard uses this path only with DELETE, to retract requests. 2026-10-31, after a restart: still 489. Server log: the workflow engine fails while writing the PRD-history answer, its error handler then fails too (ClassCastException), and the connection is closed mid-answer ('Premature end of chunk coded message body'). A server bug, not an input problem.",
+  "evidence": "server code + live 2026-10-30, live 2026-10-31"
  },
  {
   "method": "POST",
@@ -2153,7 +2153,7 @@
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/tasks/list/others/team",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "List the workflow tasks of one member of a team the caller manages.",
   "params": [
    {
@@ -2228,10 +2228,10 @@
    }
   ],
   "body": null,
-  "answer": "{total, hasMore, totalSize, nextIndex, userTypeInTask, tasks?:[\u2026]}",
-  "example": "GET \u2026/access/tasks/list/others/team?memberDn=<member DN>&teamDN=<team DN>&fromIndex=1&size=10",
-  "notes": "With a real team and uaadmin as its manager the call is now authorized (200; before: 489 'You are unauthorized for this operation.'). The members had no tasks, so total 0. Tasks need a workflow with an approval for a member; the test made none. Missing memberDn or teamDN: 489 'Team member input is empty\u2026'. The caller must be a team manager and the member must belong to one of the caller's teams, else 489 'You are unauthorized for this operation.'.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "answer": "{total:int, hasMore:bool, tasks:[\u2026as GET /tasks/list\u2026], totalSize, nextIndex}",
+  "example": "GET \u2026/tasks/list/others/team?memberDn=<member DN>&teamDN=<team DN>",
+  "notes": "The team needs the task permission on the PRD the task belongs to: PUT /access/teams/permissions with {dn: PRD DN, objClass: srvprvRequest, permission: nrfAccessMgrTaskAddressee} ('Manage Addressee Task'). Without it the call answers 200 with total 0 even though the member has tasks; with it, the member's role approval task was listed. The caller must be a team manager and the member must belong to one of the caller's teams, else 489 'You are unauthorized for this operation.'. Missing memberDn or teamDN: 489 'Team member input is empty\u2026'.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "DELETE",
@@ -2695,8 +2695,8 @@
   },
   "answer": "{nextIndex, arraySize, permissions?:[\u2026]}",
   "example": "POST \u2026/access/teams/permissions?q=*&nextIndex=1&size=10 {targetSetDnList:[<team DN>], useExcludePermList:false}",
-  "notes": "Still {nextIndex:0, arraySize:0} although the team holds Assign/Revoke Role on a role (shown by /teams/team/permissions and /admin/permission/assignment), with q * or the role's name and with useExcludePermList true or false. The server builds this list from a vault search plus the permission index, filtered by the request operation 'grantToUser'; why the role grant did not appear was not found. PRD grants (nrfAccessMgrInitiatePRD) were not tried, because granting on a PRD writes to a PRD object the test did not create. A read despite POST (the dashboard's request-on-behalf permission list). {} and an empty targetSetDnList answer {nextIndex:0, arraySize:0}.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "notes": "Still {nextIndex:0, arraySize:0} although the team holds Assign/Revoke Role on a role (shown by /teams/team/permissions and /admin/permission/assignment), with q * or the role's name and with useExcludePermList true or false. The server builds this list from a vault search plus the permission index, filtered by the request operation 'grantToUser'; why the role grant did not appear was not found. PRD grants (nrfAccessMgrInitiatePRD) were not tried, because granting on a PRD writes to a PRD object the test did not create. A read despite POST (the dashboard's request-on-behalf permission list). {} and an empty targetSetDnList answer {nextIndex:0, arraySize:0}. Re-tried 2026-10-31 after a restart (the permission index is rebuilt then) and with the team also holding Initiate PRD and Manage Addressee Task on a PRD: still empty.",
+  "evidence": "live 2026-10-30 (test users, groups and a team), live 2026-10-31"
  },
  {
   "method": "PUT",
@@ -3049,8 +3049,8 @@
   "body": null,
   "answer": "{nextIndex, arraySize, permissions?:[\u2026]}",
   "example": "GET \u2026/access/teams/role/permissions?q=*&nextIndex=1&size=10",
-  "notes": "Still empty with a team that has role permissions and uaadmin as its manager; it uses the same team permission search as POST /teams/permissions (roles only, operation 'grantToUser'), which also stayed empty.",
-  "evidence": "live 2026-10-30 (test users, groups and a team)"
+  "notes": "Still empty with a team that has role permissions and uaadmin as its manager; it uses the same team permission search as POST /teams/permissions (roles only, operation 'grantToUser'), which also stayed empty. Still empty after a restart (2026-10-31).",
+  "evidence": "live 2026-10-30 (test users, groups and a team), live 2026-10-31"
  },
  {
   "method": "GET",

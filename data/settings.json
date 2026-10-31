@@ -1030,7 +1030,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/config/clients/{id}",
-  "status": "unknown",
+  "status": "validated",
   "purpose": "Update a client's name or match condition.",
   "params": [
    {
@@ -1043,47 +1043,30 @@
   ],
   "body": {
    "example": {
-    "id": "2",
-    "name": "Contractors",
-    "matchCondition": "<condition>"
+    "id": "1",
+    "name": "<client name>",
+    "matchCondition": "<condition>",
+    "config": "<config JSON text from GET>"
    },
    "fields": [
     {
      "name": "id",
      "required": true,
-     "values": "client id; the server uses this, not the path, to find the client",
+     "values": "the client id (same as the path)",
      "kind": "per-installation"
     },
     {
-     "name": "name",
+     "name": "name / matchCondition / config",
      "required": false,
-     "values": "must not be in use by another client",
-     "kind": "free"
-    },
-    {
-     "name": "matchCondition",
-     "required": false,
-     "values": "must not be used by another client",
-     "kind": "free"
-    },
-    {
-     "name": "config",
-     "required": false,
-     "values": "",
-     "kind": "free"
-    },
-    {
-     "name": "isDefault",
-     "required": false,
-     "values": "",
-     "kind": "free"
+     "values": "as read from GET \u2026/config/clients/{id}",
+     "kind": "per-installation"
     }
    ]
   },
-  "answer": "empty 200",
+  "answer": "200, no body",
   "example": "",
-  "notes": "Not called (write); the dashboard has no call for it. Blank body id: 'client not found'. Needs the 'settings' right for the path id.",
-  "evidence": "server code"
+  "notes": "Saves a client's settings. Tested by posting the GET answer back unchanged: GET afterwards was identical. Blank body id: 'client not found'. Needs the 'settings' right for the path id. The dashboard has no call for it.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -1383,7 +1366,7 @@
  {
   "method": "POST",
   "path": "/IDMProv/rest/access/dashboard/globalTiles",
-  "status": "unknown",
+  "status": "validated",
   "purpose": "Save the global dashboard tile layout.",
   "params": [
    {
@@ -1407,10 +1390,10 @@
     }
    ]
   },
-  "answer": "empty 200",
+  "answer": "{dashboardCustomizations: string} (what was saved)",
   "example": "",
-  "notes": "Not called (write); no dashboard call found. Missing dashboardCustomizations: 'payload is empty'. Needs the global dashboard right (403).",
-  "evidence": "server code"
+  "notes": "Saves the global dashboard layout. Tested by posting the GET answer's dashboardCustomizations back unchanged; GET afterwards was identical. Missing dashboardCustomizations: 'payload is empty'. Needs the global dashboard right (403). No dashboard call found.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "GET",
@@ -2392,13 +2375,13 @@
   "body": null,
   "answer": "the removed preference {isPreferenceAvailable:true, columns} (not empty, as earlier notes said)",
   "example": "DELETE \u2026/access/preference?attribute=<name>",
-  "notes": "GET afterwards: {isPreferenceAvailable:false}.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "GET afterwards: {isPreferenceAvailable:false}. The answer carries the preference that was deleted.",
+  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/preference",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Read one of the signed-in user's stored preferences.",
   "params": [
    {
@@ -2410,10 +2393,10 @@
    }
   ],
   "body": null,
-  "answer": "{isPreferenceAvailable: bool, columns?: [str], openFormInPopUp?: bool}",
-  "example": "GET \u2026/access/preference?attribute=rolesPageSize -> {isPreferenceAvailable:false}",
-  "notes": "uaadmin has no stored preferences, so every name tried answered false. Page sizes are stored as columns[0]. Side effect: the first read moves preferences from the old store to the new one if only the old one has data.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{isPreferenceAvailable:bool, columns?:[\u2026]}",
+  "example": "GET \u2026/access/preference?attribute=<name>",
+  "notes": "Answers the caller's stored preference of that name: after POST \u2026/preference?attribute=<name> {columns:[\u2026]} it gave {isPreferenceAvailable:true, columns}. Without attribute (All) it answered {isPreferenceAvailable:false} even while a named one existed. Dashboard names: rolesPageSize, resourcesPageSize, tasksPageSize, \u2026 (page sizes are stored as columns[0]). Side effect: the first read moves preferences from the old store to the new one if only the old one has data.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
@@ -2479,13 +2462,13 @@
   "body": null,
   "answer": "{isDashboardCustomized:false, dashboardCustomizations:<the removed layout>}",
   "example": "DELETE \u2026/access/preference/dashboard?attribute=<name>",
-  "notes": "GET afterwards: {isDashboardCustomized:false}. uaadmin's dashboard preferences (All) empty before and after.",
-  "evidence": "live 2026-10-30 (scratch objects)"
+  "notes": "GET afterwards: {isDashboardCustomized:false}. uaadmin's dashboard preferences (All) empty before and after. The answer carries the layout that was deleted.",
+  "evidence": "live 2026-10-30 (scratch objects), live 2026-10-31"
  },
  {
   "method": "GET",
   "path": "/IDMProv/rest/access/preference/dashboard",
-  "status": "empty-on-lab",
+  "status": "validated",
   "purpose": "Read the signed-in user's personal dashboard layout.",
   "params": [
    {
@@ -2497,10 +2480,10 @@
    }
   ],
   "body": null,
-  "answer": "{isDashboardCustomized: bool, dashboardCustomizations?: JSON string}",
-  "example": "GET \u2026/access/preference/dashboard -> {isDashboardCustomized:false}",
-  "notes": "uaadmin has no personal layout. No dashboard call found for this path.",
-  "evidence": "server code + live 2026-10-30"
+  "answer": "{isDashboardCustomized:bool, dashboardCustomizations?:string}",
+  "example": "GET \u2026/access/preference/dashboard?attribute=<name>",
+  "notes": "After POST \u2026/preference/dashboard?attribute=<name> {dashboardCustomizations:\"<JSON text>\"} it gave {isDashboardCustomized:true, dashboardCustomizations}. Without attribute (All): {isDashboardCustomized:false}.",
+  "evidence": "server code + live 2026-10-31"
  },
  {
   "method": "POST",
