@@ -1,0 +1,2874 @@
+[
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/admin/administrator/assignments",
+  "status": "from-ui",
+  "purpose": "Revokes domain or delegated administrator assignments from identities.",
+  "params": [],
+  "body": {
+   "example": {
+    "revokeAssignments": [
+     {
+      "assignmentDomain": "ROLES",
+      "identity": "cn=someone,ou=users,o=data",
+      "isAllPermissions": false
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "revokeAssignments",
+     "required": true,
+     "values": "non-empty list; 400/INV_INPUT when missing or empty",
+     "kind": "free"
+    },
+    {
+     "name": "revokeAssignments[].assignmentDomain",
+     "required": true,
+     "values": "domain key: PROVISIONING, ROLES, RESOURCES, SECURITY",
+     "kind": "fixed"
+    },
+    {
+     "name": "revokeAssignments[].identity",
+     "required": true,
+     "values": "assignee DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "revokeAssignments[].isAllPermissions",
+     "required": false,
+     "values": "true removes a domain administrator; false removes a delegated administrator and then each of their granular permissions in that domain",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{succeeded: bool, succeedNodes: [{id}], failNodes: [{id}]}",
+  "example": "DELETE \u2026/admin/administrator/assignments {revokeAssignments:[{assignmentDomain, identity, isAllPermissions}]}",
+  "notes": "Not called (write). Dashboard sends the selected rows as-is. Gated by the ADMIN_ASSIGNMENT client setting. The reference body adds arraySize, which the server ignores.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/administrator/assignments",
+  "status": "validated",
+  "purpose": "Lists the administrator assignments (domain and delegated admins) in all domains.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search on the assignee name; * or empty means all (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "sortColumn",
+    "in": "query",
+    "required": false,
+    "values": "column key from \u2026/assignments/columns, e.g. assignee, domain, adminType (default assignee)",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc (default asc)",
+    "kind": "fixed"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 20)",
+    "kind": "free"
+   },
+   {
+    "name": "filterSearch",
+    "in": "query",
+    "required": false,
+    "values": "filter handed to the assignment reader (default ALL); an unknown value was ignored on the lab",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{adminAssignments:[{assignee, assigneeDn, assignmentType, assignmentTypeKey, adminType, adminTypeKey, comment, domain, domainType, effectiveDate, status}], nextIndex, totalSize, total}",
+  "example": "GET \u2026/admin/administrator/assignments?q=*&nextIndex=1&size=5&sortColumn=assignee&sortOrder=asc",
+  "notes": "Lab: uaadmin holds both Domain Admin and Delegated Admin rows for Provisioning, etc. Values seen: adminTypeKey DOMAIN_ADMIN / DELEGATED_ADMIN, assignmentTypeKey USER, domainType PROVISIONING/ROLES/RESOURCES/SECURITY, status COMPLETED. Dates are epoch milliseconds. filterSearch=bogus gave the same rows as ALL.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/administrator/assignments/adminDomains",
+  "status": "validated",
+  "purpose": "Lists the administration domains the signed-in user is domain administrator of.",
+  "params": [],
+  "body": null,
+  "answer": "{domains:[{key, value}]}",
+  "example": "GET \u2026/admin/administrator/assignments/adminDomains",
+  "notes": "A Security domain admin gets every domain; otherwise only the domains the caller administers. Lab (uaadmin): PROVISIONING, ROLES, RESOURCES, SECURITY.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/administrator/assignments/columns",
+  "status": "validated",
+  "purpose": "Lists the columns (with localized labels) of the administrator assignment list.",
+  "params": [],
+  "body": null,
+  "answer": "{attributesList:[{key, displayLabel, isSortable}]}",
+  "example": "GET \u2026/admin/administrator/assignments/columns",
+  "notes": "Keys: adminType, domain, assignmentType, effectiveDate, status, comment, assignee, expirationDate \u2014 these are the sortColumn values for the list.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/administrator/assignments/create",
+  "status": "from-ui",
+  "purpose": "Makes an identity a domain administrator or delegated administrator of a domain.",
+  "params": [],
+  "body": {
+   "example": {
+    "assignee": "Some User",
+    "assigneeDn": "cn=someone,ou=users,o=data",
+    "assignmentType": "USER",
+    "adminType": "DELEGATED_ADMIN",
+    "domain": "ROLES",
+    "comment": "why",
+    "effectiveDate": 1790000000000,
+    "expirationDate": null
+   },
+   "fields": [
+    {
+     "name": "assigneeDn",
+     "required": true,
+     "values": "DN of the user/group/container being made administrator",
+     "kind": "per-installation"
+    },
+    {
+     "name": "adminType",
+     "required": true,
+     "values": "DOMAIN_ADMIN or DELEGATED_ADMIN (keys as the list returns them)",
+     "kind": "fixed"
+    },
+    {
+     "name": "assignmentType",
+     "required": true,
+     "values": "assignee kind, e.g. USER (list shows assignmentTypeKey)",
+     "kind": "fixed"
+    },
+    {
+     "name": "domain",
+     "required": true,
+     "values": "domain key PROVISIONING, ROLES, RESOURCES, SECURITY; DELEGATED_ADMIN in a domain that does not support delegation (SECURITY) is refused",
+     "kind": "fixed"
+    },
+    {
+     "name": "assignee",
+     "required": false,
+     "values": "display name; dashboard fills it from the picked identity",
+     "kind": "free"
+    },
+    {
+     "name": "comment",
+     "required": false,
+     "values": "free text",
+     "kind": "free"
+    },
+    {
+     "name": "effectiveDate",
+     "required": false,
+     "values": "epoch ms",
+     "kind": "free"
+    },
+    {
+     "name": "expirationDate",
+     "required": false,
+     "values": "epoch ms",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the posted node echoed back with status set to a localized success/failed text",
+  "example": "POST \u2026/admin/administrator/assignments/create {assigneeDn, adminType, assignmentType, domain, comment}",
+  "notes": "Not called (write). Missing assigneeDn/adminType/assignmentType/domain each raise their own validation error. Dashboard turns its picked assignee [{name, dn}] into assignee + assigneeDn. Gated by ADMIN_ASSIGNMENT client setting. The vendor reference shows an XML example.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/administrator/assignments/domains",
+  "status": "validated",
+  "purpose": "Lists all administration domains.",
+  "params": [],
+  "body": null,
+  "answer": "{domains:[{key, value}]}",
+  "example": "GET \u2026/admin/administrator/assignments/domains",
+  "notes": "Same four keys as adminDomains on the lab, but this one is not filtered by the caller's rights. The dashboard does not call it.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/admin/assignment/permissions",
+  "status": "from-ui",
+  "purpose": "Removes granular permissions from a delegated administrator.",
+  "params": [],
+  "body": {
+   "example": {
+    "assignedToDN": "cn=someone,ou=users,o=data",
+    "permissions": [
+     {
+      "dn": "cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+      "objClass": "nrfRole",
+      "permission": "nrfAccessViewRole"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "assignedToDN",
+     "required": true,
+     "values": "DN of the delegated administrator",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions",
+     "required": true,
+     "values": "list of granular permissions",
+     "kind": "free"
+    },
+    {
+     "name": "permissions[].dn",
+     "required": true,
+     "values": "DN of the object (role, resource, SoD, PRD, configuration) or container the right applies to",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions[].objClass",
+     "required": true,
+     "values": "object class from GET \u2026/admin/permission authObjects[].objectClass: nrfRole, nrfResource, nrfSOD, nrfConfiguration, srvprvRequest, srvprvAppConfig",
+     "kind": "fixed"
+    },
+    {
+     "name": "permissions[].permission",
+     "required": true,
+     "values": "permissionKey from GET \u2026/admin/permission, e.g. nrfAccessViewRole, nrfAccessCreateResource",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "list of per-permission success/failed nodes (id = permission dn)",
+  "example": "DELETE \u2026/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}",
+  "notes": "Not called (write). Same body as the PUT. The reference example shows the catalog permission node (id, name, permParams\u2026); the server only uses dn, objClass and permission.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/admin/assignment/permissions",
+  "status": "from-ui",
+  "purpose": "Grants granular permissions on objects to a delegated administrator.",
+  "params": [],
+  "body": {
+   "example": {
+    "assignedToDN": "cn=someone,ou=users,o=data",
+    "permissions": [
+     {
+      "dn": "cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+      "objClass": "nrfRole",
+      "permission": "nrfAccessViewRole"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "assignedToDN",
+     "required": true,
+     "values": "DN of the delegated administrator",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions",
+     "required": true,
+     "values": "list of granular permissions",
+     "kind": "free"
+    },
+    {
+     "name": "permissions[].dn",
+     "required": true,
+     "values": "DN of the object (role, resource, SoD, PRD, configuration) or container the right applies to",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions[].objClass",
+     "required": true,
+     "values": "object class from GET \u2026/admin/permission authObjects[].objectClass: nrfRole, nrfResource, nrfSOD, nrfConfiguration, srvprvRequest, srvprvAppConfig",
+     "kind": "fixed"
+    },
+    {
+     "name": "permissions[].permission",
+     "required": true,
+     "values": "permissionKey from GET \u2026/admin/permission, e.g. nrfAccessViewRole, nrfAccessCreateResource",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "list of per-permission success/failed nodes",
+  "example": "PUT \u2026/admin/assignment/permissions {assignedToDN, permissions:[{dn, objClass, permission}]}",
+  "notes": "Not called (write). nrfRole permissions are handled specially (role-level DNs). An empty body returns no response at all.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/assignments",
+  "status": "from-ui",
+  "purpose": "Removes the signed-in user's own role/resource/PRD permission assignments (self-revoke).",
+  "params": [],
+  "body": {
+   "example": {
+    "reason": "no longer needed",
+    "assignments": [
+     {
+      "id": "cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+      "entityType": "resource",
+      "instanceId": "<instance guid>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "assignments",
+     "required": true,
+     "values": "non-empty list, else 489 'permission required'",
+     "kind": "free"
+    },
+    {
+     "name": "assignments[].id",
+     "required": true,
+     "values": "role or resource DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "assignments[].entityType",
+     "required": true,
+     "values": "role, resource or prd",
+     "kind": "fixed"
+    },
+    {
+     "name": "assignments[].instanceId",
+     "required": false,
+     "values": "required for resources: the assignment instance GUID from the user's assignment list",
+     "kind": "per-installation"
+    },
+    {
+     "name": "reason",
+     "required": false,
+     "values": "request description",
+     "kind": "free"
+    },
+    {
+     "name": "correlationId",
+     "required": false,
+     "values": "generated when absent",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "per-assignment response list",
+  "example": "DELETE \u2026/access/assignments {reason, assignments:[{id, entityType, instanceId}]}",
+  "notes": "Not called (write). Acts on the caller's own assignments only. Inherited assignments (not directly assigned) and non-removable ones are refused with their own messages.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/delegatedAdmin/rights",
+  "status": "not-working",
+  "purpose": "Would check which of the listed permissions the signed-in delegated administrator may configure.",
+  "params": [],
+  "body": {
+   "example": {
+    "permissions": [
+     {
+      "id": "cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+      "entityType": "role"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "permissions",
+     "required": true,
+     "values": "list of permission nodes (id, entityType\u2026)",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "none: HTTP 404",
+  "example": "POST \u2026/catalog/delegatedAdmin/rights {permissions:[{id, entityType}]} \u2192 404",
+  "notes": "The method exists in the catalog jar, but its class is not in the catalog application's registered service list, so the path is never served (404 with any body). Use GET \u2026/admin/permission/rights?objectType= instead (that is what the dashboard calls).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/driver",
+  "status": "validated",
+  "purpose": "Lists every DirXML driver in the driver set with its GUID.",
+  "params": [],
+  "body": null,
+  "answer": "{nextIndex, arraySize, drivers:[{dn, name, guid}]}",
+  "example": "GET \u2026/admin/driver",
+  "notes": "No parameters (the dashboard builds q/nextIndex/size but never sends them). GUID is upper-case hex. Lab: 4 drivers (DCS, MSGW, Role and Resource, User Application).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/drivers",
+  "status": "empty-on-lab",
+  "purpose": "Lists the drivers whose entitlements the caller may bind to resources (resource-mapping drivers).",
+  "params": [
+   {
+    "name": "type",
+    "in": "query",
+    "required": false,
+    "values": "driver mapping type as an integer (default 2 = resource mapping); dashboard sends 4 for the CPRS (permission reconciliation) list; a non-number gives 404",
+    "kind": "fixed"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "accepted but ignored",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "echoed back, no paging",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "ignored",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex, drivers:[{id, name}]} (drivers omitted when none)",
+  "example": "GET \u2026/catalog/drivers?type=2",
+  "notes": "Lab has no entitlement-enabled drivers, so every type (0-5) answered {nextIndex:0}. Each driver is also checked for the caller's ENTITLEMENT BIND right.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/drivers/driver",
+  "status": "empty-on-lab",
+  "purpose": "Returns a driver with its entitlements (types, views/logical systems, parameter types) for resource mapping.",
+  "params": [
+   {
+    "name": "cprsSupported",
+    "in": "query",
+    "required": false,
+    "values": "true keeps only CPRS-capable entitlements (default false)",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "driver DN (JSON name id; empty body gives 489)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "requestFrom",
+     "required": false,
+     "values": "when set, entitlements without resource mapping are skipped",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{id, name, entitlements:[{id, displayName, description, entitlementType, views:[{displayName, viewID, queryKey}], paramTypes}]}",
+  "example": "POST \u2026/catalog/drivers/driver {id:\"cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "Lab drivers have no entitlements: the answer is just {id, name}. Entitlements whose configuration is missing or not resource-mapping-enabled are left out.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/drivers/driverEntitlementViewValues/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists code-map values of several entitlements for one logical system (view), unpaged.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "cn=User Application Driver,cn=driverset1,o=system",
+    "viewID": "<code map view id>",
+    "entitlements": [
+     {
+      "id": "cn=Group,cn=User Application Driver,cn=driverset1,o=system",
+      "displayName": "Group",
+      "paramLogicSystem": "<viewID>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "entitlements",
+     "required": true,
+     "values": "entitlements whose values to list; each needs id and paramLogicSystem (its view id)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "driver DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "viewID",
+     "required": false,
+     "values": "selected view (queryKey)",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{entitlementValues:[\u2026], arraySize} or {} when none",
+  "example": "POST \u2026/drivers/driverEntitlementViewValues/list {id, viewID, entitlements:[{id, paramLogicSystem}]}",
+  "notes": "Without paramLogicSystem the server fails with 489 'Error occurred retrieving data from Provisioning Param Code Map table'. With it the lab answered {} (no code maps). Not used by the dashboard (it uses listV2).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/drivers/driverEntitlementViewValues/listV2",
+  "status": "empty-on-lab",
+  "purpose": "Paged variant: lists code-map values of entitlements that have a logical system (view).",
+  "params": [
+   {
+    "name": "query",
+    "in": "query",
+    "required": false,
+    "values": "search text; * or empty for all (default empty)",
+    "kind": "free"
+   },
+   {
+    "name": "pageSize",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10; negative is refused)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=User Application Driver,cn=driverset1,o=system",
+    "viewID": "<queryKey>",
+    "hasLogicalSystem": true,
+    "entitlements": [
+     {
+      "id": "cn=Group,cn=User Application Driver,cn=driverset1,o=system",
+      "displayName": "Group",
+      "paramLogicSystem": "<viewID>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "entitlements",
+     "required": true,
+     "values": "entitlements whose values to list; each needs id and paramLogicSystem (its view id)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "driver DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "viewID",
+     "required": false,
+     "values": "selected view (queryKey)",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex, arraySize, entitlementValues:[\u2026]}",
+  "example": "POST \u2026/drivers/driverEntitlementViewValues/listV2?query=*&pageSize=10&nextIndex=1 {id, viewID, entitlements:[{id, displayName, paramLogicSystem}]}",
+  "notes": "Dashboard uses this when the entitlement has views (it sends hasLogicalSystem:true, which the server ignores). Same 489 as /list when paramLogicSystem is missing; with it the lab answered nothing.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/drivers/entitlementValues/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists every code-map value of a driver's (or one entitlement's) resource-mapping entitlements, unpaged.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "driver DN (or entitlement DN)",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{entitlementValues:[{id, value, name, description, entitlementName}], arraySize} or {}",
+  "example": "POST \u2026/drivers/entitlementValues/list {id:\"cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "Lab answered {}. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/drivers/entitlementValues/listV2",
+  "status": "empty-on-lab",
+  "purpose": "Paged list of an entitlement's code-map values when it has no logical system.",
+  "params": [
+   {
+    "name": "query",
+    "in": "query",
+    "required": false,
+    "values": "search text (default empty)",
+    "kind": "free"
+   },
+   {
+    "name": "pageSize",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=Group,cn=User Application Driver,cn=driverset1,o=system",
+    "hasLogicalSystem": false
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "entitlement (or driver) DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex, arraySize, entitlementValues:[\u2026]}",
+  "example": "POST \u2026/drivers/entitlementValues/listV2?query=*&pageSize=10&nextIndex=1 {id}",
+  "notes": "Dashboard sends {id: entitlement DN, hasLogicalSystem:false}. Lab: {nextIndex:0, arraySize:0}.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/drivers/entitlementViewValues/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists the values of one code-map view.",
+  "params": [],
+  "body": {
+   "example": {
+    "viewID": "Helpdesk Entitlement"
+   },
+   "fields": [
+    {
+     "name": "viewID",
+     "required": true,
+     "values": "view id from \u2026/resources/views or an entitlement's views",
+     "kind": "per-installation"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "entitlement DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{entitlementValues:[\u2026]} or {}",
+  "example": "POST \u2026/drivers/entitlementViewValues/list {viewID:\"Helpdesk Entitlement\"}",
+  "notes": "Lab answered {} even for its one view. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/driverstatus/info",
+  "status": "validated",
+  "purpose": "Shows the User Application driver's state, versions and licence expiry.",
+  "params": [],
+  "body": null,
+  "answer": "{patchLevel, appVersion, driverVersion, buildVersion, driverName, expirationDate, state}",
+  "example": "GET \u2026/admin/driverstatus/info",
+  "notes": "Lab: appVersion 4.10.2.0200, driverVersion 4.8, state Running, expirationDate epoch ms; driverName is the DN of the provisioning root.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/entitlements/entitlementInfo",
+  "status": "empty-on-lab",
+  "purpose": "Returns one entitlement's configuration: value type, multi-value, resource mapping, views and parameter types.",
+  "params": [
+   {
+    "name": "entilementDN",
+    "in": "query",
+    "required": true,
+    "values": "entitlement DN (note the vendor's spelling, missing the t)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{dn, name, description, multiValue, resourceMappingEnabled, type: NO_VALUE|FREE_FORM|DB|ADMIN|QUERY, entitlementLists, entitlementParamTypes}",
+  "example": "GET \u2026/catalog/entitlements/entitlementInfo?entilementDN=cn=Group,cn=<driver>,cn=driverset1,o=system",
+  "notes": "Missing or unknown DN answers 204 with no body (lab has no entitlements). type is fixed: FREE_FORM (external, free-form), DB (external with code map), ADMIN (static), QUERY (application query).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/entitlements/entitlementValues",
+  "status": "empty-on-lab",
+  "purpose": "Lists the code-map values of a view, optionally limited to parameter types.",
+  "params": [],
+  "body": {
+   "example": {
+    "viewID": "Helpdesk Entitlement",
+    "type": null
+   },
+   "fields": [
+    {
+     "name": "viewID",
+     "required": true,
+     "values": "view id (a DN is also accepted and turned into its GUID)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "type",
+     "required": false,
+     "values": "parameter types separated by %; null/empty for all",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{entitlementValues:[{name, description, paramType, value}], arraySize}",
+  "example": "POST \u2026/catalog/entitlements/entitlementValues {viewID:\"Helpdesk Entitlement\", type:null}",
+  "notes": "Used by form selection fields bound to a code map (dashboard sends viewID = the field's codeMapKey and type null). Results are cached per view/locale/types. Lab: arraySize 0 even for its one view; an empty body also answers {arraySize:0}.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/entitlements/resources",
+  "status": "empty-on-lab",
+  "purpose": "Finds the existing resources bound to an entitlement value, or proposes a new one, when mapping an entitlement to a role.",
+  "params": [],
+  "body": {
+   "example": {
+    "entitlements": [
+     {
+      "id": "cn=Group,cn=User Application Driver,cn=driverset1,o=system",
+      "displayName": "Group",
+      "name": "Group",
+      "parameterName": "cn=g1,ou=groups,o=data",
+      "parameterValue": "<value>",
+      "driverName": "<driver name>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "entitlements",
+     "required": true,
+     "values": "entitlement value(s) being mapped",
+     "kind": "free"
+    },
+    {
+     "name": "entitlements[].id",
+     "required": true,
+     "values": "entitlement DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlements[].parameterValue",
+     "required": false,
+     "values": "entitlement value used to find matching resources",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlements[].parameterName",
+     "required": false,
+     "values": "value label; becomes entName (and the proposed resource name)",
+     "kind": "free"
+    },
+    {
+     "name": "entitlements[].displayName",
+     "required": false,
+     "values": "entitlement display name",
+     "kind": "free"
+    },
+    {
+     "name": "entitlements[].driverName",
+     "required": false,
+     "values": "copied into the resource's driver",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{entResourcesList:[{entName, resources:[resource\u2026]}]}",
+  "example": "POST \u2026/catalog/entitlements/resources {entitlements:[{id, displayName, parameterName, parameterValue, driverName}]}",
+  "notes": "Read-only. Lab has no entitlements; a made-up entitlement DN gave 489 'Internal Error'. When no resource matches, the server proposes an unsaved one built from the entitlement.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/entitlements/tempResources",
+  "status": "validated",
+  "purpose": "Builds an unsaved draft resource from each entitlement value (name, id under ResourceDefs) for the role-mapping dialog.",
+  "params": [],
+  "body": {
+   "example": {
+    "entitlements": [
+     {
+      "id": "cn=Group,cn=User Application Driver,cn=driverset1,o=system",
+      "displayName": "Group",
+      "name": "Group",
+      "parameterName": "cn=g1,ou=groups,o=data",
+      "parameterValue": "<value>",
+      "driverName": "<driver name>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "entitlements",
+     "required": true,
+     "values": "entitlement value(s) being mapped",
+     "kind": "free"
+    },
+    {
+     "name": "entitlements[].id",
+     "required": true,
+     "values": "entitlement DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlements[].parameterValue",
+     "required": false,
+     "values": "entitlement value used to find matching resources",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlements[].parameterName",
+     "required": false,
+     "values": "value label; becomes entName (and the proposed resource name)",
+     "kind": "free"
+    },
+    {
+     "name": "entitlements[].displayName",
+     "required": false,
+     "values": "entitlement display name",
+     "kind": "free"
+    },
+    {
+     "name": "entitlements[].driverName",
+     "required": false,
+     "values": "copied into the resource's driver",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{entResourcesList:[{entName, resources:[{id, name, description, driver, entitlements, isExisted:false}]}]}",
+  "example": "POST \u2026/catalog/entitlements/tempResources {entitlements:[{id:\"cn=x,<driver dn>\", displayName:\"X\", parameterName:\"x\", driverName}]}",
+  "notes": "Despite the dashboard's name createTemporaryResource, the server only builds the draft in memory (isExisted false); nothing is saved \u2014 saving happens when the role mapping is posted. Checks the caller's resource CREATE right (403 node otherwise). Worked on the lab with a made-up entitlement.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/identityResync",
+  "status": "from-ui",
+  "purpose": "Sends a resync event for one identity to the Role and Resource Service driver.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "cn=someone,ou=users,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "identity DN; empty or malformed is refused",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success-flag, message} (message node)",
+  "example": "POST \u2026/admin/identityResync {dn}",
+  "notes": "Not called (write; brief forbids it). Only provisioning administrators may call it. Not in the dashboard bundles. Needs a Role and Resource driver in the driver set.",
+  "evidence": "server code"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/permission",
+  "status": "validated",
+  "purpose": "Lists the granular permissions that can be delegated in an administration domain, by object type.",
+  "params": [
+   {
+    "name": "domain",
+    "in": "query",
+    "required": true,
+    "values": "PROVISIONING, ROLES or RESOURCES (SECURITY is refused: not supported for delegated administration; PRD is refused although the reference names it)",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{authObjects:[{objectType, objectClass, permissions:[{permissionKey, permissionLabel}]}], nextIndex, totalSize, total}",
+  "example": "GET \u2026/admin/permission?domain=ROLES",
+  "notes": "Missing domain: 412 'invalid input domain type'. domain=PRD: 412 with reason 'PRD'; SECURITY: 412 'Given Domain type is not supported for Administartion Type'. The reference says ROLES, RESOURCES, PRD, but the dashboard and server use PROVISIONING. ROLES covers objectClass nrfSOD, nrfConfiguration, nrfRole\u2026; RESOURCES nrfConfiguration, nrfResource\u2026; PROVISIONING srvprvAppConfig, srvprvRequest.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/permission/assignment",
+  "status": "empty-on-lab",
+  "purpose": "Lists the granular permissions a delegated administrator holds in one domain.",
+  "params": [
+   {
+    "name": "assigneeDn",
+    "in": "query",
+    "required": true,
+    "values": "DN of the delegated administrator",
+    "kind": "per-installation"
+   },
+   {
+    "name": "domain",
+    "in": "query",
+    "required": true,
+    "values": "PROVISIONING, ROLES or RESOURCES (SECURITY is refused: not supported for delegated administration; PRD is refused although the reference names it)",
+    "kind": "fixed"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "sortColumn",
+    "in": "query",
+    "required": false,
+    "values": "default resolvedNameAuthObject",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc/desc (default asc)",
+    "kind": "fixed"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 20)",
+    "kind": "free"
+   },
+   {
+    "name": "filterSearch",
+    "in": "query",
+    "required": false,
+    "values": "optional filter; the dashboard appends extra filterKey=filterValue pairs",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{authObjects:[\u2026], nextIndex, totalSize, total}",
+  "example": "GET \u2026/admin/permission/assignment?assigneeDn=cn=uaadmin,ou=sa,o=data&domain=ROLES&q=*&nextIndex=1&size=5",
+  "notes": "Missing assigneeDn: 412 'invalid input DN value'; missing domain: 412 'invalid input domain type'; PRD refused as above. Lab uaadmin has no granular permissions, so nextIndex -1, total 0.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/permission/rights",
+  "status": "validated",
+  "purpose": "Tells whether the signed-in administrator may create roles, resources or SoDs.",
+  "params": [
+   {
+    "name": "objectType",
+    "in": "query",
+    "required": true,
+    "values": "role, resource or sod (lower case, exact); anything else answers isAccesible:false; missing gives 412 with a null-pointer text",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{permissionKey, isAccesible: bool}",
+  "example": "GET \u2026/admin/permission/rights?objectType=role",
+  "notes": "Field is spelled isAccesible. Lab (uaadmin): role \u2192 'create Role' true, resource \u2192 'create Resource' true, sod \u2192 'create Sod' true; 'Role' (capital) and 'prd' \u2192 {isAccesible:false}. Domain admins of ROLES (role, sod) / RESOURCES (resource) get true; delegated admins are checked against their create rights.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/permission/rootContainer",
+  "status": "validated",
+  "purpose": "Gives the container DNs that granular permissions of a domain can be scoped to.",
+  "params": [
+   {
+    "name": "domain",
+    "in": "query",
+    "required": true,
+    "values": "PROVISIONING, ROLES or RESOURCES (SECURITY is refused: not supported for delegated administration; PRD is refused although the reference names it)",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{mapList:[{key, value}]}",
+  "example": "GET \u2026/admin/permission/rootContainer?domain=ROLES",
+  "notes": "ROLES \u2192 RoleDefs, configuration, SoDDefs; RESOURCES \u2192 ResourceDefs, configuration, driverset1; PROVISIONING \u2192 RequestDefs, User Application Driver. Missing domain: 489 'Internal Error'; PRD 489; SECURITY 412 not supported. The dashboard picks SoDDefs from the ROLES answer for new SoDs.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/resourceCategories",
+  "status": "validated",
+  "purpose": "Searches resource categories.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "matches key or name; * for all (default empty = all)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "name only (default name); an unknown value gives 489 'Invalid sort order'/'Invalid sort-by column'",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "token",
+    "in": "query",
+    "required": false,
+    "values": "cache token from a previous answer; reuses the cached list",
+    "kind": "free"
+   },
+   {
+    "name": "forceRefresh",
+    "in": "query",
+    "required": false,
+    "values": "true with a token rebuilds the cache (default false)",
+    "kind": "fixed"
+   },
+   {
+    "name": "noCache",
+    "in": "query",
+    "required": false,
+    "values": "true skips the cache (default false)",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex, arraySize, categories:[{id, name}], token}",
+  "example": "GET \u2026/catalog/resourceCategories?q=*&nextIndex=1&size=5",
+  "notes": "Lab: default, helpdesk, system. Category ids are per-installation. nextIndex 0 means no more pages. sortBy=id \u2192 489 'Invalid sort-by column: id'.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources",
+  "status": "validated",
+  "purpose": "Create a resource (here without an entitlement binding).",
+  "params": [
+   {
+    "name": "fromEntitlement",
+    "in": "query",
+    "required": false,
+    "values": "true builds one resource per entitlement (default false)",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "<resource cn>",
+    "name": "<display name>",
+    "description": "<text>"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "the resource's cn",
+     "kind": "free"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "values": "display name",
+     "kind": "free"
+    },
+    {
+     "name": "description",
+     "required": true,
+     "values": "text",
+     "kind": "free"
+    },
+    {
+     "name": "categories / entitlements / owners / approval\u2026 / localizedNames",
+     "required": false,
+     "values": "see reference",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the resource with id = cn=<id>,cn=ResourceDefs,cn=RoleConfig,\u2026",
+  "example": "POST \u2026/catalog/resources {id, name, description}",
+  "notes": "No entitlement needed: a plain resource is created, and it could be assigned and revoked (status Completed).",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/category",
+  "status": "not-working",
+  "purpose": "Create a resource category (meant to).",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "<category key>",
+    "name": "<display name>"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "category key",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "values": "display name",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "'Created' as text on success (server code)",
+  "example": "POST \u2026/catalog/resources/category {id, name}",
+  "notes": "489 'Unable to find abstract layer object definition for the specified definition key.': the server looks up the directory abstraction layer entity 'resources-category', which this installation does not define. Nothing was created (GET /catalog/resourceCategories unchanged: default, helpdesk, system). There is no REST route to delete a category.",
+  "evidence": "server code + live"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/driverResources",
+  "status": "empty-on-lab",
+  "purpose": "Lists resources bound to a given driver, with filters.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search name/description (default empty)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "entitlementId",
+    "in": "query",
+    "required": false,
+    "values": "only resources bound to this entitlement DN",
+    "kind": "per-installation"
+   },
+   {
+    "name": "resourceType",
+    "in": "query",
+    "required": false,
+    "values": "dynamic or static (dashboard derives it from a boolean)",
+    "kind": "fixed"
+   },
+   {
+    "name": "logicalSystem",
+    "in": "query",
+    "required": false,
+    "values": "only resources for this view/logical system",
+    "kind": "per-installation"
+   },
+   {
+    "name": "managedBy",
+    "in": "query",
+    "required": false,
+    "values": "true keeps only resources managed by the permission-reconciliation (CPRS) service (default false)",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "driver DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex, arraySize, resources:[{id, name, description, driver, entitlementValues, managedBy}]}",
+  "example": "POST \u2026/catalog/resources/driverResources?q=*&nextIndex=1&size=10 {id:\"cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "Lab has no driver-bound resources, so arraySize 0. The dashboard also sends sortBy/sortOrder/column, which the server does not read.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/resources/list",
+  "status": "validated",
+  "purpose": "Searches resources (v1 list; the dashboard uses listV2 instead).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search name/description; * for all (default empty)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "name or description (default name); an unknown value gives 489 'Invalid sort order'/'Invalid sort-by column'",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "categoryKeys",
+    "in": "query",
+    "required": false,
+    "values": "resource category ids, comma separated",
+    "kind": "per-installation"
+   },
+   {
+    "name": "column",
+    "in": "query",
+    "required": false,
+    "values": "columns to return; default from the user's column preference, else name, description",
+    "kind": "fixed"
+   },
+   {
+    "name": "fetchEntitlements",
+    "in": "query",
+    "required": false,
+    "values": "default false",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex, arraySize, resources:[{id, name, description, allowMultiple, localizedNames, localizedDescriptions}], totalSize, total}",
+  "example": "GET \u2026/catalog/resources/list?q=*&nextIndex=1&size=3&categoryKeys=helpdesk&sortBy=description&sortOrder=desc",
+  "notes": "Lab: 6 resources, all helpdesk system resources. Only domain or delegated resource admins (else 489 security). sortBy=driver \u2192 489.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/catalog/resources/resource",
+  "status": "validated",
+  "purpose": "Delete resources.",
+  "params": [],
+  "body": {
+   "example": {
+    "resources": [
+     {
+      "id": "<resource DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "resources[].id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]}",
+  "example": "DELETE \u2026/catalog/resources/resource {resources:[{id}]}",
+  "notes": "Afterwards POST /catalog/resources/resource answers 489 'Permission with id [\u2026] does not exist.'.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/resource",
+  "status": "validated",
+  "purpose": "Returns full details of one or more resources (v1).",
+  "params": [],
+  "body": {
+   "example": {
+    "resources": [
+     {
+      "id": "cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "resources",
+     "required": true,
+     "values": "list of {id}",
+     "kind": "free"
+    },
+    {
+     "name": "resources[].id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{arraySize, resources:[{id, name, description, categories, subContainer, approvalOverRide, approvalRequired, approvalIsStandard, revokeRequired, revokeEqualsGrant, localizedNames, localizedDescriptions, managedBy}]}",
+  "example": "POST \u2026/catalog/resources/resource {resources:[{id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
+  "notes": "Read despite the POST. Only resource domain/delegated admins. The dashboard uses resourceV2 instead.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/catalog/resources/resource",
+  "status": "validated",
+  "purpose": "Change one resource.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "<resource DN>",
+    "name": "<new name>",
+    "description": "<new text>"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "other resource fields",
+     "required": false,
+     "values": "as for create",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the full resource after the change: {id, name, description, subContainer, approval\u2026, localizedNames, localizedDescriptions, managedBy, isExpirationRequired}",
+  "example": "PUT \u2026/catalog/resources/resource {id, name, description}",
+  "notes": "Localized name/description for the request locale follow the new values.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/resource/assignments/assign",
+  "status": "validated",
+  "purpose": "Assign a resource directly to identities.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<resource DN>",
+    "recipientDns": [
+     "<user DN>"
+    ],
+    "recipientType": "user",
+    "description": "<why>"
+   },
+   "fields": [
+    {
+     "name": "dn or dns",
+     "required": true,
+     "values": "resource DN, or a list in dns",
+     "kind": "per-installation"
+    },
+    {
+     "name": "recipientDns",
+     "required": true,
+     "values": "identity DNs",
+     "kind": "per-installation"
+    },
+    {
+     "name": "description",
+     "required": true,
+     "values": "reason",
+     "kind": "free"
+    },
+    {
+     "name": "recipientType",
+     "required": false,
+     "values": "user, group, container; not checked here",
+     "kind": "fixed"
+    },
+    {
+     "name": "effectiveDate / expiryDate",
+     "required": false,
+     "values": "epoch ms as strings; a past expiry is refused",
+     "kind": "free"
+    },
+    {
+     "name": "dynamicParams",
+     "required": false,
+     "values": "{dynamicParamList:[\u2026]} for resources with parameters",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, assignToUsers:[{dn, name}]}]}",
+  "example": "POST \u2026/catalog/resources/resource/assignments/assign {dn, recipientDns:[<user DN>], recipientType:'user', description}",
+  "notes": "Completed within 12 s (statusCode 50) for a resource with no entitlement; POST /catalog/resources/resource/assignments {dn} shows it with its instanceGuId.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/resource/assignments/revoke",
+  "status": "validated",
+  "purpose": "Revoke a resource from identities.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<resource DN>",
+    "recipientDns": [
+     "<user DN>"
+    ],
+    "recipientType": "user",
+    "description": "<why>"
+   },
+   "fields": [
+    {
+     "name": "dn or dns",
+     "required": true,
+     "values": "resource DN(s)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "recipientDns",
+     "required": true,
+     "values": "identity DNs",
+     "kind": "per-installation"
+    },
+    {
+     "name": "description",
+     "required": true,
+     "values": "reason",
+     "kind": "free"
+    },
+    {
+     "name": "instanceGuId",
+     "required": false,
+     "values": "not needed: the revoke worked without it",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, assignToUsers:[{dn, name}]}]}",
+  "example": "POST \u2026/catalog/resources/resource/assignments/revoke {dn, recipientDns, recipientType:'user', description}",
+  "notes": "Unlike DELETE /access/assignments/list, no instance id was needed; the assignment list was empty 12 s later.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/catalog/resources/resource/entitlement",
+  "status": "from-ui",
+  "purpose": "Changes the entitlement binding of an existing resource.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+    "entitlements": [
+     {
+      "id": "cn=Group,<driver dn>",
+      "displayName": "Group",
+      "parameterValue": "<value>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "resource DN; missing/empty refused",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlements",
+     "required": false,
+     "values": "new binding",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "response list",
+  "example": "PUT \u2026/resources/resource/entitlement {id, entitlements}",
+  "notes": "Not called (write). Missing body: 400 payload required.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/resource/entitlements/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists the entitlement values bound to a resource.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{entitlementValues:[\u2026]} or {} when the resource has none",
+  "example": "POST \u2026/resources/resource/entitlements/list {id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "Lab helpdesk resources have no entitlements: {}. An empty body gives an HTML 500.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/resource/entitlements/list/v2",
+  "status": "empty-on-lab",
+  "purpose": "Same as entitlements/list, typed by entity.",
+  "params": [
+   {
+    "name": "entityType",
+    "in": "query",
+    "required": false,
+    "values": "default resource",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{entitlementValues:[\u2026]} or {}",
+  "example": "POST \u2026/resources/resource/entitlements/list/v2?entityType=resource {id}",
+  "notes": "Lab: {}. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/resourceV2",
+  "status": "validated",
+  "purpose": "Returns full details of resources, including dynamic parameters (what the dashboard uses).",
+  "params": [
+   {
+    "name": "entityType",
+    "in": "query",
+    "required": false,
+    "values": "default resource",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "resources": [
+     {
+      "id": "cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "resources[].id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "resources[].resourceParameters",
+     "required": false,
+     "values": "parameter values to resolve",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{arraySize, resources:[{id, name, description, categories, subContainer, approvalOverRide, approvalRequired, approvalIsStandard, revokeRequired, resourceParameters, allowMultiple, localizedNames, localizedDescriptions, managedBy}]}",
+  "example": "POST \u2026/catalog/resources/resourceV2 {resources:[{id:\"cn=Helpdesk-Group,cn=System,cn=ResourceDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
+  "notes": "Read. Allowed for resource admins, or inside a workflow session. Adds resourceParameters and allowMultiple compared to v1.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/catalog/resources/resources",
+  "status": "validated",
+  "purpose": "Change several resources in one call.",
+  "params": [],
+  "body": {
+   "example": {
+    "resources": [
+     {
+      "id": "<resource DN>",
+      "name": "<new name>",
+      "description": "<new text>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "resources",
+     "required": true,
+     "values": "non-empty list",
+     "kind": "free"
+    },
+    {
+     "name": "resources[].id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]}",
+  "example": "PUT \u2026/catalog/resources/resources {resources:[{id, name, description}]}",
+  "notes": "",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/resources/validateResourceNames",
+  "status": "validated",
+  "purpose": "Checks proposed resource names: whether the resulting id already exists, and a usable suggested name.",
+  "params": [],
+  "body": {
+   "example": {
+    "resourceNames": [
+     {
+      "name": "Group Access"
+     },
+     {
+      "name": "Group/Access"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "resourceNames",
+     "required": true,
+     "values": "list of {name}; a top-level name alone gives 489",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{arraySize, resources:[{name, isNameExist, suggestedName}]}",
+  "example": "POST \u2026/catalog/resources/validateResourceNames {resourceNames:[{name:\"Group Access\"}]}",
+  "notes": "Invalid characters are stripped/replaced in suggestedName ('Group/Access' \u2192 'Group_Access'); names over 64 characters are cut. The existence check looks for the id in the default resource container, so even existing System resources ('Helpdesk-Group') answered isNameExist false. Not called by the dashboard bundles.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/resources/views",
+  "status": "validated",
+  "purpose": "Lists the code-map views (logical systems) available for entitlement values.",
+  "params": [],
+  "body": null,
+  "answer": "{views:[{displayName, viewID, description}]}",
+  "example": "GET \u2026/catalog/resources/views",
+  "notes": "Lab: one view, 'Helpdesk Entitlement'. viewID is per-installation.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/roleCategories",
+  "status": "validated",
+  "purpose": "Searches role categories.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "matches key or name; * for all (default empty)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default name",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex, arraySize, categories:[{id, name}]}",
+  "example": "GET \u2026/catalog/roleCategories?q=*&nextIndex=1&size=5",
+  "notes": "Lab: default, system.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/roles/list",
+  "status": "validated",
+  "purpose": "Searches roles (v1 list; the dashboard uses listV2).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search name/description (default empty)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "roleLevel",
+    "in": "query",
+    "required": false,
+    "values": "role level number(s), comma separated, e.g. 10,20; a non-number gives 489",
+    "kind": "per-installation"
+   },
+   {
+    "name": "categoryKeys",
+    "in": "query",
+    "required": false,
+    "values": "role category ids, comma separated",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "name, description or roleLevel (default name); an unknown value gives 489 'Invalid sort order'/'Invalid sort-by column'",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "column",
+    "in": "query",
+    "required": false,
+    "values": "columns to return; default from the roleList column preference, else name, description",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex, arraySize, roles:[{id, name, description, localizedNames, localizedDescriptions}], totalSize, total}",
+  "example": "GET \u2026/catalog/roles/list?q=*&nextIndex=1&size=3&roleLevel=20&sortBy=name&sortOrder=desc",
+  "notes": "Lab: 10 system roles, all level 20; categoryKeys=system finds them, default finds none. Only role domain or delegated admins (else 489). sortBy=level \u2192 489 'Invalid sort-by column: level'.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/catalog/roles/mappedResources",
+  "status": "validated",
+  "purpose": "Remove resource mappings from a role.",
+  "params": [],
+  "body": {
+   "example": {
+    "roleId": "<role DN>",
+    "mappedResources": [
+     {
+      "id": "<resource DN>",
+      "entityKey": "<association DN from mappedResources/list>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roleId",
+     "required": true,
+     "values": "role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "mappedResources[].id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "mappedResources[].entityKey",
+     "required": true,
+     "values": "the association DN from POST /catalog/roles/mappedResources/list; without it 489 'Internal Error'",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{succeeded:[{id}]}",
+  "example": "DELETE \u2026/catalog/roles/mappedResources {roleId, mappedResources:[{id, entityKey}]}",
+  "notes": "entityKey is what the server deletes by; the mapping list was empty afterwards.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/mappedResources",
+  "status": "validated",
+  "purpose": "Map resources to a role.",
+  "params": [],
+  "body": {
+   "example": {
+    "roleId": "<role DN>",
+    "mappedResources": [
+     {
+      "id": "<resource DN>",
+      "mappingDescription": "<why>",
+      "isExisted": true
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roleId",
+     "required": true,
+     "values": "role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "mappedResources",
+     "required": true,
+     "values": "list",
+     "kind": "free"
+    },
+    {
+     "name": "mappedResources[].id",
+     "required": true,
+     "values": "resource DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "mappedResources[].mappingDescription",
+     "required": false,
+     "values": "reason",
+     "kind": "free"
+    },
+    {
+     "name": "mappedResources[].isExisted",
+     "required": false,
+     "values": "true for an existing resource",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{succeeded:[{id}]} (no success flag)",
+  "example": "POST \u2026/catalog/roles/mappedResources {roleId, mappedResources:[{id, mappingDescription, isExisted:true}]}",
+  "notes": "Creates a resource-association object under cn=ResourceAssociations,cn=RoleConfig,\u2026; POST /catalog/roles/mappedResources/list {id:<role DN>} shows it with status 50 and its entityKey.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/mappedResources/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists the resources mapped to a role.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search name/description (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "name or description (default name); an unknown value gives 489 'Invalid sort order'/'Invalid sort-by column'",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "driverID",
+    "in": "query",
+    "required": false,
+    "values": "only resources of this driver DN (default empty)",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "role DN; empty body gives 489 'Role id is required'",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex, arraySize, resources:[{id, name, description, status, mappingDescription, entityKey, driver\u2026}]}",
+  "example": "POST \u2026/catalog/roles/mappedResources/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "Lab system roles have no mapped resources. The dashboard sends the selected role object and driverID.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/catalog/roles/parentRoles",
+  "status": "validated",
+  "purpose": "Remove parent roles from a role.",
+  "params": [],
+  "body": {
+   "example": {
+    "roleId": "<child role DN>",
+    "parentRoles": [
+     {
+      "id": "<parent role DN>",
+      "requestDescription": "<why>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roleId",
+     "required": true,
+     "values": "child role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "parentRoles[].id",
+     "required": true,
+     "values": "parent role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "parentRoles[].requestDescription",
+     "required": true,
+     "values": "reason",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, name}]}",
+  "example": "DELETE \u2026/catalog/roles/parentRoles {roleId, parentRoles:[{id, requestDescription}]}",
+  "notes": "",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/parentRoles",
+  "status": "validated",
+  "purpose": "Give a role parent roles.",
+  "params": [],
+  "body": {
+   "example": {
+    "roleId": "<child role DN>",
+    "parentRoles": [
+     {
+      "id": "<parent role DN, higher level>",
+      "requestDescription": "<why>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roleId",
+     "required": true,
+     "values": "child role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "parentRoles",
+     "required": true,
+     "values": "non-empty list",
+     "kind": "free"
+    },
+    {
+     "name": "parentRoles[].id",
+     "required": true,
+     "values": "parent role DN at a higher level",
+     "kind": "per-installation"
+    },
+    {
+     "name": "parentRoles[].requestDescription",
+     "required": true,
+     "values": "reason",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, name}]} or success false with failed[{id, reason, errCode}]",
+  "example": "POST \u2026/catalog/roles/parentRoles {roleId:<level-10 role>, parentRoles:[{id:<level-20 role>, requestDescription}]}",
+  "notes": "A level-10 parent: 200 success false, errCode 403 'The role belongs to level 10 can't be a parent of any other roles'. The same link shows from both sides (parentRoles/list of the child, subRoles/list of the parent).",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/parentRoles/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists a role's parent roles.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search name/description (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "name or description (default name); an unknown value gives 489 'Invalid sort order'/'Invalid sort-by column'",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "role DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex, arraySize, roles:[{id, name, description, level\u2026}]}",
+  "example": "POST \u2026/catalog/roles/parentRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "Lab system roles have no parents. Unknown role \u2192 400 'not found'.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/role/assignments/assign",
+  "status": "validated",
+  "purpose": "Assign a role directly to identities (no request workflow).",
+  "params": [],
+  "body": {
+   "example": {
+    "reason": "<why>",
+    "assignments": [
+     {
+      "id": "<role DN>",
+      "entityType": "role",
+      "assignmentToList": [
+       {
+        "assignedToDn": "<user DN>",
+        "subtype": "user"
+       }
+      ]
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "reason",
+     "required": true,
+     "values": "request description; empty is refused",
+     "kind": "free"
+    },
+    {
+     "name": "assignments",
+     "required": true,
+     "values": "non-empty list of roles",
+     "kind": "free"
+    },
+    {
+     "name": "assignments[].id",
+     "required": true,
+     "values": "role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "assignments[].entityType",
+     "required": false,
+     "values": "role",
+     "kind": "fixed"
+    },
+    {
+     "name": "assignments[].assignmentToList[].assignedToDn",
+     "required": true,
+     "values": "recipient DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "assignments[].assignmentToList[].subtype",
+     "required": true,
+     "values": "user, group or container (lower case)",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, assignToUsers:[{dn, name}]}]}",
+  "example": "POST \u2026/catalog/roles/role/assignments/assign {reason, assignments:[{id, entityType:'role', assignmentToList:[{assignedToDn, subtype:'user'}]}]}",
+  "notes": "Completed within 12 s: POST /catalog/roles/role/assignments shows 'User Assigned to Role', status Completed, and GET /access/assignments/identities lists the user. The recipient field is subtype (as in the revocation), not type. Revoked with DELETE /access/assignments/list.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/roleV2",
+  "status": "validated",
+  "purpose": "Returns full details of roles (what the dashboard uses).",
+  "params": [
+   {
+    "name": "entityType",
+    "in": "query",
+    "required": false,
+    "values": "default role; accepted but not used for roles",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "roles": [
+     {
+      "id": "cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roles",
+     "required": true,
+     "values": "non-empty list; empty gives 489 empty payload",
+     "kind": "free"
+    },
+    {
+     "name": "roles[].id",
+     "required": true,
+     "values": "role DN; blank gives 489",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{arraySize, roles:[{id, name, description, categories, level, roleLevel:{name, level, cn\u2026}, subContainer, approvalIsStandard, approvalRequired, localizedNames, localizedDescriptions}]}",
+  "example": "POST \u2026/catalog/roles/roleV2 {roles:[{id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}]}",
+  "notes": "A bare {id} (without the roles list) gives 489. Callers without read rights on a system role get 489 'unauthorized to view System Role Details'.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/catalog/roles/roles",
+  "status": "validated",
+  "purpose": "Change several roles in one call.",
+  "params": [],
+  "body": {
+   "example": {
+    "roles": [
+     {
+      "id": "<role DN>",
+      "name": "<new name>",
+      "description": "<new text>",
+      "level": 10
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roles",
+     "required": true,
+     "values": "non-empty list",
+     "kind": "free"
+    },
+    {
+     "name": "roles[].id",
+     "required": true,
+     "values": "role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "roles[].name / description / level / categories / owners / approval\u2026",
+     "required": false,
+     "values": "fields to change",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]}",
+  "example": "PUT \u2026/catalog/roles/roles {roles:[{id, name, description, level}]}",
+  "notes": "POST /catalog/roles/role showed the new name and description at once.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/catalog/roles/subRoles",
+  "status": "validated",
+  "purpose": "Remove child roles from a role.",
+  "params": [],
+  "body": {
+   "example": {
+    "roleId": "<parent role DN>",
+    "subRoles": [
+     {
+      "id": "<child role DN>",
+      "requestDescription": "<why>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roleId",
+     "required": true,
+     "values": "parent role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "subRoles[].id",
+     "required": true,
+     "values": "child role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "subRoles[].requestDescription",
+     "required": true,
+     "values": "required on delete too: else 489 'Request description is required for all Child Roles'",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, name}]}",
+  "example": "DELETE \u2026/catalog/roles/subRoles {roleId, subRoles:[{id, requestDescription}]}",
+  "notes": "Only role domain administrators (403 otherwise, server code).",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/subRoles",
+  "status": "validated",
+  "purpose": "Make roles children of a role.",
+  "params": [],
+  "body": {
+   "example": {
+    "roleId": "<parent role DN, higher level>",
+    "subRoles": [
+     {
+      "id": "<child role DN, lower level>",
+      "requestDescription": "<why>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "roleId",
+     "required": true,
+     "values": "parent role DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "subRoles",
+     "required": true,
+     "values": "non-empty list",
+     "kind": "free"
+    },
+    {
+     "name": "subRoles[].id",
+     "required": true,
+     "values": "child role DN, at a lower level than the parent",
+     "kind": "per-installation"
+    },
+    {
+     "name": "subRoles[].requestDescription",
+     "required": true,
+     "values": "reason; blank is refused",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, name}]} or success false with failed[].reason (HTTP 200)",
+  "example": "POST \u2026/catalog/roles/subRoles {roleId:<level-20 role>, subRoles:[{id:<level-10 role>, requestDescription}]}",
+  "notes": "Two level-10 roles: 200 success false 'Invalid roles specified for the role to role assignment \u2026 You can only assign role at the different level!'. Worked with a level-20 parent. Read back: POST /catalog/roles/subRoles/list {id:<parent>}.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/roles/subRoles/list",
+  "status": "empty-on-lab",
+  "purpose": "Lists a role's child roles with their request details.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search name/description (default empty)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "name or description (default name); an unknown value gives 489 'Invalid sort order'/'Invalid sort-by column'",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "id": "cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "role DN; empty body gives 489",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex, arraySize, roles:[{id, name, description, level, requestDescription, requester, approval}]}",
+  "example": "POST \u2026/catalog/roles/subRoles/list?nextIndex=1&size=10&q=* {id:\"cn=provAdmin,cn=System,cn=Level20,cn=RoleDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "Lab system roles have no children. Dashboard always asks from nextIndex 1.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/sods",
+  "status": "not-working",
+  "purpose": "Create a separation-of-duties constraint between two roles (meant to).",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "<sod cn>",
+    "name": "<display name>",
+    "description": "<text>",
+    "roles": [
+     {
+      "id": "<role DN 1>"
+     },
+     {
+      "id": "<role DN 2>"
+     }
+    ],
+    "sodApprovalType": "ALWAYS_ALLOW"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "the new SoD's cn; placed under the SoD container",
+     "kind": "free"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "values": "display name",
+     "kind": "free"
+    },
+    {
+     "name": "description",
+     "required": true,
+     "values": "required by the server code",
+     "kind": "free"
+    },
+    {
+     "name": "roles",
+     "required": true,
+     "values": "the two conflicting roles [{id}]",
+     "kind": "per-installation"
+    },
+    {
+     "name": "sodApprovalType",
+     "required": true,
+     "values": "enumeration names ALWAYS_ALLOW or ALLOW_WITH_WORKFLOW (the server's enum carries '0'/'1' internally; the JSON form is the name)",
+     "kind": "fixed"
+    },
+    {
+     "name": "isDefaultApproversUsed / approvers / approvalRequestDef / approvalQuorum",
+     "required": false,
+     "values": "approval settings; defaults from GET /catalog/sods/defaultApprovals",
+     "kind": "per-installation"
+    },
+    {
+     "name": "localizedNames / localizedDescriptions",
+     "required": false,
+     "values": "[{locale, name}] / [{locale, desc}]",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the SoD with its DN and hasConflicts (server code)",
+  "example": "POST \u2026/catalog/sods {id, name, description, roles, sodApprovalType}",
+  "notes": "Five variants (sodApprovalType '0', ALWAYS_ALLOW, ALLOW_WITH_WORKFLOW; with and without approvalRequestDef from sods/defaultApprovals, isDefaultApproversUsed and localized names) all gave 489 'Internal Error. Please contact Administrator.' with subcode 'Internal exception occurred processing REST service'. Nothing was created (GET /catalog/sods arraySize 0, POST /catalog/sods/sod of the expected DN empty). The duplicate-SoD check before the write wraps any failure in that generic message, so the cause is not visible.",
+  "evidence": "server code + live"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/sods/defaultApprovals",
+  "status": "validated",
+  "purpose": "Returns the default approval settings for new SoDs.",
+  "params": [],
+  "body": null,
+  "answer": "{approvalRequestDef, approvers?, quorum?}",
+  "example": "GET \u2026/catalog/sods/defaultApprovals",
+  "notes": "Lab: approvalRequestDef cn=Role Approval,cn=RequestDefs,\u2026; no default approvers or quorum.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/catalog/sods/sod",
+  "status": "from-ui",
+  "purpose": "Deletes SoDs.",
+  "params": [],
+  "body": {
+   "example": {
+    "sods": [
+     {
+      "id": "<sod dn>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "sods[].id",
+     "required": true,
+     "values": "SoD DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "response list",
+  "example": "DELETE \u2026/catalog/sods/sod {sods:[{id}]}",
+  "notes": "Not called (write). Each SoD needs the caller's DELETE right.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/catalog/sods/sod",
+  "status": "empty-on-lab",
+  "purpose": "Returns details of one or more SoDs.",
+  "params": [
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "sods": [
+     {
+      "id": "cn=x,cn=SoDDefs,cn=RoleConfig,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "sods[].id",
+     "required": true,
+     "values": "SoD DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{sods:[\u2026], arraySize, nextIndex}",
+  "example": "POST \u2026/catalog/sods/sod {sods:[{id}]}",
+  "notes": "Read. Lab has no SoDs; unknown ids are skipped (arraySize 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/catalog/sods/sod",
+  "status": "from-ui",
+  "purpose": "Updates a SoD.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "<sod dn>",
+    "name": "\u2026",
+    "roles": [
+     {
+      "id": "<role dn 1>"
+     },
+     {
+      "id": "<role dn 2>"
+     }
+    ],
+    "sodApprovalType": "0"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "for create: the new SoD's CN (the server puts it under the SoD container); for update: SoD DN",
+     "kind": "free"
+    },
+    {
+     "name": "name",
+     "required": true,
+     "values": "display name",
+     "kind": "free"
+    },
+    {
+     "name": "description",
+     "required": false,
+     "values": "text",
+     "kind": "free"
+    },
+    {
+     "name": "roles",
+     "required": true,
+     "values": "the two conflicting roles [{id}]",
+     "kind": "per-installation"
+    },
+    {
+     "name": "sodApprovalType",
+     "required": true,
+     "values": "0 = always allow, 1 = allow with approval workflow",
+     "kind": "fixed"
+    },
+    {
+     "name": "isDefaultApproversUsed / approvers / approvalRequestDef / approvalQuorum",
+     "required": false,
+     "values": "approval settings (defaults from \u2026/sods/defaultApprovals)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "localizedNames / localizedDescriptions",
+     "required": false,
+     "values": "per locale",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "response list",
+  "example": "PUT \u2026/catalog/sods/sod {id, name, roles, sodApprovalType}",
+  "notes": "Not called (write).",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/cacheinfo",
+  "status": "validated",
+  "purpose": "Lists the User Application cache holders and their object counts.",
+  "params": [],
+  "body": null,
+  "answer": "{cacheArraySize, cacheHolders:[{name, objectCount}]}",
+  "example": "GET \u2026/catalog/statistics/cacheinfo",
+  "notes": "Lab: 19 holders.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/clusterinfo",
+  "status": "empty-on-lab",
+  "purpose": "Shows the cache cluster (JGroups) name, local address and state.",
+  "params": [],
+  "body": null,
+  "answer": "{clusterName, localAdrress, sentBytes, rcvdBytes, sentMessages, rcvdMessages, isOpen, isConnected, dumpStats} or {}",
+  "example": "GET \u2026/catalog/statistics/clusterinfo",
+  "notes": "Lab is not clustered: {}. Field is spelled localAdrress.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/jvmstats",
+  "status": "validated",
+  "purpose": "Per-node JVM memory statistics.",
+  "params": [],
+  "body": null,
+  "answer": "{nodesStats:{Node_1:{ipAddressAndPort, memoryStats:{jvmMemoryUsage, jvmMemoryPool\u2026}}}}",
+  "example": "GET \u2026/catalog/statistics/jvmstats",
+  "notes": "Lab: one node.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/memoryinfo",
+  "status": "validated",
+  "purpose": "JVM memory, runtime, OS and class-loader statistics.",
+  "params": [],
+  "body": null,
+  "answer": "{memoryInfo:{jvmMemoryUsage, jvmMemoryPool, systemMemoryUsage, commitedVirtualMemory}, runtimeStats:[{uptime, startTime, systemProperties:[{key,value}]}], operatingSystemStats, classLoaderStats}",
+  "example": "GET \u2026/catalog/statistics/memoryinfo",
+  "notes": "systemProperties lists every JVM system property (about 100), including the trust store's password in clear and key store paths. The method itself checks no rights; on the lab it was called as the applications administrator. Value not recorded here.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/threadinfo",
+  "status": "validated",
+  "purpose": "Top CPU-consuming threads and thread-state counts.",
+  "params": [
+   {
+    "name": "stack",
+    "in": "query",
+    "required": false,
+    "values": "true adds each thread's stack trace (default false)",
+    "kind": "fixed"
+   },
+   {
+    "name": "thread-count",
+    "in": "query",
+    "required": false,
+    "values": "number of top CPU threads (default 5)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{topMostCPUConsumingThread:[{name, state, cpuTimeInMilliSec, stackTrace?}], threadStateCounts:[{state, count}]}",
+  "example": "GET \u2026/catalog/statistics/threadinfo?stack=true&thread-count=1",
+  "notes": "stackTrace is one string, not a list.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/workflowcacheinfo",
+  "status": "validated",
+  "purpose": "Cache holders of the workflow engine.",
+  "params": [],
+  "body": null,
+  "answer": "{cacheArraySize, cacheHolders:[{name, objectCount}]}",
+  "example": "GET \u2026/catalog/statistics/workflowcacheinfo",
+  "notes": "Lab: same 19 holders as cacheinfo (workflow engine runs in the same JVM).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/workflowjvmstats",
+  "status": "validated",
+  "purpose": "JVM memory statistics of the workflow engine nodes.",
+  "params": [],
+  "body": null,
+  "answer": "{nodesStats:{Node_1:{\u2026}}}",
+  "example": "GET \u2026/catalog/statistics/workflowjvmstats",
+  "notes": "Same shape as jvmstats.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/workflowmemoryinfo",
+  "status": "validated",
+  "purpose": "Memory/runtime statistics of the workflow engine.",
+  "params": [],
+  "body": null,
+  "answer": "same shape as memoryinfo",
+  "example": "GET \u2026/catalog/statistics/workflowmemoryinfo",
+  "notes": "Like memoryinfo, it returns every JVM system property, the trust store's password among them (not recorded here).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/workflowstatistics",
+  "status": "validated",
+  "purpose": "Workflow counts: total, completed, failed, terminated, in progress, recent requests.",
+  "params": [],
+  "body": null,
+  "answer": "{currentTimeStamp, totalWorkflows, completedWorkflows, completedWorkflowsInLast5Mins, \u2026InLast1Min, \u2026InLast10Secs, failedWorkflows, terminatedWorkflows, inProgressWorkflows, newRequestsInLast5Mins, \u2026}",
+  "example": "GET \u2026/catalog/statistics/workflowstatistics",
+  "notes": "Lab: 20 total, 17 completed, 2 failed, 1 terminated. currentTimeStamp is a server-local text timestamp.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/catalog/statistics/workflowthreadinfo",
+  "status": "validated",
+  "purpose": "Top CPU threads of the workflow engine.",
+  "params": [
+   {
+    "name": "stack",
+    "in": "query",
+    "required": false,
+    "values": "true adds each thread's stack trace (default false)",
+    "kind": "fixed"
+   },
+   {
+    "name": "thread-count",
+    "in": "query",
+    "required": false,
+    "values": "number of top CPU threads (default 5)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "same shape as threadinfo",
+  "example": "GET \u2026/catalog/statistics/workflowthreadinfo",
+  "notes": "",
+  "evidence": "server code + live 2026-10-30"
+ }
+]

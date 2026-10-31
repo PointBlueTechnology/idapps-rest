@@ -20,7 +20,13 @@ record that, from calls made against a running system.
 ## Contents
 
 - [Authenticating](docs/authentication.md): OSP tokens, refresh, lifetimes, and the trap that locks a user out
-- [Every endpoint](docs/endpoints.md): all 339 operations, with the ones validated so far; the rest are placeholders
+- [Every endpoint](docs/endpoints.md): all 339 operations, each with its status and a link to its section
+- The reference, by area: one section per operation, with its parameters, body fields, answer and an example:
+  - [Workflow](docs/reference/workflow.md): tasks, requests, the cart, forms, teams, proxies, delegation, availability
+  - [Catalog](docs/reference/catalog.md): roles, resources, SoDs, entitlements, categories, drivers, administrators
+  - [People](docs/reference/people.md): users, groups, containers, entities, the organization chart, the DAL
+  - [Settings](docs/reference/settings.md): configuration, administration, display, logging, caches, workflow engines
+  - [Not in the reference](docs/reference/unlisted.md): routes the server answers that the reference leaves out
 
 In this page:
 
@@ -39,6 +45,9 @@ How each fact is known:
 
 - **[live]:** called on the lab system, with the answer shown.
 - **[server]:** read from the applications' own error messages, which name the field they want.
+- **[server code]:** read from the 4.10.2 server's REST classes: their routes, defaults, the fields they check and
+  the values they compare against. The reference pages say so in each operation's status. The code itself is not
+  reproduced here.
 - **[reference]:** only from the vendor's reference.
 
 ---
@@ -544,16 +553,15 @@ request object):
 
 - `GET /access/tasks/historyList` (tasks the caller acted on). It answered 489 "An error occurred while obtaining the
   process or comment details from the database" with every combination of its parameters.
-- `POST /access/requests/historylist/permission` (all requests for one role or resource, for administrators). It
-  answered "Permission id (id:) is required" with the permission's DN as `id` in the body, as `id` in the query, and
-  as `permissionId` in both.
 
-**Not called on the lab** (reference only):
+**Since fixed:** `POST /access/requests/historylist/permission` (all requests for one role or resource, for
+administrators) takes the permission's DN in the `item` **query** parameter, not in `id`
+(`?item=<role DN>&type=role`, body `{}`) **[server code, live]**. The answer is
+`{"totalSize", "total", "nextIndex", …}`.
 
-- direct assignment (§4.4);
-- bulk requests (§3.3);
-- proxy, delegation and availability changes;
-- SoD, team and role-relationship changes;
-- configuration and administration.
+**Not called on the lab:** the writes that change the system's configuration or can't be undone on a shared lab,
+such as configuration saves, logging, caches, the workflow engines, resynchronization and migration. Each one's page
+under [docs/reference/](docs/reference/) gives its body as worked out from the server's and the dashboard's code,
+marked "not run". [Every endpoint](docs/endpoints.md) has the counts.
 
 Corrections and results from other versions are welcome.

@@ -1,0 +1,3545 @@
+[
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/availability",
+  "status": "validated",
+  "purpose": "Delete availability entries.",
+  "params": [],
+  "body": {
+   "example": {
+    "availability": [
+     {
+      "availabilityId": "<availability DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "availability[].availabilityId",
+     "required": true,
+     "values": "id from availability/list",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]}",
+  "example": "DELETE \u2026/access/availability {availability:[{availabilityId}]}",
+  "notes": "",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/availability",
+  "status": "validated",
+  "purpose": "Mark a user unavailable for a period, so their tasks go to delegates.",
+  "params": [],
+  "body": {
+   "example": {
+    "principalUser": {
+     "dn": "<user DN>"
+    },
+    "effectiveDate": "<epoch ms>",
+    "allRequests": true,
+    "hasExpiry": true,
+    "expiryDate": "<epoch ms>"
+   },
+   "fields": [
+    {
+     "name": "principalUser.dn",
+     "required": true,
+     "values": "the user who is away",
+     "kind": "per-installation"
+    },
+    {
+     "name": "effectiveDate",
+     "required": true,
+     "values": "epoch ms",
+     "kind": "free"
+    },
+    {
+     "name": "allRequests",
+     "required": true,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "hasExpiry",
+     "required": true,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "expiryDate",
+     "required": false,
+     "values": "epoch ms; with hasExpiry",
+     "kind": "free"
+    },
+    {
+     "name": "requestDefs",
+     "required": false,
+     "values": "[{dn, name}] when allRequests false",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the request echoed with availabilityId 'apwaNewDetailId' (placeholder)",
+  "example": "POST \u2026/access/availability {principalUser:{dn}, effectiveDate, allRequests:true, hasExpiry:true, expiryDate}",
+  "notes": "Needs a delegation first: without one 489 'User [<dn>] has no delegatee assignment configured for [cn=RequestDefs,\u2026] provisioning request definitions.'. The real id (cn=<32 hex>,cn=DelegationDefs,\u2026) is in POST /access/availability/list {dn}; dates come back rounded to seconds.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/availability",
+  "status": "validated",
+  "purpose": "Change an availability entry.",
+  "params": [],
+  "body": {
+   "example": {
+    "availabilityId": "<availability DN>",
+    "principalUser": {
+     "dn": "<user DN>"
+    },
+    "effectiveDate": "<epoch ms>",
+    "allRequests": true,
+    "hasExpiry": true,
+    "expiryDate": "<epoch ms>"
+   },
+   "fields": [
+    {
+     "name": "availabilityId",
+     "required": true,
+     "values": "id from availability/list",
+     "kind": "per-installation"
+    },
+    {
+     "name": "other fields",
+     "required": true,
+     "values": "as for create",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{id}",
+  "example": "PUT \u2026/access/availability {availabilityId, principalUser, effectiveDate, allRequests, hasExpiry, expiryDate}",
+  "notes": "Same id; the list shows the new expiry.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/availability/list",
+  "status": "empty-on-lab",
+  "purpose": "List the availability entries of one user.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "cn=uaadmin,ou=sa,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "DN of the user whose entries to list",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name/firstName/lastName",
+     "required": false,
+     "values": "ignored",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{totalAvailability:int, availabilityStatus:int, hasDelegatesAssigned:bool, newable:bool, availability:[\u2026]}",
+  "example": "POST \u2026/availability/list {\"dn\":\"cn=uaadmin,ou=sa,o=data\"}",
+  "notes": "Empty body or blank dn \u2192 489 'Invalid input DN: null'. A DN that does not exist \u2192 489 'User with dn [...] does not exist.' Caller must be provisioning administrator or the user's team manager (AVAILABILITY). Lab: uaadmin has no entries (totalAvailability 0). The dashboard's own list uses GET \u2026/availability (no body) for the signed-in user.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/availability/prds",
+  "status": "validated",
+  "purpose": "List the PRDs a user may delegate when creating an availability.",
+  "params": [
+   {
+    "name": "userDn",
+    "in": "query",
+    "required": false,
+    "values": "user DN; omitted = signed-in user. Needs provisioning admin or team manager rights over that user",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{availability:[{enableAllRequests:bool, availabilityId:'apwaNewDetailId', requestDefs?:[{dn,name}]}]}",
+  "example": "GET \u2026/availability/prds?userDn=cn=uaadmin,ou=sa,o=data",
+  "notes": "Returns one template entry whose availabilityId is the placeholder 'apwaNewDetailId'; on the lab it carries no requestDefs (no delegable PRDs for uaadmin).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/availability/status",
+  "status": "validated",
+  "purpose": "Set a user's overall availability status.",
+  "params": [],
+  "body": {
+   "example": {
+    "status": "1",
+    "dn": "<user DN>"
+   },
+   "fields": [
+    {
+     "name": "status",
+     "required": true,
+     "values": "'0' (available) or '1' (unavailable) as seen in availability/list availabilityStatus; missing gives an HTML 500",
+     "kind": "fixed"
+    },
+    {
+     "name": "dn",
+     "required": false,
+     "values": "user DN; omitted = the caller",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{status:'success'} on success; {} for a value it does not know; errors never change the HTTP 200",
+  "example": "POST \u2026/access/availability/status {status:'0', dn}",
+  "notes": "SIDE EFFECT: it rewrites the user's availability entries. status '0' removed the existing dated entry; status '1' created a new open-ended all-requests entry (new id, hasExpiry false) that then had to be deleted. 'Available' answered {}; '2' answered success but availabilityStatus read 0. Missing status: HTML 500, not the validation message the code suggests.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/cprs/assignments/delta",
+  "status": "empty-on-lab",
+  "purpose": "Page through the differences found by the last completed CPRS delta computation for a driver/entitlement.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text; default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "start, default 0",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size, default 10",
+    "kind": "free"
+   },
+   {
+    "name": "source",
+    "in": "query",
+    "required": false,
+    "values": "filter by where the assignment was found (value passed to the stored delta search)",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default firstName",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": {
+   "example": {
+    "driverDn": "cn=User Application Driver,cn=driverset1,o=system",
+    "entitlementDn": "<entitlement DN>",
+    "logicalSystem": "<id>",
+    "opType": "fetch"
+   },
+   "fields": [
+    {
+     "name": "driverDn",
+     "required": false,
+     "values": "DN of the driver whose entitlements are reconciled",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlementDn",
+     "required": false,
+     "values": "DN of one entitlement; omitted = all CPRS-mapped entitlements of the driver",
+     "kind": "per-installation"
+    },
+    {
+     "name": "logicalSystem",
+     "required": false,
+     "values": "logical system id (multi-system drivers)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "opType",
+     "required": false,
+     "values": "delta (compute differences), migrate (migrate assignments) or fetch",
+     "kind": "fixed"
+    },
+    {
+     "name": "isMigrate",
+     "required": false,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "CPRS request id",
+     "kind": "free"
+    },
+    {
+     "name": "deltaAssignmentsList",
+     "required": false,
+     "values": "list of delta rows (publish only)",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{requestId, nextIndex, arraySize, deltaAssignmentsList:[{dn, firstName, lastName, entitlementDn, entitlementValue, logicalSystemId, source, instanceGuId, id}]}",
+  "example": "POST \u2026/cprs/assignments/delta?q=*&nextIndex=1&size=5 {\"driverDn\":\"cn=User Application Driver,cn=driverset1,o=system\",\"opType\":\"fetch\"}",
+  "notes": "A read, but it only works after a reconcile with opType delta has completed for the same driver/entitlement/logical system; otherwise 489 'Delta computation might not have been perfomed\u2026'. The lab has no CPRS-mapped resources (GET \u2026/cprs/settings is empty) so no delta exists. If a request is still running and opType is fetch, the server refuses with 'request in progress'. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator. The dashboard also adds entitlementValues [{id}] to the body; the server's body type has no such field.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/cprs/assignments/publish",
+  "status": "from-ui",
+  "purpose": "Turn selected delta rows into resource assignments (requests resources for each user).",
+  "params": [],
+  "body": {
+   "example": {
+    "driverDn": "cn=User Application Driver,cn=driverset1,o=system",
+    "entitlementDn": "<entitlement DN>",
+    "id": "<requestId from delta>",
+    "deltaAssignmentsList": [
+     {
+      "dn": "<user DN>",
+      "entitlementDn": "<entitlement DN>",
+      "entitlementValue": "<value>",
+      "source": "<source>",
+      "id": "<row id>",
+      "instanceGuId": "<guid>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "driverDn",
+     "required": false,
+     "values": "DN of the driver whose entitlements are reconciled",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlementDn",
+     "required": false,
+     "values": "DN of one entitlement; omitted = all CPRS-mapped entitlements of the driver",
+     "kind": "per-installation"
+    },
+    {
+     "name": "logicalSystem",
+     "required": false,
+     "values": "logical system id (multi-system drivers)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "opType",
+     "required": false,
+     "values": "delta (compute differences), migrate (migrate assignments) or fetch",
+     "kind": "fixed"
+    },
+    {
+     "name": "isMigrate",
+     "required": false,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "CPRS request id",
+     "kind": "free"
+    },
+    {
+     "name": "deltaAssignmentsList",
+     "required": false,
+     "values": "list of delta rows (publish only)",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{succeeded:bool, succeedNodes:[{id: user DN}], failNodes:[{id, reason}]}",
+  "example": "POST \u2026/cprs/assignments/publish (not called)",
+  "notes": "For each row the server finds the CPRS resources mapped to entitlementValue (or the dynamic-parameter resource) and requests them for the user; rows whose entitlement has no mapping are skipped. Published rows are removed from the stored delta (by id). The dashboard sends to \u2026/reconcile instead when it is in migrate mode. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/cprs/assignments/reconcile",
+  "status": "from-ui",
+  "purpose": "Start a CPRS run (delta computation or migration) for a driver or one entitlement.",
+  "params": [],
+  "body": {
+   "example": {
+    "driverDn": "cn=User Application Driver,cn=driverset1,o=system",
+    "entitlementDn": "<entitlement DN, optional>",
+    "logicalSystem": "<id, optional>",
+    "opType": "delta"
+   },
+   "fields": [
+    {
+     "name": "driverDn",
+     "required": false,
+     "values": "DN of the driver whose entitlements are reconciled",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlementDn",
+     "required": false,
+     "values": "DN of one entitlement; omitted = all CPRS-mapped entitlements of the driver",
+     "kind": "per-installation"
+    },
+    {
+     "name": "logicalSystem",
+     "required": false,
+     "values": "logical system id (multi-system drivers)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "opType",
+     "required": false,
+     "values": "delta (compute differences), migrate (migrate assignments) or fetch",
+     "kind": "fixed"
+    },
+    {
+     "name": "isMigrate",
+     "required": false,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "id",
+     "required": false,
+     "values": "CPRS request id",
+     "kind": "free"
+    },
+    {
+     "name": "deltaAssignmentsList",
+     "required": false,
+     "values": "list of delta rows (publish only)",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{succeeded:bool, succeedNodes:[{id: entitlement DN, requestId}], failNodes:[{id, reason}]}",
+  "example": "POST \u2026/cprs/assignments/reconcile {driverDn, opType:'delta'} (not called)",
+  "notes": "Creates one CPRS request per mapped entitlement and records it; fails per entitlement when a run is already in progress, and overall when no CPRS resource is configured for the driver/entitlement. The driver must be in a usable state. Both 'refresh' and 'migrate permissions' in the dashboard post here. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/cprs/cprsrequest/status",
+  "status": "empty-on-lab",
+  "purpose": "Read the status of one CPRS request by its id.",
+  "params": [],
+  "body": {
+   "example": {
+    "id": "<CPRS request id>"
+   },
+   "fields": [
+    {
+     "name": "id",
+     "required": true,
+     "values": "CPRS request id returned by reconcile",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the request's status object {id, driverDn, entitlementDn, logicalSystem, opType, opStatus, statusMessage, counts, times}, or an empty 200 answer when the id is unknown",
+  "example": "POST \u2026/cprs/cprsrequest/status {\"id\":\"00000000000000000000000000000000\"}",
+  "notes": "Works with any body; an unknown or missing id answers 200 with no content. The lab has no CPRS requests, so only the empty answer was seen. CPRS must be enabled (GET \u2026/administration/cprsConfig enableCprs) and the caller must be a Resources domain administrator. Not used by the dashboard.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/cprs/cprsrequest/status/list",
+  "status": "empty-on-lab",
+  "purpose": "List past CPRS requests for a driver/entitlement, newest first.",
+  "params": [
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "default desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default requestCompletionTime; a CPRS request column name",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "driverDn": "cn=User Application Driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "driverDn",
+     "required": false,
+     "values": "driver DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "entitlementDn",
+     "required": false,
+     "values": "entitlement DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "logicalSystem",
+     "required": false,
+     "values": "logical system id",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex:int, arraySize:int, total:int, requestStatusList?:[\u2026]}",
+  "example": "POST \u2026/cprs/cprsrequest/status/list?nextIndex=1&size=5 {\"driverDn\":\"cn=User Application Driver,cn=driverset1,o=system\"}",
+  "notes": "An empty body {} \u2192 489 'Internal Error'; give driverDn or entitlementDn. Unlike the other CPRS calls this one does not require CPRS to be enabled, only Resources domain administrator. Lab: empty (no CPRS runs).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/cprs/settings",
+  "status": "empty-on-lab",
+  "purpose": "List the entitlement-value to resource mappings used by CPRS.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text, default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "column",
+    "in": "query",
+    "required": false,
+    "values": "columns to include: drivername, logicalsystem, entitlement, entitlementvalue, resource (dashboard column keys)",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default drivername",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, total:int, settings rows when present}",
+  "example": "GET \u2026/cprs/settings?q=*&nextIndex=1&size=5",
+  "notes": "Resources domain administrator only. Lab: no resource is CPRS-enabled, so the list is empty even though CPRS itself is enabled.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/delegation",
+  "status": "validated",
+  "purpose": "Delete delegations.",
+  "params": [],
+  "body": {
+   "example": {
+    "delegations": [
+     {
+      "assignmentId": "<delegation DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "delegations[].assignmentId",
+     "required": true,
+     "values": "id from delegation/list",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, assignFromUsers, assignToUsers}]}",
+  "example": "DELETE \u2026/access/delegation {delegations:[{assignmentId}]}",
+  "notes": "",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/delegation",
+  "status": "validated",
+  "purpose": "Delegate one user's tasks to another.",
+  "params": [],
+  "body": {
+   "example": {
+    "assignFromUsers": [
+     {
+      "dn": "<user DN>"
+     }
+    ],
+    "assignToUsers": [
+     {
+      "dn": "<delegate DN>"
+     }
+    ],
+    "createAvailability": false,
+    "allRequests": true,
+    "isExpires": false
+   },
+   "fields": [
+    {
+     "name": "assignFromUsers",
+     "required": true,
+     "values": "whose tasks",
+     "kind": "per-installation"
+    },
+    {
+     "name": "assignToUsers",
+     "required": true,
+     "values": "delegates (or assignToRelationship)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "createAvailability",
+     "required": true,
+     "values": "bool; read without a null check",
+     "kind": "free"
+    },
+    {
+     "name": "allRequests",
+     "required": true,
+     "values": "true = all PRDs, else requestDefs",
+     "kind": "free"
+    },
+    {
+     "name": "isExpires",
+     "required": true,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "expiryDate",
+     "required": false,
+     "values": "epoch ms",
+     "kind": "free"
+    },
+    {
+     "name": "requestDefs",
+     "required": false,
+     "values": "[{dn, name}]",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the request echoed with assignmentId 'apwaNewDetailId' (a placeholder, not the new id)",
+  "example": "POST \u2026/access/delegation {assignFromUsers, assignToUsers, createAvailability:false, allRequests:true, isExpires:false}",
+  "notes": "The answer does not give the real id; read it from POST /access/delegation/list {dn:<from user>} (cn=<32 hex>,cn=DelegateeDefs,\u2026). No expiry is stored as 4102444799000. The delegation shows under both users.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/delegation",
+  "status": "validated",
+  "purpose": "Change a delegation.",
+  "params": [],
+  "body": {
+   "example": {
+    "assignmentId": "<delegation DN>",
+    "assignFromUsers": [
+     {
+      "dn": "<user DN>"
+     }
+    ],
+    "assignToUsers": [
+     {
+      "dn": "<delegate DN>"
+     }
+    ],
+    "createAvailability": false,
+    "allRequests": true,
+    "isExpires": true,
+    "expiryDate": 1830000000000
+   },
+   "fields": [
+    {
+     "name": "assignmentId",
+     "required": true,
+     "values": "id from delegation/list",
+     "kind": "per-installation"
+    },
+    {
+     "name": "other fields",
+     "required": true,
+     "values": "as for create",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{id, assignFromUsers, assignToUsers}",
+  "example": "PUT \u2026/access/delegation {assignmentId, \u2026, isExpires:true, expiryDate}",
+  "notes": "The id stays the same; the list shows the new expiry.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/delegation/category",
+  "status": "validated",
+  "purpose": "List the request categories offered when choosing which requests to delegate.",
+  "params": [],
+  "body": null,
+  "answer": "{categoryList:[{categoryId, categoryName}], arraySize:int}",
+  "example": "GET \u2026/delegation/category",
+  "notes": "Lab categories: entitlements, nrf (Roles), attestation, groups, accounts. Category ids are per installation (PRD categories). Caller must be the provisioning administrator, a team manager with delegation rights, or a PRD domain delegated administrator.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/delegation/list",
+  "status": "empty-on-lab",
+  "purpose": "List the delegation assignments of one user.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "cn=uaadmin,ou=sa,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "user DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{totalDelegations:int, delegations:[\u2026]}",
+  "example": "POST \u2026/delegation/list {\"dn\":\"cn=uaadmin,ou=sa,o=data\"}",
+  "notes": "Empty body \u2192 489 'Invalid input DN: null'. Query parameters are not read (the dashboard only adds size). Lab: none (totalDelegations 0). The signed-in user's own list is GET \u2026/delegation (q, nextIndex, size, sortBy, sortOrder).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/delegation/relationships",
+  "status": "validated",
+  "purpose": "List the relationships a delegation can target instead of named users.",
+  "params": [],
+  "body": null,
+  "answer": "{relationships:[{key, displayName}], arraySize:int}",
+  "example": "GET \u2026/delegation/relationships",
+  "notes": "Lab: one relationship, key manager. Keys are per installation.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/delegation/requests",
+  "status": "validated",
+  "purpose": "List PRDs, optionally limited to one request category, for choosing delegated requests.",
+  "params": [
+   {
+    "name": "category",
+    "in": "query",
+    "required": false,
+    "values": "categoryId from GET \u2026/delegation/category; empty = all PRDs",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{provisioningRequests:[{dn, name}], arraySize:int}",
+  "example": "GET \u2026/delegation/requests?category=nrf",
+  "notes": "Lab: no category \u2192 8 PRDs; nrf \u2192 4; accounts \u2192 2; an unknown category \u2192 {arraySize:0}, no error. Caller must be the provisioning administrator, a team manager with delegation rights, or a PRD domain delegated administrator.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/forms",
+  "status": "validated",
+  "purpose": "Render a request, approval or workflow-template form as form.io JSON.",
+  "params": [
+   {
+    "name": "formContainer",
+    "in": "query",
+    "required": true,
+    "values": "RequestForms, ApprovalForms or TemplateForms (compared case-insensitively); required",
+    "kind": "fixed"
+   },
+   {
+    "name": "pid",
+    "in": "query",
+    "required": false,
+    "values": "PRD DN: required for RequestForms; for TemplateForms the template PRD DN (alternative to id)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "id",
+    "in": "query",
+    "required": false,
+    "values": "for ApprovalForms the task id (required); for TemplateForms the form DN (alternative to pid)",
+    "kind": "per-installation"
+   },
+   {
+    "name": "recipient",
+    "in": "query",
+    "required": false,
+    "values": "RequestForms: recipient DN",
+    "kind": "per-installation"
+   },
+   {
+    "name": "proxyFor",
+    "in": "query",
+    "required": false,
+    "values": "ApprovalForms: user DN to act for",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{formJSON: string (a form.io definition, serialized JSON; ~205 KB for the template form, ~22 KB for the help-desk request form)}",
+  "example": "GET \u2026/forms?formContainer=TemplateForms&id=cn=Create Workflow Form,cn=WorkflowTemplateForms,cn=WorkflowForms,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+  "notes": "Errors: no formContainer \u2192 489 'Form Container is Empty.'; TemplateForms with neither id nor pid \u2192 489 'Invalid Input for Template forms\u2026'; RequestForms without pid \u2192 489 'Invalid input DN: '; id given as a bare name \u2192 489 'Failed to generate form'. An unknown container \u2192 204 with no body. RequestForms also checks that the caller may request that PRD. Verified on the lab: TemplateForms by id and by pid (cn=NoApproval template), RequestForms with pid=HelpdeskTicket PRD. ApprovalForms was not tried (no open task on the lab). The dashboard opens the form renderer with these parameters rather than calling it directly.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/forms/dataItemsList",
+  "status": "validated",
+  "purpose": "List the data-item fields a stored form exposes.",
+  "params": [
+   {
+    "name": "formId",
+    "in": "query",
+    "required": true,
+    "values": "full form DN (not the bare name); required",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{dataItems:[{fieldKey, dataType, controlType, targetType}]}",
+  "example": "GET \u2026/forms/dataItemsList?formId=cn=Create Workflow Form,cn=WorkflowTemplateForms,cn=WorkflowForms,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+  "notes": "No formId \u2192 489 'Form ID is empty.'; a bare form name \u2192 489 'Internal Error'. Provisioning domain administrator only. Comment fields are left out.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/forms/listTemplates",
+  "status": "validated",
+  "purpose": "List the PRD templates used to create new workflows.",
+  "params": [
+   {
+    "name": "isCustom",
+    "in": "query",
+    "required": false,
+    "values": "false (default) = built-in approval templates; true = custom templates",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{prdTemplates:[{dn, templateName, description}], size?:int}",
+  "example": "GET \u2026/forms/listTemplates",
+  "notes": "Lab: 9 built-in templates (No Approval, Single Step, Two/Three/Four Step Serial and Parallel, \u2026); isCustom=true \u2192 {size:0}. Provisioning domain administrator only.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/forms/listWorkflowForms",
+  "status": "validated",
+  "purpose": "List the stored workflow forms of one container.",
+  "params": [
+   {
+    "name": "formContainer",
+    "in": "query",
+    "required": true,
+    "values": "container name, required: TemplateForms, RequestForms, ApprovalForms seen; the value picks the form container",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{worfklowFormsList:[{dn, cn}], size:int}  (note the misspelt key)",
+  "example": "GET \u2026/forms/listWorkflowForms?formContainer=TemplateForms",
+  "notes": "No formContainer \u2192 489 'Form Container is Empty.'. Lab: TemplateForms \u2192 1 form (Create Workflow Form); RequestForms \u2192 request forms; ApprovalForms \u2192 approval forms. An unrecognised value (e.g. bogus) returned the approval forms rather than an error. Provisioning domain administrator only.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/monitoring/comments",
+  "status": "validated",
+  "purpose": "Read the comments of one workflow request.",
+  "params": [
+   {
+    "name": "requestId",
+    "in": "query",
+    "required": true,
+    "values": "request id (from GET \u2026/requests/historylist or \u2026/monitoring/process/list); required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "includeSystemComments",
+    "in": "query",
+    "required": false,
+    "values": "default false",
+    "kind": "free"
+   },
+   {
+    "name": "commentLimit",
+    "in": "query",
+    "required": false,
+    "values": "default 200",
+    "kind": "free"
+   },
+   {
+    "name": "startIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 0",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc (default desc); anything else \u2192 489 'Invalid sort order'",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{listCommentNode:[{commentId, requestId, activityId, activityName, author, authorType, messageId, commentText, createTime, sequenceNumber, isSystemComment, activityType}]}",
+  "example": "GET \u2026/monitoring/comments?requestId=34f1826bc4594d29b8b62d2171fc2cb8",
+  "notes": "No requestId \u2192 489 'Invalid requestId'. Ids from historylist and from process/list both work.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/monitoring/process/list",
+  "status": "validated",
+  "purpose": "List workflow processes (requests) for monitoring, with filters.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text; '*' or omitted = all; matched on a field other than the process name (q=Role, q='Add Role' gave 0)",
+    "kind": "free"
+   },
+   {
+    "name": "startIndex",
+    "in": "query",
+    "required": false,
+    "values": "start position",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size",
+    "kind": "free"
+   },
+   {
+    "name": "creationTime",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms; used with operator",
+    "kind": "free"
+   },
+   {
+    "name": "operator",
+    "in": "query",
+    "required": false,
+    "values": "comparison for creationTime: GT worked; '>' was ignored",
+    "kind": "fixed"
+   },
+   {
+    "name": "processStatus",
+    "in": "query",
+    "required": false,
+    "values": "status display name, e.g. Completed (numeric codes are ignored)",
+    "kind": "fixed"
+   },
+   {
+    "name": "approvalStatus",
+    "in": "query",
+    "required": false,
+    "values": "approval display name, e.g. Approved (numeric codes are ignored)",
+    "kind": "fixed"
+   },
+   {
+    "name": "initiator",
+    "in": "query",
+    "required": false,
+    "values": "initiator DN",
+    "kind": "per-installation"
+   },
+   {
+    "name": "recipient",
+    "in": "query",
+    "required": false,
+    "values": "recipient DN",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortField",
+    "in": "query",
+    "required": false,
+    "values": "database column name in capitals, e.g. CREATION_TIME; other names (creationTime, name) \u2192 489 database error",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "{processInfoNodeList:[{requestId, processId, version, name, creationTime, completionTime, recipient, recipientName, initiator, initiatorName, processStatus, processStatusDisplayName, approvalStatus, approvalStatusDisplayName, correlationId, engineId, \u2026}], totalSize:int}",
+  "example": "GET \u2026/monitoring/process/list?startIndex=1&size=5&processStatus=Completed",
+  "notes": "No parameter is required. totalSize was 20 for the unfiltered list and 17 with processStatus=Completed; creationTime=\u2026&operator=GT narrowed it to 2. A wrong sortField gives 489 'An error occurred while obtaining the process or comment details from the database'. The call goes to the workflow engine client, whose code is not in the REST jars.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/monitoring/process/terminate",
+  "status": "from-ui",
+  "purpose": "Terminate running workflow processes.",
+  "params": [],
+  "body": {
+   "example": {
+    "processes": [
+     "<requestId>"
+    ],
+    "comment": "<reason>"
+   },
+   "fields": [
+    {
+     "name": "processes",
+     "required": true,
+     "values": "list of request ids to stop",
+     "kind": "free"
+    },
+    {
+     "name": "comment",
+     "required": false,
+     "values": "reason text",
+     "kind": "free"
+    },
+    {
+     "name": "primaryPrincipal",
+     "required": false,
+     "values": "ignored; the server sets the caller",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "terminate result per process",
+  "example": "POST \u2026/monitoring/process/terminate {processes:[\u2026], comment} (not called)",
+  "notes": "Only processes is checked (missing \u2192 489 'Invalid request'). The reference shows an XML body; the method declares no media type. Not used by the dashboard.",
+  "evidence": "server code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/monitoring/reassign",
+  "status": "from-ui",
+  "purpose": "Reassign workflow tasks to another user.",
+  "params": [],
+  "body": {
+   "example": {
+    "afTaskNode": {
+     "tasks": [
+      {
+       "taskId": "<task id>"
+      }
+     ],
+     "approver": "<new addressee DN>",
+     "action": "reassign",
+     "comment": "<text>"
+    },
+    "comment": "<text>"
+   },
+   "fields": [
+    {
+     "name": "afTaskNode",
+     "required": true,
+     "values": "task action: tasks (list of task nodes with taskId \u2026), approver, action, comment, proxyUser, dataItems",
+     "kind": "free"
+    },
+    {
+     "name": "comment",
+     "required": false,
+     "values": "text",
+     "kind": "free"
+    },
+    {
+     "name": "primaryPrincipal",
+     "required": false,
+     "values": "string",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "operation result {succeeded, failed \u2026}",
+  "example": "POST \u2026/monitoring/reassign (not called)",
+  "notes": "The REST layer does no validation; it passes the node to the workflow engine client (not in the decompiled jars), so the meaning of approver/action is inferred from field names only. Not used by the dashboard.",
+  "evidence": "server code"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/monitoring/workentries",
+  "status": "empty-on-lab",
+  "purpose": "List the work entries (tasks/activities) of one request.",
+  "params": [
+   {
+    "name": "requestId",
+    "in": "query",
+    "required": true,
+    "values": "request id; required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "startIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 0",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{totalSize:int, entries when present}",
+  "example": "GET \u2026/monitoring/workentries?requestId=34f1826bc4594d29b8b62d2171fc2cb8",
+  "notes": "No requestId \u2192 489 'Invalid requestId'. All tried requests (completed, retracted, failed) answered {totalSize:0}; entries probably exist only for requests with open work.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/proxy/configuration",
+  "status": "empty-on-lab",
+  "purpose": "Read the proxy settings: notification template and retention time.",
+  "params": [],
+  "body": null,
+  "answer": "{proxyNotfTemplate?: string, proxyRetentionTime?: int minutes}; fields left out when unset",
+  "example": "GET /IDMProv/rest/admin/proxy/configuration",
+  "notes": "Lab answers {} (no template chosen, retention 0). Allowed for a team manager or anyone with the delegation/proxy configuration right. Retention is stored in ms and returned in minutes.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/proxy/configuration",
+  "status": "from-ui",
+  "purpose": "Save the proxy notification template and retention time.",
+  "params": [],
+  "body": {
+   "example": {
+    "proxyNotfTemplate": "<email template id>",
+    "proxyRetentionTime": 60
+   },
+   "fields": [
+    {
+     "name": "proxyNotfTemplate",
+     "required": false,
+     "values": "email template id (GET \u2026/access/info/email/templates)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "proxyRetentionTime",
+     "required": false,
+     "values": "minutes; negative \u2192 error 'negative values not allowed'",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success:true, message}",
+  "example": "POST /IDMProv/rest/admin/proxy/configuration (not called)",
+  "notes": "Both fields optional; only those present are saved. Empty body \u2192 error. Needs the delegation/proxy configuration right.",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/proxy/create",
+  "status": "validated",
+  "purpose": "Make a user a proxy for other users.",
+  "params": [],
+  "body": {
+   "example": {
+    "assignedUserDN": "<proxy user DN>",
+    "proxyForUsers": [
+     {
+      "dn": "<user DN>"
+     }
+    ],
+    "isNotificationRequired": false
+   },
+   "fields": [
+    {
+     "name": "assignedUserDN",
+     "required": true,
+     "values": "the user who becomes the proxy",
+     "kind": "per-installation"
+    },
+    {
+     "name": "proxyForUsers / proxyForGroups / proxyForContainers",
+     "required": true,
+     "values": "at least one non-empty list of {dn}",
+     "kind": "per-installation"
+    },
+    {
+     "name": "expirytime",
+     "required": false,
+     "values": "epoch ms as string; leave it out (or empty) for no expiry. '-1' is taken as a date in 1969 and refused",
+     "kind": "free"
+    },
+    {
+     "name": "isNotificationRequired",
+     "required": false,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "notificationAddresseeType",
+     "required": false,
+     "values": "with notification: ALL, ASSIGN_FROM, ASSIGN_TO, SELECTIVE",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{proxyDefinitions:[{dn, proxyForUsers:[{dn, username}], assignedUserDN, assignedUserName, editable, expirytime}], configureProxy}",
+  "example": "POST \u2026/access/proxy/create {assignedUserDN:<uaadmin>, proxyForUsers:[{dn:<scratch user>}]}",
+  "notes": "No expiry is stored as 4102444799000 (end of 2099). expirytime '-1': 489 SecurityException 'Invalid proxy definition \u2026 Expiration time is prior to current time.'. The id is cn=<32 hex>,cn=ProxyDefs,cn=AppConfig,\u2026.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/proxy/delete",
+  "status": "validated",
+  "purpose": "Delete proxy definitions.",
+  "params": [],
+  "body": {
+   "example": {
+    "proxyDefinitions": [
+     {
+      "dn": "<proxy definition DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "proxyDefinitions[].dn",
+     "required": true,
+     "values": "definition id",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]}",
+  "example": "POST \u2026/access/proxy/delete {proxyDefinitions:[{dn}]}",
+  "notes": "A POST that deletes. GET /access/proxy/all empty afterwards.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/proxy/edit",
+  "status": "validated",
+  "purpose": "Change a proxy definition.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<proxy definition DN>",
+    "assignedUserDN": "<proxy user DN>",
+    "proxyForUsers": [
+     {
+      "dn": "<user DN>"
+     }
+    ],
+    "expirytime": "<epoch ms>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "definition id from proxy/create or GET /access/proxy/all",
+     "kind": "per-installation"
+    },
+    {
+     "name": "assignedUserDN / proxyForUsers / \u2026",
+     "required": false,
+     "values": "send the full definition",
+     "kind": "per-installation"
+    },
+    {
+     "name": "expirytime",
+     "required": false,
+     "values": "epoch ms as string",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{proxyDefinitions:[the changed definition]}",
+  "example": "POST \u2026/access/proxy/edit {dn, assignedUserDN, proxyForUsers, expirytime:'1830000000000'}",
+  "notes": "GET /access/proxy/all showed the new expiry.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/admin/proxy/service/settings",
+  "status": "validated",
+  "purpose": "Read the proxy/delegation background service schedule.",
+  "params": [],
+  "body": null,
+  "answer": "{cleanUpSeviceActivationInteval:int, syncServiceActivationInterval:int, lastCleanUpDate?:epoch ms, scheduledCleanUpDate?:epoch ms, cleanupChoice:'useInterval'|'useDate'}",
+  "example": "GET /IDMProv/rest/admin/proxy/service/settings",
+  "notes": "Field names keep the vendor misspelling (cleanUpSeviceActivationInteval). Lab: both intervals 0, cleanupChoice useInterval. cleanupChoice is useDate when a cleanup date is scheduled. Needs the delegation/proxy configuration right.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/admin/proxy/service/settings",
+  "status": "from-ui",
+  "purpose": "Save the proxy/delegation service schedule.",
+  "params": [],
+  "body": {
+   "example": {
+    "cleanupChoice": "useInterval",
+    "cleanUpSeviceActivationInteval": 1440,
+    "syncServiceActivationInterval": 60
+   },
+   "fields": [
+    {
+     "name": "cleanupChoice",
+     "required": true,
+     "values": "useInterval or useDate; must be present (read without a null check)",
+     "kind": "fixed"
+    },
+    {
+     "name": "cleanUpSeviceActivationInteval",
+     "required": false,
+     "values": "minutes; used when cleanupChoice is useInterval",
+     "kind": "free"
+    },
+    {
+     "name": "scheduledCleanUpDate",
+     "required": false,
+     "values": "epoch ms in the future; used otherwise (a past date \u2192 'invalid cleanup date')",
+     "kind": "free"
+    },
+    {
+     "name": "syncServiceActivationInterval",
+     "required": false,
+     "values": "minutes",
+     "kind": "free"
+    },
+    {
+     "name": "lastCleanUpDate",
+     "required": false,
+     "values": "answer only",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success:true, message}",
+  "example": "POST /IDMProv/rest/admin/proxy/service/settings (not called)",
+  "notes": "The server multiplies the minute values by 60000 when saving; GET returns the stored values without converting back, so units may not round-trip (lab values are 0, so this could not be checked).",
+  "evidence": "server code + dashboard code"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/queue/entry",
+  "status": "not-working",
+  "purpose": "Remove a whole cart.",
+  "params": [],
+  "body": {
+   "example": {
+    "cartAction": "<cart name>"
+   },
+   "fields": [
+    {
+     "name": "cartAction",
+     "required": true,
+     "values": "cart name",
+     "kind": "free"
+    },
+    {
+     "name": "cartOwner",
+     "required": false,
+     "values": "the caller's DN or omitted (any other DN is refused)",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the removed cart (server code)",
+  "example": "DELETE \u2026/access/queue/entry {cartAction}",
+  "notes": "Every call (3, owner given or defaulted) hung until the client gave up (120 s, then nginx 504 at 180 s). Cause, from the behaviour: the earlier 'successful' item delete left an uncommitted database transaction in one server worker (that worker then read the item as gone, the others still saw it), so deletes of the cart row waited on its lock. The lab answers through more than one worker: GETs alternated between the two views. The lock cleared after a later cart write failed in that worker (rolled back); then both views showed the cart empty. Side effect still visible at 21:20: about 1 in 20 GET /access/queue/entry reads answers 489 'Internal Error' (one worker's session looks broken); a User Application restart should clear it. Do not script cart deletes without a timeout.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/queue/entry",
+  "status": "empty-on-lab",
+  "purpose": "Read the signed-in user's cart for one cart action, with its items.",
+  "params": [
+   {
+    "name": "cartAction",
+    "in": "query",
+    "required": true,
+    "values": "required, free text; the cart's action name (e.g. revoke)",
+    "kind": "free"
+   },
+   {
+    "name": "cartOwner",
+    "in": "query",
+    "required": false,
+    "values": "optional; only the caller's own DN is accepted",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{cartOwner, cartAction, totalCount:int, cartItems?:[{itemDn, itemType, itemFullname, itemAssignees:[{instanceId, type, subtype, assignedToDn, assigneeFullName, comment, sodJustification, entRef, reqForm}]}]}",
+  "example": "GET \u2026/queue/entry?cartAction=revoke",
+  "notes": "Missing cartAction \u2192 489 'Value for cartAction is missing in payload\u2026'. Another user's cartOwner \u2192 489 'You are unauthorized for this operation.'. Lab: empty cart (totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/queue/entry/item/assignees",
+  "status": "validated",
+  "purpose": "Remove assignees from cart items.",
+  "params": [],
+  "body": {
+   "example": {
+    "cartAction": "<cart name>",
+    "cartItems": [
+     {
+      "itemDn": "<role DN>",
+      "itemAssignees": [
+       {
+        "assignedToDn": "<user DN>",
+        "instanceId": "<id>"
+       }
+      ]
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "cartAction",
+     "required": true,
+     "values": "cart name",
+     "kind": "free"
+    },
+    {
+     "name": "cartItems[].itemDn",
+     "required": true,
+     "values": "permission DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "itemAssignees[].assignedToDn",
+     "required": true,
+     "values": "DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "itemAssignees[].instanceId",
+     "required": true,
+     "values": "the line id",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id:<assignee DN>, instanceId}]}",
+  "example": "DELETE \u2026/access/queue/entry/item/assignees {cartAction, cartItems:[\u2026]}",
+  "notes": "The item stays in the cart without assignees.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/queue/entry/items",
+  "status": "validated",
+  "purpose": "Remove items from a cart.",
+  "params": [],
+  "body": {
+   "example": {
+    "cartAction": "<cart name>",
+    "cartItems": [
+     {
+      "itemDn": "<role DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "cartAction",
+     "required": true,
+     "values": "cart name",
+     "kind": "free"
+    },
+    {
+     "name": "cartItems[].itemDn",
+     "required": true,
+     "values": "permission DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]} or success false 'Error in deleting queue item <dn>'",
+  "example": "DELETE \u2026/access/queue/entry/items {cartAction, cartItems:[{itemDn}]}",
+  "notes": "UNRELIABLE on the lab: for the 1st item it answered success but other workers kept showing the item (the delete was left uncommitted, see DELETE /access/queue/entry); a repeat answered success false 'Error in deleting queue item'. For the 2nd item it worked at once. Cart writes also need the item DN to be an existing permission ('Permission with id [\u2026] does not exist.').",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/queue/entry/items",
+  "status": "validated",
+  "purpose": "Add items (permission + assignees) to the caller's cart.",
+  "params": [],
+  "body": {
+   "example": {
+    "cartAction": "<cart name>",
+    "cartItems": [
+     {
+      "itemDn": "<role DN>",
+      "itemType": "role",
+      "itemAssignees": [
+       {
+        "assignedToDn": "<user DN>",
+        "instanceId": "<any id>",
+        "subtype": "user"
+       }
+      ]
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "cartAction",
+     "required": true,
+     "values": "the cart's name, free text chosen by the client",
+     "kind": "free"
+    },
+    {
+     "name": "cartOwner",
+     "required": false,
+     "values": "the caller's DN or omitted",
+     "kind": "per-installation"
+    },
+    {
+     "name": "cartItems",
+     "required": true,
+     "values": "non-empty",
+     "kind": "free"
+    },
+    {
+     "name": "cartItems[].itemDn",
+     "required": true,
+     "values": "permission DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "cartItems[].itemType",
+     "required": false,
+     "values": "role, resource, \u2026",
+     "kind": "fixed"
+    },
+    {
+     "name": "cartItems[].itemAssignees[].assignedToDn",
+     "required": true,
+     "values": "existing identity DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "cartItems[].itemAssignees[].instanceId",
+     "required": true,
+     "values": "any string identifying the line",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]}",
+  "example": "POST \u2026/access/queue/entry/items {cartAction:'<name>', cartItems:[\u2026]}",
+  "notes": "A cart is per (owner, cartAction); a scratch cartAction name kept the real carts (revoke, request) untouched. GET /access/queue/entry?cartAction=<name> reads it; totalCount counts assignees, not items.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/requests/history",
+  "status": "not-working",
+  "purpose": "The signed-in user's request history (PRD, role and resource requests), newest first.",
+  "params": [
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 5",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{requests:[\u2026], nextIndex:int} when it works",
+  "example": "GET \u2026/requests/history?nextIndex=1&size=5",
+  "notes": "Lab: always 489 'Failed to get process request history', with or without parameters. The server merges PRD history with role/resource history and fails as a whole if either part fails. Use GET or POST \u2026/requests/historylist instead. The dashboard uses this path only with DELETE, to retract requests.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/requests/historyForUser",
+  "status": "validated",
+  "purpose": "Request history of another user, for administrators and authorised help-desk users.",
+  "params": [
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text, default *",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default requestDate; requestState sorts by status",
+    "kind": "free"
+   },
+   {
+    "name": "item",
+    "in": "query",
+    "required": false,
+    "values": "requested item filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "status",
+    "in": "query",
+    "required": false,
+    "values": "process status filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "cn",
+    "in": "query",
+    "required": false,
+    "values": "confirmation number filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "startDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms, default 0 = no limit",
+    "kind": "free"
+   },
+   {
+    "name": "endDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms, default 0 = no limit",
+    "kind": "free"
+   },
+   {
+    "name": "type",
+    "in": "query",
+    "required": false,
+    "values": "prd, role or resource; anything else (default *) = all three",
+    "kind": "fixed"
+   },
+   {
+    "name": "action",
+    "in": "query",
+    "required": false,
+    "values": "request action filter; default *. PRD history is included only when action is *",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "cn=uaadmin,ou=sa,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "DN of the user whose history to read",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name/firstName/lastName",
+     "required": false,
+     "values": "ignored",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{totalSize:int, total:int, nextIndex:int, requests:[{id, name, entityType, requestState, processState, status, requester, requesterName, requesterType, recipient, recipientName, recipientType, requestDate, confirmationNumber, retractable}]}",
+  "example": "POST \u2026/requests/historyForUser?nextIndex=1&size=3 {\"dn\":\"cn=uaadmin,ou=sa,o=data\"}",
+  "notes": "No dn \u2192 489 'User DN is required in the payload'. Allowed for a domain administrator, or a help-desk user whose client list includes the user's client. Lab: 20 requests for uaadmin.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/requests/historylist",
+  "status": "validated",
+  "purpose": "PRD request history of the signed-in user, or of the user they act as proxy for.",
+  "params": [
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text, default *",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default requestDate; requestState sorts by status",
+    "kind": "free"
+   },
+   {
+    "name": "item",
+    "in": "query",
+    "required": false,
+    "values": "requested item filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "status",
+    "in": "query",
+    "required": false,
+    "values": "process status filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "cn",
+    "in": "query",
+    "required": false,
+    "values": "confirmation number filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "startDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms, default 0 = no limit",
+    "kind": "free"
+   },
+   {
+    "name": "endDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms, default 0 = no limit",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "cn=uaadmin,ou=sa,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "user DN the caller acts for (proxy); the caller's own DN gives their own history",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{totalSize:int, total:int, nextIndex:int, requests:[{id, name, entityType, requestState, processState, status, requester, requesterName, requesterType, recipient, recipientName, recipientType, requestDate, confirmationNumber, retractable}]}",
+  "example": "POST \u2026/requests/historylist?nextIndex=1&size=3 {\"dn\":\"cn=uaadmin,ou=sa,o=data\"}",
+  "notes": "Despite the body being named 'proxy user', a body is needed: {} \u2192 489 'Cannot validate user authentication info'; no body \u2192 HTTP 400 (HTML page). Only PRD (workflow) requests are listed. GET \u2026/requests/historylist (same query parameters, no body) returns the caller's own list and is what gave the request ids used here.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/requests/permissions",
+  "status": "from-ui",
+  "purpose": "Submit requests for roles, resources or PRDs, for oneself or for recipients.",
+  "params": [],
+  "body": {
+   "example": {
+    "reason": "<why>",
+    "reqPermissions": [
+     {
+      "id": "<permission DN>",
+      "entityType": "role"
+     }
+    ],
+    "recipients": [
+     {
+      "dn": "<user DN>",
+      "type": "user"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "reason",
+     "required": true,
+     "values": "request reason; required (missing \u2192 489 invalid reason)",
+     "kind": "free"
+    },
+    {
+     "name": "reqPermissions",
+     "required": true,
+     "values": "non-empty list of {id, entityType, proxyFor}; entityType role, resource or prd",
+     "kind": "fixed"
+    },
+    {
+     "name": "recipients",
+     "required": false,
+     "values": "list of {dn, type (user/group/\u2026), isGroupAssignment, targetSetList}; omitted = request for the caller",
+     "kind": "per-installation"
+    },
+    {
+     "name": "effDate / expDate",
+     "required": false,
+     "values": "epoch ms",
+     "kind": "free"
+    },
+    {
+     "name": "sodJustification",
+     "required": false,
+     "values": "text",
+     "kind": "free"
+    },
+    {
+     "name": "proxyUser",
+     "required": false,
+     "values": "DN to act as",
+     "kind": "per-installation"
+    },
+    {
+     "name": "process",
+     "required": false,
+     "values": "workflow callback data (used when called from a workflow)",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{succeeded:bool, operationNodes:[per recipient result]} or a single result when no recipients",
+  "example": "POST \u2026/requests/permissions (not called)",
+  "notes": "Group recipients are expanded; groups are kept as group assignments only for Roles or Security domain administrators. The reference shows an XML body; the dashboard defines this path (submitRequestsForSelf/Others) but the bundles on hand never call it.",
+  "evidence": "server code"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/requests/resourceCategories",
+  "status": "validated",
+  "purpose": "List resource categories for the request catalog.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text, default empty = all",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "name only (default); anything else \u2192 invalid sort column",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "token",
+    "in": "query",
+    "required": false,
+    "values": "cache token from a previous answer; reuses the cached list",
+    "kind": "free"
+   },
+   {
+    "name": "noCache",
+    "in": "query",
+    "required": false,
+    "values": "default false; true skips the cache",
+    "kind": "free"
+   },
+   {
+    "name": "forceRefresh",
+    "in": "query",
+    "required": false,
+    "values": "default false; with a token, true drops that cached list first",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, categories:[{id, name}], token:string}",
+  "example": "GET \u2026/requests/resourceCategories?q=*&nextIndex=1&size=5",
+  "notes": "Lab: default, helpdesk, system. Category ids are per installation. forceRefresh only clears a cached copy for that token; it was not used.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/requests/roleCategories",
+  "status": "validated",
+  "purpose": "List role categories for the request catalog.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text; * or empty = all",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default name (not checked)",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "desc sorts descending; anything else ascending (not validated)",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, categories:[{id, name}]}",
+  "example": "GET \u2026/requests/roleCategories?q=*&nextIndex=1&size=5",
+  "notes": "Lab: default, system. Unlike resourceCategories, an invalid sortOrder is accepted silently.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/requests/team/user/history",
+  "status": "validated",
+  "purpose": "Request history of a team member, for team managers.",
+  "params": [
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text, default *",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default requestDate; requestState sorts by status",
+    "kind": "free"
+   },
+   {
+    "name": "item",
+    "in": "query",
+    "required": false,
+    "values": "requested item filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "status",
+    "in": "query",
+    "required": false,
+    "values": "process status filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "cn",
+    "in": "query",
+    "required": false,
+    "values": "confirmation number filter, default *",
+    "kind": "free"
+   },
+   {
+    "name": "startDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms, default 0 = no limit",
+    "kind": "free"
+   },
+   {
+    "name": "endDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms, default 0 = no limit",
+    "kind": "free"
+   },
+   {
+    "name": "type",
+    "in": "query",
+    "required": false,
+    "values": "prd, role or resource; anything else (default *) = all three",
+    "kind": "fixed"
+   },
+   {
+    "name": "action",
+    "in": "query",
+    "required": false,
+    "values": "request action filter; default *. PRD history is included only when action is *",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "cn=uaadmin,ou=sa,o=data"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "team member's DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{totalSize:int, total:int, nextIndex:int, requests:[{id, name, entityType, requestState, processState, status, requester, requesterName, requesterType, recipient, recipientName, recipientType, requestDate, confirmationNumber, retractable}]}",
+  "example": "POST \u2026/requests/team/user/history?nextIndex=1&size=3 {\"dn\":\"cn=uaadmin,ou=sa,o=data\"}",
+  "notes": "No dn \u2192 'User DN is required'. Allowed for a team manager or domain administrator; each type (prd/role/resource) is included only if the caller manages or administers that domain. As domain administrator uaadmin the answer matched historyForUser.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/tasks/list/others/team",
+  "status": "empty-on-lab",
+  "purpose": "List the workflow tasks of one member of a team the caller manages.",
+  "params": [
+   {
+    "name": "memberDn",
+    "in": "query",
+    "required": true,
+    "values": "team member DN; required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "teamDN",
+    "in": "query",
+    "required": true,
+    "values": "team DN; required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "fromIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc or desc; otherwise 489 'Invalid sort order'",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "default createTime",
+    "kind": "free"
+   },
+   {
+    "name": "recipient",
+    "in": "query",
+    "required": false,
+    "values": "recipient filter",
+    "kind": "per-installation"
+   },
+   {
+    "name": "status",
+    "in": "query",
+    "required": false,
+    "values": "only Claimed is accepted; any other value \u2192 489 'Invalid task status'",
+    "kind": "fixed"
+   },
+   {
+    "name": "assignStatus",
+    "in": "query",
+    "required": false,
+    "values": "assignment status filter",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "task list (same shape as the other task lists) when the caller manages the team",
+  "example": "GET \u2026/tasks/list/others/team?memberDn=\u2026&teamDN=\u2026",
+  "notes": "Missing memberDn or teamDN \u2192 489 'Team member input is empty\u2026'. The caller must be a team manager; the member must belong to one of the caller's teams. Lab: no teams, so 489 'You are unauthorized for this operation.' for uaadmin.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/teams",
+  "status": "validated",
+  "purpose": "Delete teams.",
+  "params": [],
+  "body": {
+   "example": {
+    "teams": [
+     {
+      "dn": "<team DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "teams",
+     "required": true,
+     "values": "non-empty list of {dn}",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id}]}",
+  "example": "DELETE \u2026/access/teams {teams:[{dn}]}",
+  "notes": "Afterwards GET /access/teams/list?forceRefresh=true is empty and POST /access/teams/team {dn} answers 489 'Internal Error' (not a not-found message).",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams",
+  "status": "validated",
+  "purpose": "Create a team (managers, members, domains).",
+  "params": [],
+  "body": {
+   "example": {
+    "name": "<team name>",
+    "description": "<text>",
+    "requestors": [
+     {
+      "dn": "<user DN>",
+      "type": "user"
+     }
+    ],
+    "recipients": [
+     {
+      "dn": "<user DN>",
+      "type": "user"
+     }
+    ],
+    "allUsers": false
+   },
+   "fields": [
+    {
+     "name": "name",
+     "required": true,
+     "values": "team name",
+     "kind": "free"
+    },
+    {
+     "name": "description",
+     "required": true,
+     "values": "text",
+     "kind": "free"
+    },
+    {
+     "name": "requestors",
+     "required": true,
+     "values": "team managers [{dn, type}]",
+     "kind": "per-installation"
+    },
+    {
+     "name": "recipients",
+     "required": false,
+     "values": "members [{dn, type}]; type user, group, container or relationship; required unless allUsers",
+     "kind": "per-installation"
+    },
+    {
+     "name": "allUsers",
+     "required": false,
+     "values": "true forbids recipients",
+     "kind": "free"
+    },
+    {
+     "name": "domainTypes",
+     "required": false,
+     "values": "defaults to PROVISIONING, ROLES, RESOURCES",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "the team: {name, dn, description, recipients, requestors, allUsers, includeManager, localizedNames, localizedDescriptions, readOnly, domainTypes}",
+  "example": "POST \u2026/access/teams {name, description, requestors, recipients, allUsers:false}",
+  "notes": "The DN is generated: cn=<name without dashes><32 hex>,cn=TeamDefs,cn=AppConfig,\u2026. Without domainTypes all three domains are set.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/teams",
+  "status": "validated",
+  "purpose": "Change a team.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<team DN>",
+    "name": "<team name>",
+    "description": "<new text>",
+    "requestors": [
+     {
+      "dn": "<user DN>",
+      "type": "user"
+     }
+    ],
+    "recipients": [
+     {
+      "dn": "<user DN>",
+      "type": "user"
+     }
+    ],
+    "allUsers": false
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "team DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name / description / requestors",
+     "required": true,
+     "values": "validated as for create",
+     "kind": "free"
+    },
+    {
+     "name": "recipients / allUsers",
+     "required": false,
+     "values": "not both: allUsers true with recipients gives 489 'All Users are already selected for the team recipients.'",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "the team after the change",
+  "example": "PUT \u2026/access/teams {dn, name, description, requestors, recipients, allUsers:false}",
+  "notes": "POST /access/teams/team {dn} showed the new description.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams/container/resources",
+  "status": "validated",
+  "purpose": "List resources under one resource container (for picking team permissions).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "filter on name/description; * = all (default)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "cn=resourcedefs,cn=roleconfig,cn=appconfig,cn=user application driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": false,
+     "values": "container DN to search under; empty = the default root",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name / level / type / searchScope",
+     "required": false,
+     "values": "not used by the server",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{nextIndex:int, permissions:[{id, dn, name, desc, entityType, \u2026}]}",
+  "example": "POST \u2026/teams/container/resources?q=*&nextIndex=1&size=3 {\"dn\":\"cn=resourcedefs,cn=roleconfig,cn=appconfig,cn=user application driver,cn=driverset1,o=system\"}",
+  "notes": "A read despite POST. The search filter is applied in memory on name and description.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams/container/roles",
+  "status": "validated",
+  "purpose": "List roles under one role container (for picking team permissions).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "filter on name/description; * = all (default)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "cn=level20,cn=roledefs,cn=roleconfig,cn=appconfig,cn=user application driver,cn=driverset1,o=system"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": false,
+     "values": "container DN to search under; empty = the default root",
+     "kind": "per-installation"
+    },
+    {
+     "name": "name / level / type / searchScope",
+     "required": false,
+     "values": "not used by the server",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{nextIndex:int, permissions:[{id, dn, name, desc, entityType, \u2026}]}",
+  "example": "POST \u2026/teams/container/roles?q=*&nextIndex=1&size=3 {\"dn\":\"cn=level20,cn=roledefs,\u2026\"}",
+  "notes": "{\"dn\":\"\"} gave the same first page as the level-20 container. The dashboard calls it with {dn: role sub-container} when the widget is limited to one.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/managelist",
+  "status": "empty-on-lab",
+  "purpose": "List the teams the caller manages, optionally only those with one permission.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default -1 = all",
+    "kind": "free"
+   },
+   {
+    "name": "type",
+    "in": "query",
+    "required": false,
+    "values": "team type; empty (default) or A = all; the dashboard sends A. ALL, PROVISIONING and other values gave 489 'Internal Error'",
+    "kind": "fixed"
+   },
+   {
+    "name": "pType",
+    "in": "query",
+    "required": false,
+    "values": "permission the caller must hold on the team, e.g. AVAILABILITY (a permission-type name)",
+    "kind": "fixed"
+   },
+   {
+    "name": "proxyUser",
+    "in": "query",
+    "required": false,
+    "values": "DN to act as",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortOrder / forceRefresh",
+    "in": "query",
+    "required": false,
+    "values": "sent by the dashboard in some modes; not read by the server",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{teams:[\u2026], arraySize:int, nextIndex:int} when the caller manages teams",
+  "example": "GET \u2026/teams/managelist?q=*&nextIndex=1&size=10&type=A",
+  "notes": "When the caller is not a team manager the answer is 489 'No Teams found with Manage Addressee Permission' (misleading text: it is the generic empty-list message). The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/members",
+  "status": "empty-on-lab",
+  "purpose": "List the members of the teams that contain a given member and that the caller manages.",
+  "params": [
+   {
+    "name": "memberDn",
+    "in": "query",
+    "required": true,
+    "values": "member DN; required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default -1 = all",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{recipients:[\u2026]} when teams exist",
+  "example": "GET \u2026/teams/members?memberDn=cn=uaadmin,ou=sa,o=data",
+  "notes": "Lab: 403 'Team manger does not belong to any Team'. Without memberDn \u2192 489 'Internal Error' (the server tests the value before checking it is present). The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "DELETE",
+  "path": "/IDMProv/rest/access/teams/permissions",
+  "status": "validated",
+  "purpose": "Remove team permissions.",
+  "params": [],
+  "body": {
+   "example": {
+    "teamDN": "<team DN>",
+    "permissions": [
+     {
+      "dn": "<role DN>",
+      "objClass": "nrfRole",
+      "permission": "nrfAccessMgrAssignRole"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "teamDN",
+     "required": true,
+     "values": "team DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions[].dn",
+     "required": true,
+     "values": "DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions[].objClass",
+     "required": true,
+     "values": "nrfRole, nrfResource, srvprvRequest",
+     "kind": "fixed"
+    },
+    {
+     "name": "permissions[].permission",
+     "required": true,
+     "values": "the access key granted",
+     "kind": "fixed"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, name}]}",
+  "example": "DELETE \u2026/access/teams/permissions {teamDN, permissions:[\u2026]}",
+  "notes": "Same shape as the grant; team/permissions read empty afterwards.",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams/permissions",
+  "status": "empty-on-lab",
+  "purpose": "List the permissions the caller may request for others through their teams.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10; below 1 is reset",
+    "kind": "free"
+   },
+   {
+    "name": "column",
+    "in": "query",
+    "required": false,
+    "values": "columns to search/return",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "targetSetDnList": [
+     "<team DN>"
+    ],
+    "useExcludePermList": false,
+    "proxyUser": "<DN>"
+   },
+   "fields": [
+    {
+     "name": "targetSetDnList",
+     "required": false,
+     "values": "team DNs to limit to",
+     "kind": "per-installation"
+    },
+    {
+     "name": "useExcludePermList",
+     "required": false,
+     "values": "bool; true also applies the teams' exclusion lists",
+     "kind": "free"
+    },
+    {
+     "name": "proxyUser",
+     "required": false,
+     "values": "DN to act as",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{nextIndex:int, arraySize:int, permissions?:[\u2026]}",
+  "example": "POST \u2026/teams/permissions?q=*&nextIndex=1&size=3 {}",
+  "notes": "A read despite POST (the dashboard's request-on-behalf permission list). {} and an empty targetSetDnList both answered {nextIndex:0, arraySize:0}. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "PUT",
+  "path": "/IDMProv/rest/access/teams/permissions",
+  "status": "validated",
+  "purpose": "Grant a team permissions on roles, resources or PRDs.",
+  "params": [],
+  "body": {
+   "example": {
+    "teamDN": "<team DN>",
+    "permissions": [
+     {
+      "dn": "<role DN>",
+      "objClass": "nrfRole",
+      "permission": "nrfAccessMgrAssignRole"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "teamDN",
+     "required": true,
+     "values": "team DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions",
+     "required": true,
+     "values": "list",
+     "kind": "free"
+    },
+    {
+     "name": "permissions[].dn",
+     "required": true,
+     "values": "the role, resource or PRD (or container) DN",
+     "kind": "per-installation"
+    },
+    {
+     "name": "permissions[].objClass",
+     "required": true,
+     "values": "nrfRole, nrfResource or srvprvRequest",
+     "kind": "fixed"
+    },
+    {
+     "name": "permissions[].permission",
+     "required": true,
+     "values": "an access key from GET /admin/permission?domain=ROLES|RESOURCES|PROVISIONING, e.g. nrfAccessMgrAssignRole, nrfAccessMgrRevokeRole",
+     "kind": "fixed"
+    },
+    {
+     "name": "excludeRoles / excludeResources / excludeProvisioningRequests",
+     "required": false,
+     "values": "DN lists",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{success, succeeded:[{id, name}]} (name = '<level name>/<role name>')",
+  "example": "PUT \u2026/access/teams/permissions {teamDN, permissions:[{dn, objClass:'nrfRole', permission:'nrfAccessMgrAssignRole'}]}",
+  "notes": "The permission key is NOT checked: 'AssignRole' (the dashboard's checkbox id) also answered success but was invisible in POST /access/teams/team/permissions; it was removed with the matching DELETE. With nrfAccessMgrAssignRole the grant appears there (permissionDisplay 'Assign Role To User').",
+  "evidence": "live 2026-10-30 (scratch objects)"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/prds",
+  "status": "validated",
+  "purpose": "Search the PRDs that can be added to a team.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, permissions:[{id, dn, name, desc, entityType:'prd', bulkRequestable, categories, multiAssignable, \u2026}]}",
+  "example": "GET \u2026/teams/prds?q=*&nextIndex=1&size=3",
+  "notes": "Uses the permission index; 489 'permission index not ready' while it is building. Searches the name column.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/recipients/groups",
+  "status": "empty-on-lab",
+  "purpose": "List groups the caller may choose as recipients (request on behalf).",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default -1 = all",
+    "kind": "free"
+   },
+   {
+    "name": "proxyUser",
+    "in": "query",
+    "required": false,
+    "values": "DN to act as",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{recipients?:[{dn, name, type:'group'}], arraySize:int, nextIndex:int}",
+  "example": "GET \u2026/teams/recipients/groups?q=*&nextIndex=1&size=3",
+  "notes": "Domain administrators get all vault groups; team managers get their teams' member groups. Lab: none returned.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams/recipients/list",
+  "status": "empty-on-lab",
+  "purpose": "List all members of one team.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<team DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "team DN; blank \u2192 'Invalid input DN'",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{recipients:[\u2026]} when the team exists",
+  "example": "POST \u2026/teams/recipients/list {\"dn\":\"<team DN>\"}",
+  "notes": "Blank dn \u2192 489 'Invalid input DN: '; a DN that is not a team \u2192 489 'Internal Error'. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/recipients/userlist/v2",
+  "status": "empty-on-lab",
+  "purpose": "List users the caller may choose as recipients, optionally within one team.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "config client id, default 1",
+    "kind": "per-installation"
+   },
+   {
+    "name": "teamDn",
+    "in": "query",
+    "required": false,
+    "values": "limit to one team",
+    "kind": "per-installation"
+   },
+   {
+    "name": "proxyUser",
+    "in": "query",
+    "required": false,
+    "values": "DN to act as",
+    "kind": "per-installation"
+   }
+  ],
+  "body": null,
+  "answer": "{recipients?:[\u2026], arraySize:int, nextIndex:int, total:int}",
+  "example": "GET \u2026/teams/recipients/userlist/v2?q=*&nextIndex=1&size=3&client=1",
+  "notes": "Domain administrators search the user search root; the lab's user root is empty, so nothing comes back.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams/recipients/users/v2",
+  "status": "empty-on-lab",
+  "purpose": "List users the caller may act for as proxy, or the members of given teams.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default -1 = all",
+    "kind": "free"
+   },
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "config client id, default 1",
+    "kind": "per-installation"
+   }
+  ],
+  "body": {
+   "example": {
+    "teams": [
+     {
+      "dn": "<team DN>"
+     }
+    ]
+   },
+   "fields": [
+    {
+     "name": "teams",
+     "required": false,
+     "values": "list of {dn}; the dashboard sends one team (members) or {} (proxy users)",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{recipients?:[\u2026], arraySize:int, nextIndex:int}",
+  "example": "POST \u2026/teams/recipients/users/v2?q=*&nextIndex=1&size=3 {}",
+  "notes": "A read despite POST. Both {} and a non-existent team answered {arraySize:0, nextIndex:0}, without an error.",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/resources",
+  "status": "validated",
+  "purpose": "Search the resources that can be added to a team.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "filterBy",
+    "in": "query",
+    "required": false,
+    "values": "columns to search (repeatable); default name and description",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, permissions:[{id, dn, name, desc, entityType:'resource', \u2026}]}",
+  "example": "GET \u2026/teams/resources?q=*&nextIndex=1&size=3",
+  "notes": "Uses the permission index (489 while not ready).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/role/permissions",
+  "status": "empty-on-lab",
+  "purpose": "List the roles the caller may request through their teams.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "column",
+    "in": "query",
+    "required": false,
+    "values": "columns to search",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, permissions?:[\u2026]}",
+  "example": "GET \u2026/teams/role/permissions?q=*&nextIndex=1&size=3",
+  "notes": "Lab: {nextIndex:0, arraySize:0} even for the administrator. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/roles",
+  "status": "validated",
+  "purpose": "Search the roles that can be added to a team.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default *",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "filterBy",
+    "in": "query",
+    "required": false,
+    "values": "columns to search (repeatable); default name and description",
+    "kind": "free"
+   }
+  ],
+  "body": null,
+  "answer": "{nextIndex:int, arraySize:int, permissions:[{id, dn, name, desc, entityType:'role', \u2026}]}",
+  "example": "GET \u2026/teams/roles?q=*&nextIndex=1&size=3&filterBy=name",
+  "notes": "Uses the permission index (489 while not ready).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams/team",
+  "status": "empty-on-lab",
+  "purpose": "Read one team's details.",
+  "params": [],
+  "body": {
+   "example": {
+    "dn": "<team DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "team DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "the team object (name, dn, description, recipients, requestors, permissionList, domainTypes, readOnly \u2026)",
+  "example": "POST \u2026/teams/team {\"dn\":\"<team DN>\"}",
+  "notes": "A read despite POST. A DN that is not a team, or {}, \u2192 489 'Internal Error'. Read-only teams are only shown to domain administrators of their domains. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/teams/team/permissions",
+  "status": "empty-on-lab",
+  "purpose": "List the permissions assigned to one team.",
+  "params": [
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   },
+   {
+    "name": "forceRefresh",
+    "in": "query",
+    "required": false,
+    "values": "default false",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {
+    "dn": "<team DN>"
+   },
+   "fields": [
+    {
+     "name": "dn",
+     "required": true,
+     "values": "team DN",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{permissions:[\u2026], nextIndex, arraySize}",
+  "example": "POST \u2026/teams/team/permissions?nextIndex=1&size=3&sortOrder=asc&forceRefresh=false {\"dn\":\"<team DN>\"}",
+  "notes": "A read despite POST; the dashboard always sends nextIndex, sortOrder, size and forceRefresh. A DN that is not a team \u2192 489 'Internal Error'. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "GET",
+  "path": "/IDMProv/rest/access/teams/team/userlist",
+  "status": "empty-on-lab",
+  "purpose": "List the users in one team the caller can see.",
+  "params": [
+   {
+    "name": "teamDn",
+    "in": "query",
+    "required": true,
+    "values": "team DN; required",
+    "kind": "per-installation"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "default empty",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "default 1",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "default 10",
+    "kind": "free"
+   },
+   {
+    "name": "client",
+    "in": "query",
+    "required": false,
+    "values": "config client id, default 1",
+    "kind": "per-installation"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc (default) or desc",
+    "kind": "fixed"
+   }
+  ],
+  "body": null,
+  "answer": "user list for the team",
+  "example": "GET \u2026/teams/team/userlist?teamDn=<team DN>",
+  "notes": "No teamDn \u2192 489 'Team DN input is empty\u2026'; a DN that is not a team \u2192 489 'Internal Error'. The lab has no teams (GET \u2026/teams/list answers totalCount 0).",
+  "evidence": "server code + live 2026-10-30"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/workflow",
+  "status": "from-ui",
+  "purpose": "Create a PRD (workflow) from a built-in approval template for a role or resource.",
+  "params": [],
+  "body": {
+   "example": {
+    "template": "cn=SingleStepApproval,cn=RequestDefs,cn=AppConfig,cn=User Application Driver,cn=driverset1,o=system",
+    "cn": "MyApproval",
+    "prdName": [
+     {
+      "key": "en",
+      "value": "My approval"
+     }
+    ],
+    "permissionType": "Role",
+    "processType": "Normal",
+    "permissionDN": "<role DN>",
+    "status": "Active",
+    "approvalType": "Serial",
+    "requestInfo": {
+     "requesterFormDN": "<request form DN>"
+    }
+   },
+   "fields": [
+    {
+     "name": "template",
+     "required": true,
+     "values": "template PRD DN from GET \u2026/forms/listTemplates; must exist",
+     "kind": "per-installation"
+    },
+    {
+     "name": "cn",
+     "required": true,
+     "values": "new PRD cn; must be valid for a DN",
+     "kind": "free"
+    },
+    {
+     "name": "prdName",
+     "required": true,
+     "values": "localized names [{key: locale, value}]; must be valid",
+     "kind": "free"
+    },
+    {
+     "name": "permissionType",
+     "required": true,
+     "values": "Role or Resource",
+     "kind": "fixed"
+    },
+    {
+     "name": "processType",
+     "required": true,
+     "values": "Normal, or Role Approval (for Role) / Resource Approval (for Resource)",
+     "kind": "fixed"
+    },
+    {
+     "name": "permissionDN",
+     "required": false,
+     "values": "role/resource DN; required when processType is Normal",
+     "kind": "per-installation"
+    },
+    {
+     "name": "status",
+     "required": true,
+     "values": "Active or InActive",
+     "kind": "fixed"
+    },
+    {
+     "name": "approvalType",
+     "required": true,
+     "values": "Serial, Parallel or Quorum",
+     "kind": "fixed"
+    },
+    {
+     "name": "requestInfo.requesterFormDN",
+     "required": true,
+     "values": "request form DN (GET \u2026/forms/listWorkflowForms?formContainer=RequestForms)",
+     "kind": "per-installation"
+    },
+    {
+     "name": "prdDescription",
+     "required": false,
+     "values": "localized descriptions",
+     "kind": "free"
+    },
+    {
+     "name": "data / approveInfo / wfData",
+     "required": false,
+     "values": "approval steps and form data",
+     "kind": "free"
+    },
+    {
+     "name": "isLoggingRequired / isNotificationRequired / isCustomTemplate",
+     "required": false,
+     "values": "bool",
+     "kind": "free"
+    },
+    {
+     "name": "trustees",
+     "required": false,
+     "values": "list of trustee DNs",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{prdDN: new PRD DN}",
+  "example": "POST \u2026/workflow (not called)",
+  "notes": "Provisioning administrator only; an existing PRD with the same cn \u2192 error. For non-Normal process types the new PRD is also linked as the role's/resource's approval process. Values compared case-insensitively. The reference shows an XML body; JSON field names are the same.",
+  "evidence": "server code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/workflow/prd",
+  "status": "from-ui",
+  "purpose": "Create a PRD from raw process-flow and request XML.",
+  "params": [],
+  "body": {
+   "example": {
+    "prdCN": "MyPrd",
+    "prdName": [
+     {
+      "key": "en",
+      "value": "My PRD"
+     }
+    ],
+    "prdDescription": [
+     {
+      "key": "en",
+      "value": "\u2026"
+     }
+    ],
+    "prdCategory": "<category id>",
+    "processFlowXML": "<flow XML>",
+    "requestXML": "<request XML>"
+   },
+   "fields": [
+    {
+     "name": "prdCN",
+     "required": true,
+     "values": "PRD cn",
+     "kind": "free"
+    },
+    {
+     "name": "prdName",
+     "required": true,
+     "values": "localized names [{key, value}]; iterated without a null check",
+     "kind": "free"
+    },
+    {
+     "name": "prdDescription",
+     "required": true,
+     "values": "localized descriptions [{key, value}]; iterated without a null check",
+     "kind": "free"
+    },
+    {
+     "name": "prdCategory",
+     "required": false,
+     "values": "PRD category id",
+     "kind": "per-installation"
+    },
+    {
+     "name": "operation / prdStatus / processType / flowStrategy",
+     "required": false,
+     "values": "PRD settings",
+     "kind": "free"
+    },
+    {
+     "name": "processFlowXML / requestXML / wfData / xmlData",
+     "required": false,
+     "values": "workflow definition content",
+     "kind": "free"
+    },
+    {
+     "name": "trustees",
+     "required": false,
+     "values": "trustee DNs",
+     "kind": "per-installation"
+    }
+   ]
+  },
+  "answer": "{prdDN}",
+  "example": "POST \u2026/workflow/prd (not called)",
+  "notes": "Only an empty body is rejected explicitly; the PRD is created through the PRD manager and added to the permission index.",
+  "evidence": "server code"
+ },
+ {
+  "method": "POST",
+  "path": "/IDMProv/rest/access/requests/historylist/permission",
+  "status": "validated",
+  "purpose": "For administrators: every request made for one role, resource or PRD.",
+  "params": [
+   {
+    "name": "item",
+    "in": "query",
+    "required": true,
+    "values": "the permission's DN",
+    "kind": "free"
+   },
+   {
+    "name": "type",
+    "in": "query",
+    "required": false,
+    "values": "the permission's type, e.g. role (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "status",
+    "in": "query",
+    "required": false,
+    "values": "request status filter (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "q",
+    "in": "query",
+    "required": false,
+    "values": "search text (default *)",
+    "kind": "free"
+   },
+   {
+    "name": "nextIndex",
+    "in": "query",
+    "required": false,
+    "values": "1-based start (default 1)",
+    "kind": "free"
+   },
+   {
+    "name": "size",
+    "in": "query",
+    "required": false,
+    "values": "page size (default 10)",
+    "kind": "free"
+   },
+   {
+    "name": "sortOrder",
+    "in": "query",
+    "required": false,
+    "values": "asc|desc (default asc)",
+    "kind": "fixed"
+   },
+   {
+    "name": "sortBy",
+    "in": "query",
+    "required": false,
+    "values": "a request column (default requestDate)",
+    "kind": "free"
+   },
+   {
+    "name": "cn",
+    "in": "query",
+    "required": false,
+    "values": "",
+    "kind": "free"
+   },
+   {
+    "name": "startDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms (default 0)",
+    "kind": "free"
+   },
+   {
+    "name": "endDate",
+    "in": "query",
+    "required": false,
+    "values": "epoch ms (default 0)",
+    "kind": "free"
+   }
+  ],
+  "body": {
+   "example": {},
+   "fields": [
+    {
+     "name": "requesters",
+     "required": false,
+     "values": "DNs",
+     "kind": "free"
+    },
+    {
+     "name": "recipientUsers",
+     "required": false,
+     "values": "DNs",
+     "kind": "free"
+    },
+    {
+     "name": "recipientGroups",
+     "required": false,
+     "values": "DNs",
+     "kind": "free"
+    },
+    {
+     "name": "recipientContainers",
+     "required": false,
+     "values": "DNs",
+     "kind": "free"
+    },
+    {
+     "name": "reason",
+     "required": false,
+     "values": "",
+     "kind": "free"
+    }
+   ]
+  },
+  "answer": "{totalSize, total, nextIndex, \u2026requests}",
+  "example": "POST \u2026/access/requests/historylist/permission?item=<role DN>&type=role {}",
+  "notes": "The permission goes in the item query parameter. With id or permissionId (query or body) it answers 489 'Permission id (id:) is required', which misled earlier attempts.",
+  "evidence": "server code + live 2026-10-30"
+ }
+]
